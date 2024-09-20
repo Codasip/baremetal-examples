@@ -14,4 +14,5 @@ CONFIG_HAS_PMP              = N
 
 # ----[ PLATFORM CONFIGURATION ]----
 
+CONFIG_PLIC                 = Y
 CONFIG_SECURITY             = N

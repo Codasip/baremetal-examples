@@ -117,7 +117,7 @@ static void exit_with_error(void)
     exit(1);
 }
 
-void __attribute__((aligned(16))) trap_handler(void)
+void __attribute__((aligned(64))) trap_handler(void)
 {
     printf("FSBL trap handler entered.\n");
     printf(" - CSR mcause:        " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MCAUSE));
@@ -274,8 +274,11 @@ int main(void)
         printf(" - Platform version:  %u.%u\n",
                bm_id_get_info(id_reg, BM_ID_PLAT_VERSION_MAJOR),
                bm_id_get_info(id_reg, BM_ID_PLAT_VERSION_MINOR));
+        int core_type = bm_id_get_info(id_reg, BM_ID_CORE_TYPE);
         printf(" - Core type:         %s\n",
-               bm_id_get_info(id_reg, BM_ID_CORE_TYPE) == BM_ID_CORE_A730 ? "A730" : "Unknown");
+               core_type == BM_ID_CORE_A730   ? "A730"
+               : core_type == BM_ID_CORE_L110 ? "L110"
+                                              : "Unknown");
         printf(" - Core frequency:    %u MHz\n", bm_id_get_info(id_reg, BM_ID_CORE_FREQ));
         int eth_type = bm_id_get_info(id_reg, BM_ID_ETH_TYPE);
         printf(" - Ethernet type:     %s\n",

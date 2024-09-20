@@ -43,6 +43,11 @@ void bm_ext_irq_set_handler(unsigned ext_irq_id, void (*func)(void));
 void bm_interrupt_init(bm_priv_mode_t priv_mode);
 
 /**
+ * \brief Initialize external interrupt handler device
+ */
+void bm_ext_irq_init(void);
+
+/**
  * \brief Claim an external interrupt
  *
  * \return External interrupt identifier or -1

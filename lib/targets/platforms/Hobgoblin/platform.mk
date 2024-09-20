@@ -14,7 +14,9 @@ PROVIDES += clint
 PROVIDES += flash
 PROVIDES += gpio_io
 PROVIDES += sdcard
+ifeq ($(CONFIG_PLIC),Y)
 PROVIDES += plic
+endif
 PROVIDES += uart
 ifeq ($(CONFIG_SECURITY),Y)
 PROVIDES += aead
@@ -29,9 +31,12 @@ BM_SOURCES += \
     $(PLATFORM_DIR)/platform.c \
     $(LIB_DIR)/src/clint.c \
     $(LIB_DIR)/src/gpio.c \
-    $(LIB_DIR)/src/plic.c \
     $(LIB_DIR)/src/spi.c \
     $(LIB_DIR)/src/uart.c
+ifeq ($(CONFIG_PLIC),Y)
+BM_SOURCES += \
+    $(LIB_DIR)/src/plic.c
+endif
 ifeq ($(CONFIG_SECURITY),Y)
 BM_SOURCES += \
     $(LIB_DIR)/src/aead.c \
@@ -40,6 +45,10 @@ endif
 endif
 
 # ----[ DEFINES ]----
+
+ifeq ($(CONFIG_PLIC),Y)
+DEFINES += CONFIG_PLIC
+endif
 
 ifeq ($(CONFIG_SECURITY),Y)
 DEFINES += CONFIG_SECURITY

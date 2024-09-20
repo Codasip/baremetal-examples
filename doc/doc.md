@@ -123,8 +123,9 @@ Folders _lib/targets/cores/\<core\>_ hold core-specific sources. The build can b
 
 Please refer to the relevant _README_ files for supported core configuration options:
 
-- [A730](lib/targets/cores/A730/README.md)
-- [L31](lib/targets/cores/L31/README.md)
+- [A730](../lib/targets/cores/A730/README.md)
+- [L31](../lib/targets/cores/L31/README.md)
+- [L110](../lib/targets/cores/L110/README.md)
 
 ### Platforms
 
@@ -135,20 +136,20 @@ Folders _lib/targets/platforms/\<platform\>_ hold platform-specific sources. Req
 
 The supported target platforms are:
 
-- [DoomBar](lib/targets/platforms/DoomBar/README.md)
-- [Hobgoblin](lib/targets/platforms/Hobgoblin/README.md)
-- [Inferno](lib/targets/platforms/Inferno/README.md)
+- [DoomBar](../lib/targets/platforms/DoomBar/README.md)
+- [Hobgoblin](../lib/targets/platforms/Hobgoblin/README.md)
+- [Inferno](../lib/targets/platforms/Inferno/README.md)
 
 ## APIs and software demos
 
 Even the simplest demo is built together with the library, which allows the user to configure the I/O (console) by setting the `CONFIG_ENVIRONMENT` variable as described previously. Although, this is not in the demo code (as it is has a global default configuration in _config.mk_ which can be overriden in the local _Makefile_, if required):
 
-- [Hello-World demo](software/hello-world/README.md)
+- [Hello-World demo](../software/hello-world/README.md)
 
 More complicated demos include a range of library includes and calls to library functions, documented in the subsequent sections. For instance, the OOB demo prints out the Codasip logo on the console and blinks the LEDs, while the FSBL loads and executes payloads from the microSD card:
 
-- [Out-Of-the-Box demo](software/oob-demo/README.md)
-- [First Stage BootLoader](software/fsbl/README.md)
+- [Out-Of-the-Box demo](../software/oob-demo/README.md)
+- [First Stage BootLoader](../software/fsbl/README.md)
 
 
 ### Basic core functionality
@@ -163,11 +164,11 @@ Lastly, the Physical Memory Protection (PMP) bare-metal API (see _lib/include/ba
 
 For example usage, please see the relevant demos:
 
-- [Counter demo](software/counter-demo/README.md)
-- [CSR demo](software/csr-demo/README.md)
-- [HPMcounter demo](software/hpmcounter-demo/README.md)
-- [PMP demo](software/pmp-demo/README.md)
-- [Timing demo](software/timing-demo/README.md)
+- [Counter demo](../software/counter-demo/README.md)
+- [CSR demo](../software/csr-demo/README.md)
+- [HPMcounter demo](../software/hpmcounter-demo/README.md)
+- [PMP demo](../software/pmp-demo/README.md)
+- [Timing demo](../software/timing-demo/README.md)
 
 ### Multiprocessing
 
@@ -179,8 +180,8 @@ The bare-metal library also provides options for hart synchronization, simple ba
 
 Please examine the relevant demos for usage examples:
 
-- [MP demo](software/mp-demo/README.md)
-- [Mutex demo](software/mutex-demo/README.md)
+- [MP demo](../software/mp-demo/README.md)
+- [Mutex demo](../software/mutex-demo/README.md)
 
 ### Interrupts and privilege modes
 
@@ -189,15 +190,19 @@ The bare-metal library provides a rich support for handling RISC-V interrupts, e
 - Core Local INTerruptor (CLINT) or Advanced CLINT (ACLINT), when mapped to memory in a compatible fashion, mainly for generating timer interrupt
 - Platform Level Interrupt Controller (PLIC), for handling external interrupts
 - Codasip Programmable Interrupt Controller (PIC), also for handling external interrupts
+- Core-Local Interrupt Controller (CLIC), also for handling external interrupts
 
-These APIs can be found in _lib/include/baremetal/clint.h_, _lib/include/baremetal/pic.h_ and _lib/include/baremetal/plic.h_. Please see the relevant demos for usage examples:
+These APIs can be found in _lib/include/baremetal/clint.h_, _lib/include/baremetal/pic.h_, _lib/include/baremetal/plic.h_ and _lib/include/baremetal/clic.h_. Please see the relevant demos for usage examples:
 
-- [CLINT IPI demo](software/clint-ipi/README.md)
-- [CLINT timer demo](software/clint-timer/README.md)
-- [CLINT interrupt demo](software/clint-timer-interrupt/README.md)
-- [PIC demo](software/pic-interrupts/README.md)
-- [PLIC demo](software/plic-interrupts/README.md)
-- [PLIC interrupt priority demo](software/plic-priority/README.md)
+- [CLINT IPI demo](../software/clint-ipi/README.md)
+- [CLINT timer demo](../software/clint-timer/README.md)
+- [CLINT interrupt demo](../software/clint-timer-interrupt/README.md)
+- [PIC demo](../software/pic-interrupts/README.md)
+- [PLIC demo](../software/plic-interrupts/README.md)
+- [PLIC interrupt priority demo](../software/plic-priority/README.md)
+- [CLIC demo](../software/clic-interrupts/README.md)
+- [CLIC hardware vectoring demo](../software/clic-interrupts-vectored/README.md)
+- [CLIC interrupt priority demo](../software/clic-priority/README.md)
 
 Interrupts can be either processed by setting custom handlers using low-level interrupt API (see _lib/include/baremetal/interrupt_low.h_), or by utilyzing the provided handlers. Using the low-level API offers more simplicity and flexibility.
 
@@ -207,34 +212,34 @@ Support for privilege mode transfer is provided in _lib/include/baremetal/priv.h
 
 Please see the relevant demos for usage examples:
 
-- [ECALL demo](software/ecall-demo/README.md)
-- [Exception demo](software/exception-demo/README.md)
-- [Interrupt demo](software/interrupts-simple/README.md)
-- [Vectored interrupts demo](software/interrupts-vectored/README.md)
-- [Privilege ](software/privilege-drop/README.md)
-- [Privilege ](software/privilege-interrupts/README.md)
-- [Privilege ](software/privilege-interrupts-delegated/README.md)
-- [RDTIME demo](software/rdtime/README.md)
-- [WFI demo](software/wfi-demo/README.md)
+- [ECALL demo](../software/ecall-demo/README.md)
+- [Exception demo](../software/exception-demo/README.md)
+- [Interrupt demo](../software/interrupts-simple/README.md)
+- [Vectored interrupts demo](../software/interrupts-vectored/README.md)
+- [Privilege ](../software/privilege-drop/README.md)
+- [Privilege ](../software/privilege-interrupts/README.md)
+- [Privilege ](../software/privilege-interrupts-delegated/README.md)
+- [RDTIME demo](../software/rdtime/README.md)
+- [WFI demo](../software/wfi-demo/README.md)
 
 ### Peripheral drivers
 
 Codasip's FPGA platforms usually contain a range of hardware peripherals. The Bare-metal library therefore contains simple drivers for these peripherals. APIs for peripherals from Xilinx are provided for GPIO, I2C, SPI, and UART in _lib/include/baremetal/gpio.h_, _lib/include/baremetal/i2c.h_, _lib/include/baremetal/spi.h_, and _lib/include/baremetal/uart.h_, respectively. Please see the relevant demos for usage examples:
 
-- [GPIO demo](software/gpio-demo/README.md)
-- [GPIO interrupt demo](software/gpio-interrupt-demo/README.md)
-- [I2C demo](software/i2c-demo/README.md)
-- [SPI demo](software/spi-demo/README.md)
-- [UART demo](software/uart-demo/README.md)
+- [GPIO demo](../software/gpio-demo/README.md)
+- [GPIO interrupt demo](../software/gpio-interrupt-demo/README.md)
+- [I2C demo](../software/i2c-demo/README.md)
+- [SPI demo](../software/spi-demo/README.md)
+- [UART demo](../software/uart-demo/README.md)
 
 Besides the generic periperals, Codasip's FPGA platforms can also contain more specialized peripherals. For instance, core-specific APIs for the _L31_ core can be used for cache management, or to access Tightly Coupled Memories. The Bare-metal library also provides support for platforms with security peripherals, e.g. a True Random Number Generator (TRNG), or an adapter for the Authenticated Encryption with Associated Data (AEAD) algorithm.
 
 Please see the relevant demos for examples:
 
-- [AEAD](software/aead-demo/README.md)
-- [Cache counter demo](software/cache-counter-demo/README.md)
-- [Cache info demo](software/cache-info-demo/README.md)
-- [Cache write through demo](software/cache-write-through/README.md)
-- [TCM demo](software/tcm-demo/README.md)
-- [TRNG](software/trng-demo/README.md)
+- [AEAD](../software/aead-demo/README.md)
+- [Cache counter demo](../software/cache-counter-demo/README.md)
+- [Cache info demo](../software/cache-info-demo/README.md)
+- [Cache write through demo](../software/cache-write-through/README.md)
+- [TCM demo](../software/tcm-demo/README.md)
+- [TRNG](../software/trng-demo/README.md)
 

@@ -10,7 +10,7 @@
 /**
  * \brief A custom interrupt handler
  */
-void __attribute__((interrupt, aligned(16))) my_handler(void)
+void __attribute__((interrupt, aligned(64))) my_handler(void)
 {
     puts("Entered interrupt handler.");
 

@@ -23,6 +23,11 @@ int USED _open(const char *file, int flags, ...)
     if (!sd_init_done)
     {
         FRESULT result = f_mount(&fatfs, "", 1);
+        if (result == FR_NOT_READY)
+        {
+            // Retry to increase reliability in case of missing SD_nRESET signal
+            result = f_mount(&fatfs, "", 1);
+        }
         if (result != FR_OK)
         {
             errno = ENODEV;

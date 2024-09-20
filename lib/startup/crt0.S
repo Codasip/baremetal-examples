@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2024 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "core_info.h"
@@ -33,7 +33,7 @@ codasip_syscall:
 _reset_handler:
     .global _reset_handler
     // Perform core-specific initialization
-    jal _core_init
+    jal ra, _core_init
 
     .option push
     .option norelax
@@ -45,8 +45,8 @@ _reset_handler:
 
     csrr t0, mhartid
     bnez t0, _code_start
-    jal clear_bss
-    jal init_ram
+    jal ra, clear_bss
+    jal ra, init_ram
 
 _code_start:
     la sp, _stack
@@ -60,13 +60,12 @@ _code_start:
     mul t1, t0, t1   // t1 <- hart's stack offset
     sub sp, sp, t1
 
-    jal bm_park_hart
+    jal ra, bm_park_hart
 #endif
 
 _call_main:
     // Now we can call the main function.
-    lui t0, %hi(main)
-    jalr ra, t0, %lo(main)
+    call main
     j _exit
 
 _nmi_handler:
@@ -74,7 +73,7 @@ _nmi_handler:
     li a0, NMI_EXIT_CODE
     j _exit
 
-.balign 4
+.balign 64
 _trap_handler:
     .global _trap_handler
     li a0, TRAP_EXIT_CODE
@@ -87,6 +86,10 @@ abort:
 
 exit:
     .global exit
+    j _exit
+
+_exit:
+    .weak _exit
     j _exit
 
 clear_bss:

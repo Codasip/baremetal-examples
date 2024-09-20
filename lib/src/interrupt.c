@@ -15,13 +15,79 @@
     #include <baremetal/plic.h>
 #elif defined(TARGET_HAS_PIC)
     #include "baremetal/pic.h"
+#elif defined(TARGET_HAS_CLIC)
+    #include "baremetal/clic.h"
 #endif
 
 #include <stdint.h>
 
+static void bm_irq_handler_unset(unsigned offset UNUSED)
+{
+    bm_error("An interrupt with unset handler was triggered.");
+}
+
+static void bm_exception_handler_unset(unsigned offset)
+{
+    bm_warn("Exception handler was called:");
+
+    switch (offset)
+    {
+        case BM_EXCEPTION_IAM:
+            bm_warn("Instruction address misaligned.");
+            break;
+        case BM_EXCEPTION_IAF:
+            bm_warn("Instruction access fault.");
+            break;
+        case BM_EXCEPTION_II:
+            bm_warn("Illegal instruction.");
+            break;
+        case BM_EXCEPTION_BREAK:
+            bm_warn("Breakpoint exception.");
+            break;
+        case BM_EXCEPTION_LAM:
+            bm_warn("Load address misaligned.");
+            break;
+        case BM_EXCEPTION_LAF:
+            bm_warn("Load access fault.");
+            break;
+        case BM_EXCEPTION_SAM:
+            bm_warn("Store address misaligned.");
+            break;
+        case BM_EXCEPTION_SAF:
+            bm_warn("Store access fault.");
+            break;
+        case BM_EXCEPTION_ECALL_U:
+            bm_warn("ECALL from user mode.");
+            break;
+        case BM_EXCEPTION_ECALL_S:
+            bm_warn("ECALL from supervisor mode.");
+            break;
+        case BM_EXCEPTION_ECALL_M:
+            bm_warn("ECALL from machine mode.");
+            break;
+        case BM_EXCEPTION_IPF:
+            bm_warn("Instruction page fault");
+            break;
+        case BM_EXCEPTION_LPF:
+            bm_warn("Load page fault.");
+            break;
+        case BM_EXCEPTION_SPF:
+            bm_warn("Store page fault.");
+            break;
+        default:
+            bm_warn("Unknown exception.");
+            break;
+    }
+    bm_error("Fatal, ending execution.");
+}
+
 /** \brief Table with handlers for individual exception sources */
 static void (*bm_exc_handler_table[16])(void) = {0};
 
+#ifdef TARGET_HAS_CLIC
+/** \brief Table with handlers for individual interrupt sources */
+static void (*bm_interrupt_handler_table[TARGET_CLIC_NUM_INPUTS])(void) = {0};
+#else
 /** \brief Table with handlers for individual interrupt sources */
 static void (*bm_interrupt_handler_table[16])(void) = {0};
 
@@ -47,6 +113,7 @@ void bm_ext_irq_handler(void)
 
     bm_ext_irq_complete(pending);
 }
+#endif
 
 // clang-format off
 #if __riscv_xlen == 32
@@ -235,7 +302,7 @@ void bm_ext_irq_handler(void)
  *
  * \param new_mode Privilege mode the routine runs in
  */
-static void bm_managed_handler_inner(bm_priv_mode_t new_mode)
+void bm_managed_handler_inner(bm_priv_mode_t new_mode)
 {
     // Update internal variable holding privilege mode
     bm_priv_mode_t prev_mode = bm_current_mode;
@@ -246,7 +313,12 @@ static void bm_managed_handler_inner(bm_priv_mode_t new_mode)
     xlen_t    cause  = bm_csr_read(xcause);
 
     // Get the offset in handler tables by clearing highest cause bit (interrupt bit)
-    xlen_t offset = cause & (~(xlen_t)0 >> 1);
+#ifdef TARGET_HAS_CLIC
+    xlen_t offset_mask = 0xfff;
+#else
+    xlen_t offset_mask                   = ~(xlen_t)0 >> 1;
+#endif
+    xlen_t offset = cause & offset_mask;
     if (offset >= 16)
     {
         bm_error("Encountered cause is out of handled range");
@@ -257,7 +329,7 @@ static void bm_managed_handler_inner(bm_priv_mode_t new_mode)
         // Handling an interrupt, highest cause bit is 1
         if (!bm_interrupt_handler_table[offset])
         {
-            bm_error("An interrupt with unset handler was triggered.");
+            bm_irq_handler_unset(offset);
         }
 
         // Call the configured handler
@@ -268,56 +340,7 @@ static void bm_managed_handler_inner(bm_priv_mode_t new_mode)
         // Handling an exception, highest cause bit is 0
         if (!bm_exc_handler_table[offset])
         {
-            bm_warn("Exception handler was called:");
-            switch (cause)
-            {
-                case BM_EXCEPTION_IAM:
-                    bm_warn("Instruction address misaligned.");
-                    break;
-                case BM_EXCEPTION_IAF:
-                    bm_warn("Instruction access fault.");
-                    break;
-                case BM_EXCEPTION_II:
-                    bm_warn("Illegal instruction.");
-                    break;
-                case BM_EXCEPTION_BREAK:
-                    bm_warn("Breakpoint exception.");
-                    break;
-                case BM_EXCEPTION_LAM:
-                    bm_warn("Load address misaligned.");
-                    break;
-                case BM_EXCEPTION_LAF:
-                    bm_warn("Load access fault.");
-                    break;
-                case BM_EXCEPTION_SAM:
-                    bm_warn("Store address misaligned.");
-                    break;
-                case BM_EXCEPTION_SAF:
-                    bm_warn("Store access fault.");
-                    break;
-                case BM_EXCEPTION_ECALL_U:
-                    bm_warn("ECALL from user mode.");
-                    break;
-                case BM_EXCEPTION_ECALL_S:
-                    bm_warn("ECALL from supervisor mode.");
-                    break;
-                case BM_EXCEPTION_ECALL_M:
-                    bm_warn("ECALL from machine mode.");
-                    break;
-                case BM_EXCEPTION_IPF:
-                    bm_warn("Instruction page fault");
-                    break;
-                case BM_EXCEPTION_LPF:
-                    bm_warn("Load page fault.");
-                    break;
-                case BM_EXCEPTION_SPF:
-                    bm_warn("Store page fault.");
-                    break;
-                default:
-                    bm_warn("Unknown exception.");
-                    break;
-            }
-            bm_error("Fatal, ending execution.");
+            bm_exception_handler_unset(offset);
         }
 
         // Call the configured handler
@@ -341,7 +364,7 @@ static void bm_managed_handler_inner(bm_priv_mode_t new_mode)
  * - Exit the interrupt handler using mret, sret or uret instruction.
  */
 #define CREATE_DEFAULT_HANDLER(name, priv_mode, scratch, ret) \
-    void __attribute__((naked, aligned(16))) name(void)       \
+    void __attribute__((naked, aligned(64))) name(void)       \
     {                                                         \
         __asm__ volatile("csrw " #scratch ", x1\n"            \
                          "la x1, %0\n"                        \
@@ -381,7 +404,11 @@ CREATE_DEFAULT_HANDLER(bm_managed_handler_u, BM_PRIV_MODE_USER, uscratch, uret)
 
 void bm_interrupt_set_handler(bm_interrupt_source_t cause, void (*func)(void))
 {
-    bm_interrupt_handler_table[cause] = func;
+#ifdef TARGET_HAS_CLIC
+    bm_interrupt_handler_table[bm_clic_get_irq_id(cause)] = func;
+#else
+    bm_interrupt_handler_table[cause]    = func;
+#endif
 }
 
 void bm_exception_set_handler(bm_exception_source_t cause, void (*func)(void))
@@ -391,7 +418,11 @@ void bm_exception_set_handler(bm_exception_source_t cause, void (*func)(void))
 
 void bm_ext_irq_set_handler(unsigned ext_irq_id, void (*func)(void))
 {
+#ifdef TARGET_HAS_CLIC
+    bm_interrupt_handler_table[bm_clic_get_ext_irq_id(ext_irq_id)] = func;
+#else
     bm_ext_irq_handler_table[ext_irq_id] = func;
+#endif
 }
 
 void bm_interrupt_init(bm_priv_mode_t priv_mode)
@@ -417,16 +448,26 @@ void bm_interrupt_init(bm_priv_mode_t priv_mode)
     }
     bm_interrupt_tvec_setup(priv_mode, handler, BM_INTERRUPT_MODE_DIRECT);
 
+#ifndef TARGET_HAS_CLIC
     bm_interrupt_set_handler(BM_INTERRUPT_MEIP, bm_ext_irq_handler);
-#ifdef TARGET_EXT_S
+    #ifdef TARGET_EXT_S
     bm_interrupt_set_handler(BM_INTERRUPT_SEIP, bm_ext_irq_handler);
-#endif
-#ifdef TARGET_EXT_N
+    #endif
+    #ifdef TARGET_EXT_N
     bm_interrupt_set_handler(BM_INTERRUPT_UEIP, bm_ext_irq_handler);
+    #endif
 #endif
 
     // Global enable for the given privilege mode, individual interrupt sources need to be enabled manually
     bm_interrupt_enable(priv_mode);
+}
+
+void bm_ext_irq_init(void)
+{
+#ifdef TARGET_HAS_CLIC
+    bm_clic_t *clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
+    bm_clic_init(clic);
+#endif
 }
 
 int bm_ext_irq_claim(void)
@@ -459,6 +500,9 @@ void bm_ext_irq_enable(unsigned ext_irq_id)
     bm_plic_t *plic = (bm_plic_t *)target_peripheral_get(BM_PERIPHERAL_PLIC);
     bm_plic_set_enable(plic, bm_get_hartid(), ext_irq_id, 1);
     bm_plic_set_priority(plic, ext_irq_id, 1);
+#elif defined(TARGET_HAS_CLIC)
+    bm_clic_t *clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
+    bm_clic_set_enable(clic, bm_clic_get_ext_irq_id(ext_irq_id), 1);
 #elif defined(TARGET_HAS_PIC)
     bm_pic_enable_source(ext_irq_id);
 #else
@@ -471,6 +515,9 @@ void bm_ext_irq_disable(unsigned ext_irq_id)
 #ifdef TARGET_HAS_PLIC
     bm_plic_t *plic = (bm_plic_t *)target_peripheral_get(BM_PERIPHERAL_PLIC);
     bm_plic_set_enable(plic, bm_get_hartid(), ext_irq_id, 0);
+#elif defined(TARGET_HAS_CLIC)
+    bm_clic_t *clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
+    bm_clic_set_enable(clic, bm_clic_get_ext_irq_id(ext_irq_id), 0);
 #elif defined(TARGET_HAS_PIC)
     bm_pic_disable_source(ext_irq_id);
 #else

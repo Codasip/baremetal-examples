@@ -5,6 +5,7 @@
 
 #include "../unified_int_mem_map.h"
 #include "baremetal/aead.h"
+#include "baremetal/clic.h"
 #include "baremetal/clint.h"
 #include "baremetal/common.h"
 #include "baremetal/gpio.h"
@@ -15,12 +16,14 @@
 #include "baremetal/uart.h"
 #include "baremetal/verbose.h"
 
-#define TARGET_PLATFORM_FREQ 100000000
-
 /**
  * \brief Peripherals available on this target
  */
-static bm_plic_t  plic   = {.regs = (bm_plic_regs_t *)PLIC_ADDR};
+#ifdef TARGET_HAS_PLIC
+static bm_plic_t plic = {.regs = (bm_plic_regs_t *)PLIC_ADDR};
+#elif defined(TARGET_HAS_CLIC)
+static bm_clic_t clic = {.regs = (bm_clic_regs_t *)CLIC_ADDR};
+#endif
 static bm_clint_t aclint = {.regs = (bm_clint_regs_t *)ACLINT_ADDR, .freq = TARGET_PLATFORM_FREQ};
 static bm_uart_t  uart   = {.regs       = (bm_uart_regs_t *)UART_ADDR,
                             .ext_irq_id = UART_IRQ_ID,
@@ -39,8 +42,13 @@ void *target_peripheral_get(int id)
 {
     switch (id)
     {
+#ifdef TARGET_HAS_PLIC
         case BM_PERIPHERAL_PLIC:
             return (void *)&plic;
+#elif defined(TARGET_HAS_CLIC)
+        case BM_PERIPHERAL_CLIC:
+            return (void *)&clic;
+#endif
         case BM_PERIPHERAL_CLINT:
             return (void *)&aclint;
         case BM_PERIPHERAL_UART_CONSOLE:

@@ -10,25 +10,34 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define LSR_TEMT    0x40
-#define LSR_THRE    0x20
-#define LSR_DR      0x1
+/* 16550 UART */
 
-#define IIR_INTPEND 0x1
+/* Line Status Register bit masks */
+#define LSR_TEMT 0x40 // Transmitter Empty
+#define LSR_THRE 0x20 // Transmitter Holding Register (THR) Empty & (FIFO mode) THR and FIFO Empty
+#define LSR_DR   0x1  // Data Ready
 
-#define IER_ELSI    0x4
-#define IER_ERBEI   0x2
-#define IER_ERBFI   0x1
+/* Interrupt Status Register */
+#define IIR_INTPEND 0x1 // Interrupt (Pending) Status, 0 = Interrupt Pending
 
-#define LCR_DLA     0x80
+/* Interrupt Enable Register bit masks */
+#define IER_ELSI  0x4 // Receiver Line Status Interrupt Enable
+#define IER_ETBEI 0x2 // THR Empty Interrupt Enable
+#define IER_ERBFI 0x1 // Data Read Interrupt Enable
 
-#define FCR_TL_14   0xC0
-#define FCR_TL_8    0x80
-#define FCR_TL_4    0x40
-#define FCR_TL_1    0x00
-#define FCR_XFR     0x4
-#define FCR_RFR     0x2
-#define FCR_FIFOEN  0x1
+/* Line Control Register */
+#define LCR_DLA 0x80 //  Divisor Latch Access Bit (DLAB)
+
+/* FIFO Control Register */
+#define FCR_TL_14    0xC0 // Receiver's FIFO Trigger Level = 14
+#define FCR_TL_8     0x80 // Receiver's FIFO Trigger Level =  8
+#define FCR_TL_4     0x40 // Receiver's FIFO Trigger Level =  4
+#define FCR_TL_1     0x00 // Receiver's FIFO Trigger Level =  1
+#define FCR_XFR      0x4  // Tx FIFO Reset
+#define FCR_RFR      0x2  // Rx FIFO Reset
+#define FCR_FIFOEN   0x1  // FIFO Enable
+
+#define TX_FIFO_SIZE 16 // The 16550 has a 16 byte transmit FIFO
 
 struct bm_uart_regs {
     uint8_t _reserved1[0x1000]; ///< Codasip UART uses an offset 0x1000
@@ -137,9 +146,14 @@ static int fifo_pop(bm_uart_fifo_t *f)
  */
 static inline void fill_tx_fifo(bm_uart_t *uart)
 {
-    for (int i = 0; i < 16 && !fifo_empty(&uart->tx); ++i)
+    // We have to wait until the THR and Tx FIFO are empty before filling
+    // as there is no FIFO Full bit
+    if (uart->regs->LSR & LSR_THRE)
     {
-        uart->regs->THR = fifo_pop(&uart->tx);
+        for (int i = 0; i < TX_FIFO_SIZE && !fifo_empty(&uart->tx); ++i)
+        {
+            uart->regs->THR = fifo_pop(&uart->tx);
+        }
     }
 }
 
@@ -183,7 +197,7 @@ void bm_uart_init(bm_uart_t *uart, const bm_uart_config_t *config)
 
     // Set the divisor
     uart->regs->DLL = divisor & 0xff;
-    uart->regs->DLM = (divisor & 0xff00) >> 8;
+    uart->regs->DLM = (divisor >> 8) & 0xff;
 
     // Set data format. Resets divisor access latch
     uart->regs->LCR = config->data_format | config->parity | config->stop;
@@ -195,9 +209,18 @@ void bm_uart_init(bm_uart_t *uart, const bm_uart_config_t *config)
 
     if (uart->use_irq)
     {
+        // Clear interrupts. Reading the IIR clears the THRE and some other interrupts
+        (void)uart->regs->IIR;
+
         // Enable interrupts
+        uart->regs->IER = IER_ELSI | IER_ETBEI | IER_ERBFI;
+        bm_ext_irq_init();
         bm_ext_irq_enable(uart->ext_irq_id);
-        uart->regs->IER = IER_ELSI | IER_ERBEI | IER_ERBFI;
+    }
+    else
+    {
+        bm_ext_irq_disable(uart->ext_irq_id);
+        uart->regs->IER = 0;
     }
 }
 
@@ -211,22 +234,23 @@ void bm_uart_transmit_byte(bm_uart_t *uart, uint8_t byte)
 
         // Initiate transmission of the next byte
         uart->regs->THR = byte;
-        return;
     }
-
-    // Block until some characters transmit
-    while (fifo_full(&uart->tx))
-        ;
-
-    bm_ext_irq_disable(uart->ext_irq_id);
-    fifo_push(&uart->tx, byte);
-
-    if (fifo_full(&uart->tx) && (uart->regs->LSR & LSR_THRE))
+    else
     {
-        // Flush internal FIFO in case its full
+        // Block until some characters transmit
+        while (fifo_full(&uart->tx))
+            ;
+
+        // Disable all UART interrupts while pushing to the internal FIFO
+        bm_ext_irq_disable(uart->ext_irq_id);
+        fifo_push(&uart->tx, byte);
+
+        // Flush some or all of the internal FIFO if Transmit FIFO is Empty
         fill_tx_fifo(uart);
+
+        // Enable UART interrupts
+        bm_ext_irq_enable(uart->ext_irq_id);
     }
-    bm_ext_irq_enable(uart->ext_irq_id);
 }
 
 int bm_uart_receive_byte(bm_uart_t *uart)
@@ -262,42 +286,41 @@ void bm_uart_flush(bm_uart_t *uart)
 {
     if (uart->use_irq)
     {
-        bm_ext_irq_disable(uart->ext_irq_id);
-
-        // Start flush of the internal buffer
-        if (!fifo_empty(&uart->tx))
+        // Wait for characters to transmit and H/W FIFO to empty, under IRQ control
+        while (!fifo_empty(&uart->tx) || !(uart->regs->LSR & LSR_TEMT))
+            ;
+    }
+    else
+    {
+        // Wait for characters to transmit and then re-fill H/W FIFO until S/W FIFO is empty
+        while (!fifo_empty(&uart->tx))
         {
-            while (!(uart->regs->LSR & LSR_THRE))
-                ;
             fill_tx_fifo(uart);
         }
 
-        bm_ext_irq_enable(uart->ext_irq_id);
-
-        // Wait for the flush to finish
-        while (!fifo_empty(&uart->tx))
+        // Wait for H/W FIFO to empty
+        while (!(uart->regs->LSR & LSR_TEMT))
             ;
     }
-
-    // Wait for characters to transmit
-    while (!(uart->regs->LSR & LSR_TEMT))
-        ;
 }
 
 int bm_uart_handle_irq(bm_uart_t *uart)
 {
+    uint32_t iir;
+
+    iir = uart->regs->IIR; // Note: reading the IIR clears the THRE and some other interrupts
+
     // Check interrupt pending
-    if (uart->regs->IIR & IIR_INTPEND)
+    if (iir & IIR_INTPEND) // This bit is low when Interrupt is Pending
     {
         return -1;
     }
 
-    if (uart->regs->LSR & LSR_THRE)
-    {
-        fill_tx_fifo(uart);
-    }
-
+    // Check and get any received data before transmitting data to reduce potiential data loss
     clean_rx_fifo(uart);
+
+    // Transmit data, if possible
+    fill_tx_fifo(uart);
 
     return 0;
 }

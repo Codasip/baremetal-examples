@@ -57,6 +57,7 @@ void bm_gpio_init_irq(bm_gpio_t *gpio)
     gpio->regs->GIER  = 0x80000000;
     gpio->regs->IPIER = 0x1;
     bm_gpio_clear_irq(gpio);
+    bm_ext_irq_init();
     bm_ext_irq_enable(gpio->ext_irq_id);
 }
 

@@ -40,6 +40,7 @@ typedef enum {
 /** \brief Core type options */
 typedef enum {
     BM_ID_CORE_A730 = 0x1,
+    BM_ID_CORE_L110 = 0x2,
 } bm_id_core_type_t;
 
 /** \brief Ethernet type options */

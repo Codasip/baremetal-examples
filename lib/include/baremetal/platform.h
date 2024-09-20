@@ -21,6 +21,7 @@ typedef enum {
     BM_PERIPHERAL_TRNG,               // TRNG peripheral
     BM_PERIPHERAL_AEAD,               // AEAD peripheral
     BM_PERIPHERAL_ID_REG,             // PLatform ID register
+    BM_PERIPHERAL_CLIC,               // CLIC peripheral
 } bm_peripheral_id;
 
 /**

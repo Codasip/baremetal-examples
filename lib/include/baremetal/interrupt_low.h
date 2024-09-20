@@ -127,7 +127,7 @@ void bm_interrupt_tvec_setup(bm_priv_mode_t priv_mode, xlen_t address, bm_interr
 /**
  * \brief Enter WFI (wait for interrupt) mode
  */
-void bm_wfi();
+void bm_wfi(void);
 
 #ifdef __cplusplus
 }

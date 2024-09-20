@@ -16,12 +16,17 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #include $(THIS_DIR)/lib/targets/configs/config-l31-nickel.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l31-zinc.mk
 #include $(THIS_DIR)/lib/targets/configs/config-a730-default.mk
+#include $(THIS_DIR)/lib/targets/configs/config-l110-eagle.mk
+#include $(THIS_DIR)/lib/targets/configs/config-l110-andromeda.mk
 
 # If building from top-level, uncomment one of the following lines to select demo to build
 #DEMO_APP=aead-demo
 #DEMO_APP=cache-counter-demo
 #DEMO_APP=cache-info-demo
 #DEMO_APP=cache-write-through
+#DEMO_APP=clic-interrupts
+#DEMO_APP=clic-interrupts-vectored
+#DEMO_APP=clic-priority
 #DEMO_APP=clint-ipi
 #DEMO_APP=clint-timer
 #DEMO_APP=clint-timer-interrupt
@@ -29,6 +34,7 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #DEMO_APP=csr-demo
 #DEMO_APP=ecall-demo
 #DEMO_APP=exception-demo
+#DEMO_APP=FreeRTOS-demo
 #DEMO_APP=fsbl
 #DEMO_APP=gpio-demo
 #DEMO_APP=gpio-interrupt-demo
@@ -56,4 +62,3 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #DEMO_APP=trng-demo
 #DEMO_APP=uart-demo
 #DEMO_APP=wfi-demo
-

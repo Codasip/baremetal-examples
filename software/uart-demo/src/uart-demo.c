@@ -29,17 +29,15 @@ static inline void write_line(const char *str)
 /**
  * \brief Interrupt handler for UART
  */
-void uart_interrupt_handler(void)
+#if USE_IRQ
+static void uart_interrupt_handler(void)
 {
     bm_uart_handle_irq(uart);
 }
+#endif
 
 int main(void)
 {
-    puts("Welcome to the UART demo!\n");
-    puts("Connect to serial terminal with 115200 baud rate and 8-N-1 settings, to interract with "
-         "the program.");
-
     uart = (bm_uart_t *)target_peripheral_get(BM_PERIPHERAL_UART_CONSOLE);
 
     bm_uart_config_t config = {.baud_rate   = 115200,
@@ -50,10 +48,14 @@ int main(void)
     bm_uart_init(uart, &config);
 
 #if USE_IRQ
-    bm_interrupt_init(BM_PRIV_MODE_MACHINE);
     bm_ext_irq_set_handler(uart->ext_irq_id, uart_interrupt_handler);
     bm_interrupt_enable_source(BM_PRIV_MODE_MACHINE, BM_INTERRUPT_MEIP);
+    bm_interrupt_init(BM_PRIV_MODE_MACHINE);
 #endif
+
+    puts("Welcome to the UART demo!\n");
+    puts("Connect to serial terminal with 115200 baud rate and 8-N-1 settings, to interract with "
+         "the program.");
 
     write_line("\r\nPress any key.\r\n");
 
@@ -92,7 +94,6 @@ int main(void)
             }
 
             bm_uart_transmit_byte(uart, '\r');
-            bm_uart_flush(uart);
 
             i          = (i + 1) % 5;
             prev_print = bm_get_time_ms();

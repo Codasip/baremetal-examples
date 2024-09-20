@@ -19,7 +19,7 @@ volatile xlen_t bm_priv_sp[4] = {0};
 // to highed privilege mode on interrupt/exception
 volatile bm_register_file_t bm_priv_regs[4] = {{0}};
 
-bm_priv_mode_t bm_get_priv_mode()
+bm_priv_mode_t bm_get_priv_mode(void)
 {
     return bm_current_mode;
 }

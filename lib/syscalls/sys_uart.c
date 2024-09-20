@@ -23,7 +23,7 @@ static bm_uart_t    *sys_uart;
  *
  * This initialization only needs to be done once, if the peripheral's configuration is not changed.
  */
-static inline void bm_sys_uart_init()
+static inline void bm_sys_uart_init(void)
 {
     if (bm_sys_init_done)
     {

@@ -8,6 +8,10 @@
 #include "baremetal/priv.h"
 #include "baremetal/verbose.h"
 
+#ifdef TARGET_HAS_CLIC
+    #include "baremetal/clic.h"
+#endif
+
 #include <stdint.h>
 
 void bm_interrupt_enable(bm_priv_mode_t priv_mode)
@@ -116,7 +120,7 @@ void bm_interrupt_tvec_setup(bm_priv_mode_t priv_mode, xlen_t address, bm_interr
     bm_csr_write(tvec, (address & ~(xlen_t)0x3) | value);
 }
 
-void bm_wfi()
+void bm_wfi(void)
 {
     __asm__ volatile("wfi");
 }

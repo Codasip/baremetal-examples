@@ -6,18 +6,19 @@ include $(THIS_DIR)/common.mk
 
 # ----[ VARIABLES ]----
 
-APP_OBJS    = $(SOURCES:.c=.o)
-LIB_OBJS    = $(BM_SOURCES:.c=.o)
-CRT_OBJ     = $(BM_CRT0:.S=.o)
+APP_OBJS      = $(SOURCES:.c=.o)
+APP_OBJS     := $(APP_OBJS:.S=.o)
+LIB_OBJS      = $(BM_SOURCES:.c=.o)
+CRT_OBJ       = $(BM_CRT0:.S=.o)
 
-APP_OBJS := $(subst $(DEMO_DIR),.,$(APP_OBJS))
-LIB_OBJS := $(subst $(TOP_DIR),.,$(LIB_OBJS))
-CRT_OBJ  := $(subst $(TOP_DIR),.,$(CRT_OBJ))
+APP_OBJS     := $(subst $(DEMO_DIR),.,$(APP_OBJS))
+LIB_OBJS     := $(subst $(TOP_DIR),.,$(LIB_OBJS))
+CRT_OBJ      := $(subst $(TOP_DIR),.,$(CRT_OBJ))
 
 CFLAGS  += -std=gnu11 -pedantic -Wall -Wextra
-CFLAGS  += -g3 -Wno-unused-command-line-argument
-ASFLAGS += -g3 -Wno-unused-command-line-argument
-LDFLAGS += -nostartfiles
+CFLAGS  += -g3 -Wno-unused-command-line-argument -ffunction-sections -fdata-sections
+ASFLAGS += -g3 -Wno-unused-command-line-argument -ffunction-sections -fdata-sections
+LDFLAGS += -nostartfiles -Wl,--gc-sections
 
 # ----[ REQUIREMENTS ]----
 

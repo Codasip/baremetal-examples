@@ -3,9 +3,13 @@
 
 #define TARGET_PLATFORM_NAME "Hobgoblin"
 
-#ifndef TARGET_SIMULATION
+#if !defined(TARGET_SIMULATION) && defined(CONFIG_PLIC)
     #define TARGET_HAS_PLIC
 #endif
+
+#define TARGET_TIMER_ADDR           ACLINT_ADDR /* This is required for FreeRTOS support */
+
+#define TARGET_PLATFORM_FREQ        100000000
 
 #define TARGET_GPIO_PORT_LED0       0
 #define TARGET_GPIO_PORT_LED1       1

@@ -1,6 +1,7 @@
 /* Copyright 2023 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#define CLIC_ADDR        0x00040000
 #define PLIC_ADDR        0x40000000
 #define PLAT_ID_ADDR     0x60000000
 #define CLINT_ADDR       0x60010000

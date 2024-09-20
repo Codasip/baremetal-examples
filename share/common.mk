@@ -63,7 +63,7 @@ OBJCOPY ?= $(DETECTED_PREFIX)objcopy$(OS_SUFFIX)
 ifneq ($(findstring codasip,$(COMPILER_VERSION_STRING)),)
 CC_TYPE = codasip_clang
 LD_TARGET = codasip
-SIM = $(DETECTED_PREFIX)isimulator$(OS_SUFFIX)
+SIM ?= $(DETECTED_PREFIX)isimulator$(OS_SUFFIX)
 else ifneq ($(findstring clang,$(COMPILER_VERSION_STRING)),)
 CC_TYPE = riscv_clang
 LD_TARGET = riscv
@@ -138,7 +138,9 @@ CPPFLAGS += -I $(LIB_DIR)/include
 BM_SOURCES += $(LIB_DIR)/syscalls/sys_sbrk.c \
                $(LIB_DIR)/syscalls/sys_empty.c
 
-ifeq ($(CONFIG_ENVIRONMENT),FPGA_SEMIHOSTING)
+ifeq ($(CONFIG_PROCESSOR).$(CONFIG_ENVIRONMENT),L110.SIMULATOR)
+BM_SOURCES += $(LIB_DIR)/syscalls/sys_semihost.c
+else ifeq ($(CONFIG_ENVIRONMENT),FPGA_SEMIHOSTING)
 BM_SOURCES += $(LIB_DIR)/syscalls/sys_semihost.c
 else ifeq ($(CONFIG_ENVIRONMENT),SIMULATOR)
 BM_SOURCES += $(LIB_DIR)/syscalls/sys_nexus.c
