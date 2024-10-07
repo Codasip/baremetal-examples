@@ -16,10 +16,12 @@ PROVIDES += gpio_io
 PROVIDES += sdcard
 ifeq ($(CONFIG_PLIC),Y)
 PROVIDES += plic
+PROVIDES += pic_or_plic
 endif
 PROVIDES += uart
 ifeq ($(CONFIG_SECURITY),Y)
 PROVIDES += aead
+PROVIDES += mailbox
 PROVIDES += trng
 endif
 endif

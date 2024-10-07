@@ -15,7 +15,7 @@ APP_OBJS     := $(subst $(DEMO_DIR),.,$(APP_OBJS))
 LIB_OBJS     := $(subst $(TOP_DIR),.,$(LIB_OBJS))
 CRT_OBJ      := $(subst $(TOP_DIR),.,$(CRT_OBJ))
 
-CFLAGS  += -std=gnu11 -pedantic -Wall -Wextra
+CFLAGS  += -std=gnu11 -pedantic -Wall -Wextra -Os
 CFLAGS  += -g3 -Wno-unused-command-line-argument -ffunction-sections -fdata-sections
 ASFLAGS += -g3 -Wno-unused-command-line-argument -ffunction-sections -fdata-sections
 LDFLAGS += -nostartfiles -Wl,--gc-sections

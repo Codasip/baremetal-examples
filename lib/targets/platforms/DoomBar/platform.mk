@@ -17,6 +17,7 @@ PROVIDES += sdcard
 PROVIDES += trng
 PROVIDES += uart
 PROVIDES += i2c_pwr
+PROVIDES += mailbox
 PROVIDES += aead
 endif
 

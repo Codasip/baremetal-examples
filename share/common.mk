@@ -58,18 +58,23 @@ $(error No compiler recognized with "$(SDK_PREFIX)" prefix, fix prefix in "SDK_P
 endif
 
 CC = $(DETECTED_PREFIX)$(CC_NAME)$(OS_SUFFIX)
-OBJCOPY ?= $(DETECTED_PREFIX)objcopy$(OS_SUFFIX)
 
 ifneq ($(findstring codasip,$(COMPILER_VERSION_STRING)),)
+OBJCOPY ?= $(DETECTED_PREFIX)llvm-objcopy$(OS_SUFFIX)
 CC_TYPE = codasip_clang
 LD_TARGET = codasip
 SIM ?= $(DETECTED_PREFIX)isimulator$(OS_SUFFIX)
+
 else ifneq ($(findstring clang,$(COMPILER_VERSION_STRING)),)
+OBJCOPY ?= $(DETECTED_PREFIX)objcopy$(OS_SUFFIX)
 CC_TYPE = riscv_clang
 LD_TARGET = riscv
+
 else ifneq ($(findstring gcc,$(COMPILER_VERSION_STRING)),)
+OBJCOPY ?= $(DETECTED_PREFIX)objcopy$(OS_SUFFIX)
 CC_TYPE = riscv_gcc
 LD_TARGET = riscv
+
 else
 $(error Unrecognised compiler version "$(COMPILER_VERSION_STRING)")
 endif

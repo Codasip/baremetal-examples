@@ -45,6 +45,7 @@ endif
 # ----[ PROVIDES ]----
 
 PROVIDES += pic
+PROVIDES += pic_or_plic
 PROVIDES += user_mode
 
 ifeq ($(CONFIG_HAS_CACHES),Y)

@@ -43,6 +43,11 @@ struct bm_clic_regs {
     } INPUTS[TARGET_CLIC_NUM_INPUTS];
 };
 
+unsigned bm_clic_get_ext_irq_id(unsigned ext_irq_id)
+{
+    return ext_irq_id + CLIC_NUM_INTERNAL_INPUTS;
+}
+
 unsigned bm_clic_get_irq_id(bm_interrupt_source_t irq)
 {
     switch (irq)
@@ -58,13 +63,8 @@ unsigned bm_clic_get_irq_id(bm_interrupt_source_t irq)
         case BM_INTERRUPT_MTIP:
             return CLIC_MTIP_INPUT_ID;
         default:
-            bm_error("Unsupported interrupt source");
+            return bm_clic_get_ext_irq_id(irq);
     }
-}
-
-unsigned bm_clic_get_ext_irq_id(unsigned ext_irq_id)
-{
-    return ext_irq_id + CLIC_NUM_INTERNAL_INPUTS;
 }
 
 void bm_clic_init(bm_clic_t *clic)
