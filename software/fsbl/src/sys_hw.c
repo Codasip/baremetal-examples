@@ -18,6 +18,26 @@ static FIL           fp[FOPEN_MAX - 3];
 static uint32_t      open_fd      = 0;
 static volatile bool sd_init_done = false;
 
+#define BM_SYS_UART_BAUD 115200
+
+static void check_init_uart(void)
+{
+    bm_uart_t *sys_uart = (bm_uart_t *)target_peripheral_get(BM_PERIPHERAL_UART_CONSOLE);
+
+    static bool uart_init_done = false;
+    if (!uart_init_done)
+    {
+        bm_uart_config_t cfg = {.baud_rate   = BM_SYS_UART_BAUD,
+                                .data_format = BM_UART_DATA_BITS_8,
+                                .parity      = BM_UART_PARITY_NONE,
+                                .stop        = BM_UART_STOP_BITS_1,
+                                .use_irq     = false};
+
+        bm_uart_init(sys_uart, &cfg);
+        uart_init_done = true;
+    }
+}
+
 int USED _open(const char *file, int flags, ...)
 {
     if (!sd_init_done)
@@ -147,8 +167,6 @@ _READ_WRITE_RETURN_TYPE USED _read(int fd, void *ptr, size_t len)
     return bytes_read;
 }
 
-#define BM_SYS_UART_BAUD 115200
-
 /**
  * \brief Implementation of the write syscall using UART peripheral
  *
@@ -166,20 +184,9 @@ _READ_WRITE_RETURN_TYPE USED _write(int fd, const void *ptr, size_t len)
         return -1;
     }
 
+    check_init_uart();
+
     bm_uart_t *sys_uart = (bm_uart_t *)target_peripheral_get(BM_PERIPHERAL_UART_CONSOLE);
-
-    static bool uart_init_done = false;
-    if (!uart_init_done)
-    {
-        bm_uart_config_t cfg = {.baud_rate   = BM_SYS_UART_BAUD,
-                                .data_format = BM_UART_DATA_BITS_8,
-                                .parity      = BM_UART_PARITY_NONE,
-                                .stop        = BM_UART_STOP_BITS_1,
-                                .use_irq     = false};
-
-        bm_uart_init(sys_uart, &cfg);
-        uart_init_done = true;
-    }
 
     /* Transmit the chars over UART */
     for (unsigned i = 0; i < len; ++i)
@@ -218,3 +225,65 @@ int USED   close(int file UNUSED) __attribute__((alias("_close")));
 off_t USED lseek(int file UNUSED, off_t ptr UNUSED, int dir UNUSED)
     __attribute__((alias("_lseek")));
 int USED open(const char *file UNUSED, int flags UNUSED, ...) __attribute__((alias("_open")));
+
+/**
+ * \brief A simple CLI gets() style function using UART peripheral
+ *
+ * \param s Pointer to the output string buffer
+ * \param n size of the buffer s
+ *
+ * \return Pointer to the string s, NULL on error
+ */
+char *cli_gets(char *s, uint32_t n)
+{
+    uint32_t i = 0;
+    int      c;
+
+    if (s == NULL || n <= 1)
+    {
+        return NULL;
+    }
+
+    check_init_uart();
+    bm_uart_t *sys_uart = (bm_uart_t *)target_peripheral_get(BM_PERIPHERAL_UART_CONSOLE);
+
+    do
+    {
+        /* Wait for next user key press */
+        do
+        {
+            c = bm_uart_receive_byte(sys_uart);
+        } while (c == -1);
+
+        /* Process user key */
+        if (c == 0x7f)
+        {
+            /* Backspace */
+            if (i > 0)
+            {
+                /* Erase character on the terminal */
+                _write(STDOUT_FILENO, "\b \b", 3);
+
+                i--;
+            }
+        }
+        else if (c == '\r')
+        {
+            /* Return pressed, so end of line */
+            break;
+        }
+        else
+        {
+            /* Add char to string */
+            s[i++] = (char)c;
+
+            /* Echo character */
+            _write(STDOUT_FILENO, &c, 1);
+        }
+    } while (i < (n - 1));
+
+    /* User input finished, terminate string */
+    s[i] = '\0';
+
+    return s;
+}

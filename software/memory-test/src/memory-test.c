@@ -240,6 +240,11 @@ void test(xlen_t start, xlen_t end, bool fast)
     unsigned (*size_gen_w)(void) = fast ? constant_size : iterative_size;
     unsigned (*size_gen_r)(void) = fast ? constant_size : iterative_size_squared;
 
+    printf("Testing memory range from 0x%llx to 0x%llx, mode: %s.\n",
+           (unsigned long long)start,
+           (unsigned long long)end,
+           fast ? "fast" : "normal");
+
     if (test_whole_range)
     {
         iterate_range(start, end, write_test, size_gen_w);
@@ -268,11 +273,6 @@ void test(xlen_t start, xlen_t end, bool fast)
 
 int main(void)
 {
-    printf("Testing memory range from 0x%llx to 0x%llx, mode: %s.\n",
-           (unsigned long long)TEST_START,
-           (unsigned long long)TEST_END,
-           TEST_FAST ? "fast" : "normal");
-
     if (program_data_start < (xlen_t)TEST_END && (xlen_t)TEST_START < program_data_end)
     {
         printf("WARNING: tested range overlaps program range (" BM_FMT_XLEN " - " BM_FMT_XLEN
@@ -282,15 +282,29 @@ int main(void)
     }
 
 #ifdef TARGET_HAS_TCM
+    xlen_t itcm_start, itcm_size;
+    xlen_t dtcm_start, dtcm_size;
+
     // enable TCMs if present to allow testing their memory ranges
     bm_tcm_itcm_enable();
     bm_tcm_dtcm_enable();
+
+    itcm_start = bm_tcm_itcm_get_base_address();
+    itcm_size  = bm_tcm_itcm_get_size();
+
+    dtcm_start = bm_tcm_dtcm_get_base_address();
+    dtcm_size  = bm_tcm_dtcm_get_size();
 #endif
 
     // Initialize exception handling
     bm_interrupt_init(BM_PRIV_MODE_MACHINE);
     bm_exception_set_handler(BM_EXCEPTION_LAF, mem_error_handler);
     bm_exception_set_handler(BM_EXCEPTION_SAF, mem_error_handler);
+
+#ifdef TARGET_HAS_TCM
+    test((xlen_t)itcm_start, (xlen_t)itcm_start + itcm_size, TEST_FAST);
+    test((xlen_t)dtcm_start, (xlen_t)dtcm_start + dtcm_size, TEST_FAST);
+#endif
 
     test((xlen_t)TEST_START, (xlen_t)TEST_END, TEST_FAST);
 

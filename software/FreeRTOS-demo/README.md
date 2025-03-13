@@ -31,21 +31,16 @@ To build this demo you need the `FreeRTOS` repo, clone it from:
 
 	https://github.com/FreeRTOS/FreeRTOS.git
 
-For example, to clone and recursively get all the sub-modules, do:
+For example, to clone and recursively get all the sub-modules, from the baremetal-examples root dir:
 
+    cd ..
     git clone https://github.com/FreeRTOS/FreeRTOS.git --recurse-submodules
+    cd ../baremetal-examples
 
 This demo has been tested with `FreeRTOS V11.1.0`.
 
-In the directory FreeRTOS/Demo:
 
-    mkdir RISC-V_Codasip_GCC
-
-In the sub-directory `RISC-V_Codasip_GCC`:
-
-    git clone baremetal-examples
-
-Alternatively change `RTOS_DIR` to point to FreeRTOS elsewhere.
+Change `RTOS_DIR` to point to FreeRTOS, e.g.:
 
     RTOS_DIR ?= ../../../../../../FreeRTOS
 

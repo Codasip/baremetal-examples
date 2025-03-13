@@ -122,7 +122,7 @@ static inline xlen_t bm_cache_get_info(bm_cache_info_t info)
         case BM_DCACHE_ERRORS:
             return bm_cache_get_regs()->DERR;
     }
-    bm_error("Unsupporter cache configuration field.");
+    bm_fatal("Unsupporter cache configuration field.");
 }
 
 /**

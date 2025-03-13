@@ -124,7 +124,7 @@ void bm_counter_enable_priv(bm_priv_mode_t priv_mode, const bm_counter_id counte
 {
     if (bm_get_priv_mode() <= priv_mode)
     {
-        bm_error("Cannot enable for higher mode.");
+        bm_fatal("Cannot enable for higher mode.");
     }
 
     xlen_t mask = 1 << counter;
@@ -147,7 +147,7 @@ void bm_counter_pause(const bm_counter_id counter)
 {
     if (bm_get_priv_mode() != BM_PRIV_MODE_MACHINE)
     {
-        bm_error("Must run in machine mode.");
+        bm_fatal("Must run in machine mode.");
     }
 
     xlen_t mask = 1 << counter;
@@ -158,7 +158,7 @@ void bm_counter_resume(const bm_counter_id counter)
 {
     if (bm_get_priv_mode() != BM_PRIV_MODE_MACHINE)
     {
-        bm_error("Must run in machine mode.");
+        bm_fatal("Must run in machine mode.");
     }
 
     xlen_t mask = 1 << counter;

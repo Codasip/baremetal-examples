@@ -10,13 +10,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#ifdef TARGET_EXT_S
-    #define CLIC_NUM_INTERNAL_INPUTS 4
+/* CLINT Interrupts connected to the CLIC */
+#ifdef CLIC_TARGET_EXT_S
+    /* The Supervisor SSIP Interrupt is currently not connected in the FPGA Platforms */
+    #define CLIC_NUM_INTERNAL_INPUTS 3
     #define CLIC_NUM_EXTERNAL_INPUTS (TARGET_CLIC_NUM_INPUTS - CLIC_NUM_INTERNAL_INPUTS)
-    #define CLIC_SSIP_INPUT_ID       0
-    #define CLIC_STIP_INPUT_ID       1
-    #define CLIC_MSIP_INPUT_ID       2
-    #define CLIC_MTIP_INPUT_ID       3
+    #define CLIC_MSIP_INPUT_ID       0
+    #define CLIC_MTIP_INPUT_ID       1
+/*  #define CLIC_SSIP_INPUT_ID       ? Not defined yet */
+/*  #define CLIC_STIP_INPUT_ID       X - There is no ACLINT STIP Interrupt */
 #else
     #define CLIC_NUM_INTERNAL_INPUTS 2
     #define CLIC_NUM_EXTERNAL_INPUTS (TARGET_CLIC_NUM_INPUTS - CLIC_NUM_INTERNAL_INPUTS)
@@ -52,11 +54,13 @@ unsigned bm_clic_get_irq_id(bm_interrupt_source_t irq)
 {
     switch (irq)
     {
-#ifdef TARGET_EXT_S
-        case BM_INTERRUPT_SSIP:
+#ifdef CLIC_TARGET_EXT_S
+    #if 0
+        case BM_INTERRUPT_SSIP:     /* Currently, not connected in FPGA Platforms */
             return CLIC_SSIP_INPUT_ID;
-        case BM_INTERRUPT_STIP:
+        case BM_INTERRUPT_STIP:     /* Not part of ACLINT design */
             return CLIC_STIP_INPUT_ID;
+    #endif
 #endif
         case BM_INTERRUPT_MSIP:
             return CLIC_MSIP_INPUT_ID;
@@ -73,9 +77,12 @@ void bm_clic_init(bm_clic_t *clic)
 
     for (unsigned i = 0; i < TARGET_CLIC_NUM_INPUTS; ++i)
     {
+        clic->regs->INPUTS[i].CLICINTIP   = 0;
         clic->regs->INPUTS[i].CLICINTIE   = 0;
         clic->regs->INPUTS[i].CLICINTATTR = 0;
-        clic->regs->INPUTS[i].CLICINTCTL  = 0;
+        clic->regs->INPUTS[i].CLICINTCTL  = 1; /* When CLICINTCTLBITS == 8 and xnlbits == 8,
+                                                  if level == 0 then this is not an active interrupt. */
+        /* When xnlbits < 8, then all the levels are greater than zero since the LSBs are assumed to be 1. */
     }
 }
 

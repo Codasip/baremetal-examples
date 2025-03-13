@@ -8,8 +8,10 @@
 # ----[ TOOLCHAIN ]----
 
 OS_SUFFIX =
+CHECK_HAVE_TOOL = $(if $(shell which $(1)),Y,N)
 ifeq ($(OS),Windows_NT)
 OS_SUFFIX = .exe
+CHECK_HAVE_TOOL = $(if $(shell where $(1)),Y,N)
 endif
 
 ifeq ($(SDK_PREFIX),)
@@ -59,10 +61,14 @@ endif
 
 CC = $(DETECTED_PREFIX)$(CC_NAME)$(OS_SUFFIX)
 
-ifneq ($(findstring codasip,$(COMPILER_VERSION_STRING)),)
+ifneq ($(findstring codasip-,$(COMPILER_VERSION_STRING)),)
 OBJCOPY ?= $(DETECTED_PREFIX)llvm-objcopy$(OS_SUFFIX)
 CC_TYPE = codasip_clang
+ifeq ($(findstring Target: codasip-,$(COMPILER_VERSION_STRING)),Target: codasip-)
 LD_TARGET = codasip
+else
+LD_TARGET = riscv
+endif
 SIM ?= $(DETECTED_PREFIX)isimulator$(OS_SUFFIX)
 
 else ifneq ($(findstring clang,$(COMPILER_VERSION_STRING)),)
@@ -92,7 +98,10 @@ ifeq ($(VERSION),)
 VERSION=Unknown
 endif
 
+COMMIT=
+ifeq ($(call CHECK_HAVE_TOOL,git),Y)
 COMMIT := $(shell git -C $(TOP_DIR) rev-parse --short HEAD)
+endif
 ifeq ($(COMMIT),)
 COMMIT=Unknown
 endif
@@ -131,6 +140,8 @@ include $(PLATFORM_CONFIG_FILE)
 # ----[ LDSCRIPT ]----
 
 LDSCRIPT ?= $(LD_TARGET)$(XLEN).ld
+LDFLAGS += -Wl,-L$(CORE_DIR)
+LDFLAGS += -Wl,-L$(PLATFORM_DIR)
 LDFLAGS += -Wl,-L$(LIB_DIR)/linker
 LDFLAGS += -Wl,--defsym=_STACK_SIZE=0x4000 -Wl,--defsym=_HEAP_SIZE=0x4000
 
@@ -174,8 +185,14 @@ BM_SOURCES += \
 
 # ----[ DEFINES ]----
 
-ifeq ($(CONFIG_ENVIRONMENT),SIMULATOR)
+ifeq ($(CONFIG_PROCESSOR).$(CONFIG_ENVIRONMENT),L110.SIMULATOR)
+DEFINES += TARGET_SEMIHOSTING
+else ifeq ($(CONFIG_ENVIRONMENT),FPGA_SEMIHOSTING)
+DEFINES += TARGET_SEMIHOSTING
+else ifeq ($(CONFIG_ENVIRONMENT),SIMULATOR)
 DEFINES += TARGET_SIMULATION
+else ifeq ($(CONFIG_ENVIRONMENT),FPGA_UART)
+DEFINES += TARGET_UART
 endif
 
 DEFINES += BUILD_VERSION=\"$(VERSION)\"

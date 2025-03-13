@@ -22,6 +22,10 @@ ifeq ($(CONFIG_HAS_PMP),Y)
 DEFINES += CONFIG_HAS_PMP
 endif
 
+ifeq ($(CONFIG_HAS_TCMS),Y)
+DEFINES += CONFIG_HAS_TCMS
+endif
+
 # ----[ PROVIDES ]----
 
 PROVIDES += atomics
@@ -52,5 +56,5 @@ $(info Core Configuration:)
 $(info - Frequency       : $(CONFIG_CORE_FREQ))
 $(info - Harts           : $(CONFIG_NUM_HARTS))
 $(info - PMP             : $(CONFIG_HAS_PMP))
+$(info - TCM             : $(CONFIG_HAS_TCMS))
 $(info )
-

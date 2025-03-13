@@ -43,7 +43,7 @@ void bm_pmp_set(unsigned index, xlen_t address, bm_pmp_address_mode_t address_mo
 {
     if (index >= TARGET_PMP_NUM_REGIONS)
     {
-        bm_error("PMP entry index out of range.");
+        bm_fatal("PMP entry index out of range.");
     }
 
     unsigned config_index      = index / (__riscv_xlen / BM_PMP_CFG_SIZE);
@@ -58,7 +58,7 @@ void bm_pmp_set(unsigned index, xlen_t address, bm_pmp_address_mode_t address_mo
 
     if ((address_mode == BM_PMP_MODE_NA4) || (address_mode == BM_PMP_MODE_NAPOT))
     {
-        bm_error("Unsupported address mode.");
+        bm_fatal("Unsupported address mode.");
     }
 
     // Set address, stored shifted by 2

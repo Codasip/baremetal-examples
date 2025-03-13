@@ -14,7 +14,7 @@ void __attribute__((interrupt, aligned(64))) my_handler(void)
 {
     puts("Entered interrupt handler.");
 
-    // Move past offending instrcution to continue
+    // Move past offending instruction to continue
     bm_csr_write(BM_CSR_MEPC, bm_csr_read(BM_CSR_MEPC) + 0x4);
 }
 

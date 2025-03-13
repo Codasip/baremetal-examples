@@ -46,7 +46,7 @@ bm_csr_id bm_priv_get_csr_id(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
                 case BM_PRIV_CSR_XTVEC:
                     return BM_CSR_MTVEC;
                 default:
-                    bm_error("Unknown csr type.");
+                    bm_fatal("Unknown csr type.");
             }
 #ifdef TARGET_EXT_S
         case BM_PRIV_MODE_SUPERVISOR:
@@ -67,7 +67,7 @@ bm_csr_id bm_priv_get_csr_id(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
                 case BM_PRIV_CSR_XTVEC:
                     return BM_CSR_STVEC;
                 default:
-                    bm_error("Unknown csr type.");
+                    bm_fatal("Unknown csr type.");
             }
 #endif
 #ifdef TARGET_EXT_N
@@ -89,11 +89,11 @@ bm_csr_id bm_priv_get_csr_id(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
                 case BM_PRIV_CSR_XTVEC:
                     return BM_CSR_UTVEC;
                 default:
-                    bm_error("Unknown csr type.");
+                    bm_fatal("Unknown csr type.");
             }
 #endif
         default:
-            bm_error("Unsupported privilege mode.");
+            bm_fatal("Unsupported privilege mode.");
     }
 }
 
@@ -102,7 +102,7 @@ bm_csr_id bm_priv_get_csr_id(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
  */
 static void bm_priv_enter_mode_error(void)
 {
-    bm_error("Return from a privilege entry function detected.");
+    bm_fatal("Return from a privilege entry function detected.");
 }
 
 // Previous privilege mode is stored in [m,s]status CSR
@@ -115,7 +115,7 @@ void __attribute__((noreturn)) bm_priv_enter_mode(bm_priv_mode_t mode, xlen_t en
 {
     if (mode >= bm_current_mode)
     {
-        bm_error("Only dropping privilege to lover level is possible.");
+        bm_fatal("Only dropping privilege to lover level is possible.");
     }
 
     // Save stack pointer for the current privilege mode
@@ -150,7 +150,7 @@ void __attribute__((noreturn)) bm_priv_enter_mode(bm_priv_mode_t mode, xlen_t en
             break;
 #endif
         default:
-            bm_error("Unsupported privilege mode.");
+            bm_fatal("Unsupported privilege mode.");
     }
 
     // should not get here

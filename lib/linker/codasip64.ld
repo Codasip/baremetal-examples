@@ -6,4 +6,5 @@
 OUTPUT_FORMAT ("elf64-codasip-le")
 
 INCLUDE memmap.ld
+INCLUDE tcmmap.ld
 INCLUDE common.ld

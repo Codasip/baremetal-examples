@@ -15,7 +15,7 @@ xlen_t target_csr_read(const int csr)
             CSR_READ(BM_CSR_MEXCAUSE, value);
             break;
         default:
-            bm_error("Unsupported CSR.");
+            bm_fatal("Unsupported CSR.");
     }
     return value;
 }
@@ -28,7 +28,7 @@ void target_csr_write(const int csr, const xlen_t value)
             CSR_WRITE(BM_CSR_MEXCAUSE, value);
             break;
         default:
-            bm_error("Unsupported CSR.");
+            bm_fatal("Unsupported CSR.");
     }
 }
 
@@ -40,7 +40,7 @@ void target_csr_set_mask(const int csr, const xlen_t mask)
             CSR_SET(BM_CSR_MEXCAUSE, mask);
             break;
         default:
-            bm_error("Unsupported CSR.");
+            bm_fatal("Unsupported CSR.");
     }
 }
 
@@ -52,6 +52,6 @@ void target_csr_clear_mask(const int csr, const xlen_t mask)
             CSR_CLEAR(BM_CSR_MEXCAUSE, mask);
             break;
         default:
-            bm_error("Unsupported CSR.");
+            bm_fatal("Unsupported CSR.");
     }
 }

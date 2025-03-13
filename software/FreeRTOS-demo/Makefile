@@ -18,11 +18,11 @@ REQUIRES += uart gpio_io
 
 # FreeRTOS Directories
 RTOS_SRC_DIR = $(RTOS_DIR)/Source
-DEMO_SRC_DIR = $(RTOS_DIR)/Demo/Common/Minimal
 RTOS_ASM_DIR = $(RTOS_SRC_DIR)/portable/GCC/RISC-V
 
 # Demo App and FreeRTOS Include Directories
-CPPFLAGS += -I $(LIB_DIR)/include -I $(LIB_DIR)/targets/platforms -I $(DEMO_DIR)/src	\
+CPPFLAGS += -I $(LIB_DIR)/include -I $(LIB_DIR)/targets/platforms \
+            -I $(DEMO_DIR)/src -I $(DEMO_DIR)/src/FreeRTOS \
             -I $(RTOS_SRC_DIR)/include -I $(RTOS_SRC_DIR)/portable/GCC/RISC-V \
             -I $(RTOS_SRC_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RV32I_CLINT_no_extensions \
             -I $(RTOS_DIR)/Demo/Common/include
@@ -30,8 +30,8 @@ CPPFLAGS += -I $(LIB_DIR)/include -I $(LIB_DIR)/targets/platforms -I $(DEMO_DIR)
 APP       =	FreeRTOS-demo
 SOURCES   =	$(DEMO_DIR)/src/FreeRTOS-demo.c \
 			$(DEMO_DIR)/src/main_blinky.c \
-			$(DEMO_DIR)/src/vector.S \
-			$(DEMO_DIR)/src/portASM.S	# Local portASM.S required for CLIC
+			$(DEMO_DIR)/src/FreeRTOS/vector.S \
+			$(DEMO_DIR)/src/FreeRTOS/portASM_CLIC.S	# Local portASM.S required for CLIC
 
 RTOS_SRCS =	$(RTOS_SRC_DIR)/event_groups.c \
 			$(RTOS_SRC_DIR)/list.c \
@@ -40,13 +40,7 @@ RTOS_SRCS =	$(RTOS_SRC_DIR)/event_groups.c \
 			$(RTOS_SRC_DIR)/tasks.c \
 			$(RTOS_SRC_DIR)/timers.c \
 			$(RTOS_SRC_DIR)/portable/MemMang/heap_4.c \
-			$(RTOS_SRC_DIR)/portable/GCC/RISC-V/port.c \
-			$(DEMO_SRC_DIR)/EventGroupsDemo.c \
-			$(DEMO_SRC_DIR)/TaskNotify.c \
-			$(DEMO_SRC_DIR)/TimerDemo.c \
-			$(DEMO_SRC_DIR)/blocktim.c \
-			$(DEMO_SRC_DIR)/dynamic.c \
-			$(DEMO_SRC_DIR)/recmutex.c
+			$(RTOS_SRC_DIR)/portable/GCC/RISC-V/port.c
 
 # Required for CLIC
 # RTOS_CRT0 = $(RTOS_ASM_DIR)/portASM.S

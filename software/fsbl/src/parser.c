@@ -48,6 +48,11 @@ static void print_entry_info(unsigned line, const char *entry, const char *msg, 
     printf("%s\n\n", msg);
 }
 
+void finish_parser(void)
+{
+    fclose(fp);
+}
+
 int init_parser(const char *path)
 {
     line = 0;
@@ -55,15 +60,11 @@ int init_parser(const char *path)
 
     if (!fp)
     {
+        finish_parser();
         return -1;
     }
 
     return 0;
-}
-
-void finish_parser(void)
-{
-    fclose(fp);
 }
 
 int parse_entry(entry_t *entry)

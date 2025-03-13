@@ -44,7 +44,7 @@ void bm_spi_cs_deassert(bm_spi_t *spi);
 void bm_spi_write_byte(bm_spi_t *spi, uint8_t data);
 
 /**
- * \brief Read a byte  from the SPI bus
+ * \brief Read a byte from the SPI bus
  *
  * \param spi SPI device to read from
  *

@@ -23,7 +23,7 @@
 
 static void bm_irq_handler_unset(unsigned offset UNUSED)
 {
-    bm_error("An interrupt with unset handler was triggered.");
+    bm_fatal("An interrupt with unset handler was triggered.");
 }
 
 static void bm_exception_handler_unset(unsigned offset)
@@ -78,7 +78,7 @@ static void bm_exception_handler_unset(unsigned offset)
             bm_warn("Unknown exception.");
             break;
     }
-    bm_error("Fatal, ending execution.");
+    bm_fatal("Fatal, ending execution.");
 }
 
 /** \brief Table with handlers for individual exception sources */
@@ -106,7 +106,7 @@ void bm_ext_irq_handler(void)
 
     if (!bm_ext_irq_handler_table[pending])
     {
-        bm_error("An external interrupt with unset handler was triggered.");
+        bm_fatal("An external interrupt with unset handler was triggered.");
     }
 
     bm_ext_irq_handler_table[pending]();
@@ -321,7 +321,7 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode)
     xlen_t offset = cause & offset_mask;
     if (offset >= 16)
     {
-        bm_error("Encountered cause is out of handled range");
+        bm_fatal("Encountered cause is out of handled range");
     }
 
     if (cause >> (__riscv_xlen - 1))
@@ -444,7 +444,7 @@ void bm_interrupt_init(bm_priv_mode_t priv_mode)
             break;
 #endif
         default:
-            bm_error("Unsupported privilege mode.");
+            bm_fatal("Unsupported privilege mode.");
     }
     bm_interrupt_tvec_setup(priv_mode, handler, BM_INTERRUPT_MODE_DIRECT);
 

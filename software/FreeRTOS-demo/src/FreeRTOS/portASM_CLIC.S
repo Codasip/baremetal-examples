@@ -1,6 +1,7 @@
 /*
  * FreeRTOS Kernel <DEVELOPMENT BRANCH>
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright (C) 2024 Codasip s.r.o.
  *
  * SPDX-License-Identifier: MIT
  *
@@ -98,10 +99,8 @@ definitions. */
 /*-----------------------------------------------------------*/
 
 .macro portUPDATE_MTIMER_COMPARE_REGISTER
-    la     a0, pullMachineTimerCompareRegister  /* Load address of compare register into a0. */
-    load_x a0, 0( a0 )
-    la     a1, pullNextTime                     /* Load the address of ullNextTime into a1. */
-    load_x a1, 0( a1 )
+    load_x a0, pullMachineTimerCompareRegister  /* Load address of compare register into a0. */
+    load_x a1, pullNextTime                     /* Load the address of ullNextTime into a1. */
 
     #if( __riscv_xlen == 32 )
 
@@ -112,8 +111,7 @@ definitions. */
         sw a4, 0(a0)                /* Low word no smaller than old value to start with - will be overwritten below. */
         sw a3, 4(a0)                /* Store high word of ullNextTime into compare register.  No smaller than new value. */
         sw a2, 0(a0)                /* Store low word of ullNextTime into compare register. */
-        la t0, uxTimerIncrementsForOneTick
-        lw t0, 0(t0)                /* Load the value of ullTimerIncrementForOneTick into t0 (could this be optimized by storing in an array next to pullNextTime?). */
+        lw t0, uxTimerIncrementsForOneTick  /* Load the value of ullTimerIncrementForOneTick into t0 (could this be optimized by storing in an array next to pullNextTime?). */
         add a4, t0, a2              /* Add the low word of ullNextTime to the timer increments for one tick (assumes timer increment for one tick fits in 32-bits). */
         sltu t1, a4, a2             /* See if the sum of low words overflowed (what about the zero case?). */
         add t2, a3, t1              /* Add overflow to high word of ullNextTime. */
@@ -127,8 +125,7 @@ definitions. */
         /* Update the 64-bit mtimer compare match value. */
         ld t2, 0(a1)                /* Load ullNextTime into t2. */
         sd t2, 0(a0)                /* Store ullNextTime into compare register. */
-        la t0, uxTimerIncrementsForOneTick
-        ld t0, 0(t0)                /* Load the value of ullTimerIncrementForOneTick into t0 (could this be optimized by storing in an array next to pullNextTime?). */
+        ld t0, uxTimerIncrementsForOneTick  /* Load the value of ullTimerIncrementForOneTick into t0 (could this be optimized by storing in an array next to pullNextTime?). */
         add t4, t0, t2              /* Add ullNextTime to the timer increments for one tick. */
         sd t4, 0(a1)                /* Store ullNextTime. */
 
@@ -218,8 +215,7 @@ pxPortInitialiseStack:
 #endif
     store_x a2, 0(a0)                   /* Task parameters (pvParameters parameter) goes into register X10/a0 on the stack. */
     addi a0, a0, -(6 * portWORD_SIZE)   /* Space for registers x5-x9 + taskReturnAddress. */
-    la      t0, xTaskReturnAddress
-    load_x  t0, 0(t0)
+    load_x t0, xTaskReturnAddress
     store_x t0, 0(a0)                   /* Return address onto the stack. */
     addi t0, x0, portasmADDITIONAL_CONTEXT_SIZE /* The number of chip specific additional registers. */
 chip_specific_stack_frame:              /* First add any chip specific registers to the stack frame being created. */
@@ -235,8 +231,7 @@ chip_specific_stack_frame:              /* First add any chip specific registers
 /*-----------------------------------------------------------*/
 
 xPortStartFirstTask:
-    la      sp, pxCurrentTCB
-    load_x  sp, 0( sp )                 /* Load pxCurrentTCB. */
+    load_x  sp, pxCurrentTCB            /* Load pxCurrentTCB. */
     load_x  sp, 0( sp )                 /* Read sp from first TCB member. */
 
     load_x  x1, 0( sp ) /* Note for starting the scheduler the exception return address is used as the function return address. */
@@ -272,8 +267,7 @@ xPortStartFirstTask:
 #endif
 
     load_x  x5, portCRITICAL_NESTING_OFFSET * portWORD_SIZE( sp )    /* Obtain xCriticalNesting value for this task from task's stack. */
-    la      x6, pxCriticalNesting           /* Load the address of xCriticalNesting into x6. */
-    load_x  x6, 0( x6 )
+    load_x  x6, pxCriticalNesting           /* Load the address of xCriticalNesting into x6. */
     store_x x5, 0( x6 )                     /* Restore the critical nesting value for this task. */
 
     load_x  x5, portMSTATUS_OFFSET * portWORD_SIZE( sp )    /* Initial mstatus into x5 (t0). */
@@ -334,7 +328,7 @@ exit_without_context_switch:
 /*-----------------------------------------------------------*/
 
 .section .text.freertos_risc_v_trap_handler
-.align 8
+.balign 64                              /* Trap handler needs to be aligned to 64 byte boundary for the CLIC mtvec register */
 freertos_risc_v_trap_handler:
     portcontextSAVE_CONTEXT_INTERNAL
 
@@ -345,15 +339,13 @@ freertos_risc_v_trap_handler:
 
 asynchronous_interrupt:
     store_x a1, 0( sp )                 /* Asynchronous interrupt so save unmodified exception return address. */
-    la      sp, xISRStackTop            /* Switch to ISR stack. */
-    load_x  sp, 0( sp )
+    load_x sp, xISRStackTop             /* Switch to ISR stack. */
     j handle_interrupt
 
 synchronous_exception:
     addi a1, a1, 4                      /* Synchronous so update exception return address to the instruction after the instruction that generated the exeption. */
     store_x a1, 0( sp )                 /* Save updated exception return address. */
-    la      sp, xISRStackTop            /* Switch to ISR stack. */
-    load_x  sp, 0( sp )
+    load_x sp, xISRStackTop             /* Switch to ISR stack. */
     j handle_exception
 
 handle_interrupt:
@@ -378,11 +370,11 @@ application_interrupt_handler:
     j processed_source
 
 handle_exception:
-    /* a0 contains mcause. */
     /* Mask off new CLIC MS bits in mcause (a0), exccode is in Least Significant 12 bits [11:0] */
     li t0, 0xfff
     and a0, a0, t0
 
+    /* a0 contains mcause. */
     li t0, 11                                   /* 11 == environment call. */
     bne a0, t0, application_exception_handler   /* Not an M environment call, so some other exception. */
     call vTaskSwitchContext

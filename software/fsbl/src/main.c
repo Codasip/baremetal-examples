@@ -1,9 +1,11 @@
 /* Copyright 2023 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include "fatfs/ff.h"
 #include "file.h"
 #include "loader.h"
 #include "parser.h"
+#include "sys_hw.h"
 
 #include <baremetal/common.h>
 #include <baremetal/csr.h>
@@ -14,7 +16,10 @@
 #include <baremetal/mp.h>
 #include <baremetal/platform.h>
 #include <baremetal/time.h>
+#include <inttypes.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <tiny_printf/printf.h>
 
 #define CONFIG_FILE_PATH "/config.txt"
@@ -23,6 +28,14 @@
     #define LINUX_SUPPORT_STR "enabled"
 #else
     #define LINUX_SUPPORT_STR "disabled"
+#endif
+
+#ifndef __STRINGIFY
+    #define __STRINGIFY(s) #s
+#endif
+
+#ifndef STRINGIFY
+    #define STRINGIFY(s) __STRINGIFY(s)
 #endif
 
 /* Symbols defined in linker script */
@@ -80,7 +93,6 @@ void check_ready(void *arg)
 
 void start_payload(void *arg)
 {
-    unsigned       hart_num       = bm_get_hartid();
     boot_config_t *config         = (boot_config_t *)arg;
     payload_func_t launch_payload = (payload_func_t)config->boot_addr;
 
@@ -102,6 +114,8 @@ void start_payload(void *arg)
                                  .boot_hart = 0x0};
 
     xlen_t info_p = config->next_addr ? (xlen_t)&fw_info : 0;
+
+    unsigned int hart_num = bm_get_hartid();
 
     bm_exec_fence();
 
@@ -127,12 +141,123 @@ void __attribute__((aligned(64))) trap_handler(void)
     exit_with_error();
 }
 
+#ifdef TARGET_UART
+    #define MAX_BIN_FILES    (40)
+    #define MAX_FILENAME_LEN (64)
+    #define BIN_DIR          "/"
+    #define BIN_BOOT_ADDRESS (0x20000000)
+
+static char     bin_filenames[MAX_BIN_FILES][MAX_FILENAME_LEN];
+static uint32_t bin_filenames_num = 0;
+static char     input[16];
+
+void get_bin_files(const char *directory_path)
+{
+    DIR     dir;
+    FILINFO entry;
+
+    if (f_findfirst(&dir, &entry, directory_path, "*.bin") != FR_OK)
+    {
+        printf("Failed to open directory %s.\n", directory_path);
+        exit_with_error();
+        return;
+    }
+
+    for (bin_filenames_num = 0; bin_filenames_num < MAX_BIN_FILES;)
+    {
+        if (strlen(entry.fname) == 0)
+        {
+            /* End of file list */
+            break;
+        }
+
+        // Make sure it's a regular file
+        if ((entry.fattrib & (AM_SYS | AM_DIR)) == 0)
+        {
+            // Check if the file has a ".bin" extension
+            const char *filename = entry.fname;
+            size_t      len      = strlen(filename);
+            if (len > 4 && strcmp(filename + len - 4, ".bin") == 0)
+            {
+                if (directory_path[strlen(directory_path) - 1] == '/')
+                {
+                    snprintf(bin_filenames[bin_filenames_num],
+                             MAX_FILENAME_LEN,
+                             "%s%s",
+                             directory_path,
+                             filename);
+                }
+                else
+                {
+                    snprintf(bin_filenames[bin_filenames_num],
+                             MAX_FILENAME_LEN,
+                             "%s/%s",
+                             directory_path,
+                             filename);
+                }
+                bin_filenames_num++;
+            }
+        }
+
+        if (f_findnext(&dir, &entry) != FR_OK)
+        {
+            break;
+        }
+    }
+
+    f_closedir(&dir);
+}
+#endif /* TARGET_UART */
+
 boot_config_t load_payloads(void)
 {
     if (init_parser(CONFIG_FILE_PATH))
     {
         printf("Failed to open FSBL configuration file " CONFIG_FILE_PATH ".\n");
+
+#ifndef TARGET_UART
         exit_with_error();
+
+#else  /* TARGET_UART */
+        uint32_t    selection = 0;
+        const char *cli_ret;
+
+        printf("Looking for *.bin files in " BIN_DIR ".\n");
+        get_bin_files(BIN_DIR);
+
+        if (bin_filenames_num == 0)
+        {
+            printf("Failed to find any *.bin files in " BIN_DIR ".\n");
+            exit_with_error();
+        }
+
+        uint32_t i;
+        do
+        {
+            printf("*.bin files in " BIN_DIR ":\n");
+
+            for (i = 0; i < bin_filenames_num; i++)
+            {
+                printf("%3li %s\n", i, bin_filenames[i]);
+            }
+
+            printf("Select file to load and run at " STRINGIFY(BIN_BOOT_ADDRESS) ": ");
+
+            //i = scanf("%lu", &selection); too much code for the ROM!
+            // Do this the unsafe way:
+            cli_ret   = cli_gets(input, sizeof(input));
+            selection = atoi(input);
+            printf("\nYou selected: %i -> %s\n", selection, bin_filenames[selection]);
+
+        } while (cli_ret == NULL || selection >= bin_filenames_num);
+
+        if (load_sdcard_payload(BIN_BOOT_ADDRESS, bin_filenames[selection]))
+        {
+            printf("\nFailed to load payload '%s'.\n", bin_filenames[selection]);
+            exit_with_error();
+        }
+        return (boot_config_t){BIN_BOOT_ADDRESS};
+#endif /* TARGET_UART */
     }
 
     xlen_t boot_addr = 0;
@@ -278,6 +403,8 @@ int main(void)
         printf(" - Core type:         %s\n",
                core_type == BM_ID_CORE_A730   ? "A730"
                : core_type == BM_ID_CORE_L110 ? "L110"
+               : core_type == BM_ID_CORE_L730 ? "L730"
+               : core_type == BM_ID_CORE_L31  ? "L31"
                                               : "Unknown");
         printf(" - Core frequency:    %u MHz\n", bm_id_get_info(id_reg, BM_ID_CORE_FREQ));
         int eth_type = bm_id_get_info(id_reg, BM_ID_ETH_TYPE);

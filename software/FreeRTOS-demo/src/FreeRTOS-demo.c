@@ -284,6 +284,7 @@ int main(void)
 
     /** Setup the interrupt vector table */
     clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
+    bm_clic_init(clic);
 
     /* mtvt_table[0] = your_clint_sw_interrupt_handler; */
     mtvt_table[1] = freertos_risc_v_mtimer_interrupt_handler; /* CLINT mtimer (IRQ 1) vector entry */

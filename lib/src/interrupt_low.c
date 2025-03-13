@@ -64,7 +64,7 @@ void bm_interrupt_delegate_source(bm_priv_mode_t priv_mode, bm_interrupt_source_
 {
     if (priv_mode >= bm_get_priv_mode())
     {
-        bm_error("Can only delegate to a lower mode.");
+        bm_fatal("Can only delegate to a lower mode.");
     }
 
     switch (priv_mode)
@@ -86,7 +86,7 @@ void bm_interrupt_delegate_source(bm_priv_mode_t priv_mode, bm_interrupt_source_
             break;
     #endif
         default:
-            bm_error("Unsupported privilege mode.");
+            bm_fatal("Unsupported privilege mode.");
     }
 }
 
@@ -94,7 +94,7 @@ void bm_exception_delegate_source(bm_priv_mode_t priv_mode, bm_exception_source_
 {
     if (priv_mode >= bm_get_priv_mode())
     {
-        bm_error("Can only delegate to a lower mode.");
+        bm_fatal("Can only delegate to a lower mode.");
     }
 
     switch (priv_mode)
@@ -116,7 +116,7 @@ void bm_exception_delegate_source(bm_priv_mode_t priv_mode, bm_exception_source_
             break;
     #endif
         default:
-            bm_error("Unsupported privilege mode.");
+            bm_fatal("Unsupported privilege mode.");
     }
 }
 #endif

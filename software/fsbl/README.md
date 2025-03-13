@@ -1,10 +1,18 @@
-# CODASIP FIRST STAGE BOOTLOADER
+# CODASIP FIRST STAGE BOOTLOADER (FSBL)
 
 Simple example bootloader, intended as the first piece of code executed
 in Codasip platforms after reset. As such, it primarily meant to be located
 in a ROM memory. Codasip platforms also contain a small region of RAM memory
 for use by the bootloader. Alternatively, the demo also supports its execution
 from the main RAM memory for testing purposes.
+
+# CODASIP SECOND STAGE BOOTLOADER (SSBL)
+
+There is an additional linker script that places all of the FSBL in RAM at a high address.
+This is useful as a second stage bootloader if the first stage is for instance, a secure bootloader.
+This SSBL can be encrypted and signed to be booted using the secure bootloader.
+Then the SSBL allows the developer to test many unsigned and unencrypted applications quickly
+without the aditional steps and tools required to sign and encrypt them for the secure bootloader.
 
 ## Functional Overview
 
@@ -14,6 +22,9 @@ The FSBL loads configuration and payloads from a FAT32 formatted microSD card:
    and clearing the BSS section.
 2. Configuration file `config.txt` is located in the root folder of the microSD
    card filesystem.
+   NOTE: If the `config.txt` file does bot exist, then the user is shown a list
+   of `*.bin` files on the SD-Card and asked to select one them to load
+   at the fixed address of 0x20000000.
 3. Based on the configuration, payloads are loaded from the microSD card
    at specified addresses in the memory.
 4. Execution continues at one of the payloads, selected by the configuration

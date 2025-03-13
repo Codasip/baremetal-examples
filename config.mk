@@ -18,6 +18,8 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #include $(THIS_DIR)/lib/targets/configs/config-a730-default.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l110-eagle.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l110-andromeda.mk
+#include $(THIS_DIR)/lib/targets/configs/config-l730-pearl.mk
+#include $(THIS_DIR)/lib/targets/configs/config-x730-default.mk
 
 # If building from top-level, uncomment one of the following lines to select demo to build
 #DEMO_APP=aead-demo
@@ -30,6 +32,7 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #DEMO_APP=clint-ipi
 #DEMO_APP=clint-timer
 #DEMO_APP=clint-timer-interrupt
+#DEMO_APP=CMSIS-FreeRTOS-demo
 #DEMO_APP=counter-demo
 #DEMO_APP=csr-demo
 #DEMO_APP=ecall-demo

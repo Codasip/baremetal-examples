@@ -11,7 +11,7 @@
  */
 void ilegal_instruction_handler(void)
 {
-    puts("Enterred custom handler, check out the what caused the exception:");
+    puts("Entered custom handler, check out what caused the exception:");
 
     // Should be 0x2 - ilegal instruction
     printf("  - CSR mcause : " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MCAUSE));

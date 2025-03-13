@@ -4,7 +4,6 @@ PLATFORM_DIR := $(subst /platform.mk,,$(lastword $(MAKEFILE_LIST)))
 
 # ----[ LDSCRIPT ]----
 
-LDFLAGS += -Wl,-L$(PLATFORM_DIR)
 CFLAGS  += -I$(PLATFORM_DIR)
 
 # ----[ PROVIDES ]----

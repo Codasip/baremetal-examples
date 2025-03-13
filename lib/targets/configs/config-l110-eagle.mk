@@ -1,7 +1,7 @@
 # ----[ PLATFORM CONFIGURATION ]----
 
 CONFIG_PROCESSOR            = L110
-CONFIG_PLATFORM             = Hobgoblin
+CONFIG_PLATFORM             = Hobbs
 
 #CONFIG_ENVIRONMENT         ?= FPGA_SEMIHOSTING
 #CONFIG_ENVIRONMENT         ?= FPGA_UART
@@ -16,3 +16,4 @@ CONFIG_CLIC_INTCTLBITS      = 3
 
 CONFIG_PLIC                 = N
 CONFIG_SECURITY             = N
+CONFIG_TSBL                 = Y

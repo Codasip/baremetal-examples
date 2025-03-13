@@ -6,4 +6,5 @@
 OUTPUT_FORMAT ("elf32-littleriscv")
 
 INCLUDE memmap.ld
+INCLUDE tcmmap.ld
 INCLUDE common.ld

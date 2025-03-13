@@ -821,7 +821,7 @@ xlen_t bm_csr_read(const int csr)
 #ifdef TARGET_HAS_CUSTOM_CSR
             value = target_csr_read(csr);
 #else
-            bm_error("Unsupported CSR.");
+            bm_fatal("Unsupported CSR.");
 #endif
             break;
     }
@@ -1636,7 +1636,7 @@ void bm_csr_write(const int csr, const xlen_t value)
 #ifdef TARGET_HAS_CUSTOM_CSR
             target_csr_write(csr, value);
 #else
-            bm_error("Unsupported CSR.");
+            bm_fatal("Unsupported CSR.");
 #endif
             break;
     }
@@ -2450,7 +2450,7 @@ void bm_csr_set_mask(const int csr, const xlen_t mask)
 #ifdef TARGET_HAS_CUSTOM_CSR
             target_csr_set_mask(csr, mask);
 #else
-            bm_error("Unsupported CSR.");
+            bm_fatal("Unsupported CSR.");
 #endif
             break;
     }
@@ -3264,7 +3264,7 @@ void bm_csr_clear_mask(const int csr, const xlen_t mask)
 #ifdef TARGET_HAS_CUSTOM_CSR
             target_csr_clear_mask(csr, mask);
 #else
-            bm_error("Unsupported CSR.");
+            bm_fatal("Unsupported CSR.");
 #endif
             break;
     }

@@ -40,6 +40,7 @@ LDFLAGS += -flto -Os -Wl,--gc-sections
 LDFLAGS += -Wl,--defsym=_HEAP_SIZE=0x2000 -Wl,--defsym=_STACK_SIZE=0x1000
 
 FSBL_LDSCRIPT ?= $(LD_TARGET)$(XLEN)_fsbl.ld
+TSBL_LDSCRIPT ?= $(LD_TARGET)$(XLEN)_tsbl.ld
 
 # ----[ REQUIREMENTS ]----
 
@@ -56,6 +57,11 @@ $(if $(MISSING_REQUIRES), \
 )
 
 # ----[ TARGETS ]----
+
+ifeq ($(CONFIG_TSBL),Y)
+	TSBL_XEXE = $(BUILD_DIR)tsbl_ram.xexe
+	TSBL_BIN  = $(BUILD_DIR)tsbl_ram.bin
+endif
 
 BUILD ?= build
 BUILD_DIR := $(BUILD)/
@@ -77,7 +83,7 @@ $(BUILD_DIR)./lib%.o : $(LIB_DIR)/%.S
 	$(CC) $(ASFLAGS) $(CPPFLAGS) -c -o $@ $^
 
 .PHONY: all
-all: $(BUILD_DIR)$(APP).xexe $(BUILD_DIR)$(APP)_rom.xexe
+all: $(BUILD_DIR)$(APP).xexe $(BUILD_DIR)$(APP)_rom.xexe $(TSBL_XEXE)
 
 $(BUILD_DIR)$(APP).xexe: $(addprefix $(BUILD_DIR), $(APP_OBJS) $(LIB_OBJS) $(CRT_OBJ))
 	$(LINK.c) -Wl,-T$(LDSCRIPT) -o $@ $^ $(LDLIBS)
@@ -85,8 +91,11 @@ $(BUILD_DIR)$(APP).xexe: $(addprefix $(BUILD_DIR), $(APP_OBJS) $(LIB_OBJS) $(CRT
 $(BUILD_DIR)$(APP)_rom.xexe: $(addprefix $(BUILD_DIR), $(APP_OBJS) $(LIB_OBJS) $(CRT_OBJ) $(CRT_ROM_OBJ))
 	$(LINK.c) -Wl,-L$(DEMO_DIR)/linker -Wl,-T$(FSBL_LDSCRIPT) -o $@ $^ $(LDLIBS)
 
+$(BUILD_DIR)tsbl_ram.xexe: $(addprefix $(BUILD_DIR), $(APP_OBJS) $(LIB_OBJS) $(CRT_OBJ))
+	$(LINK.c) -Wl,-L$(DEMO_DIR)/linker -Wl,-T$(TSBL_LDSCRIPT) -o $@ $^ $(LDLIBS)
+
 .PHONY: bin
-bin: $(BUILD_DIR)$(APP).bin $(BUILD_DIR)$(APP)_rom.bin
+bin: $(BUILD_DIR)$(APP).bin $(BUILD_DIR)$(APP)_rom.bin $(TSBL_BIN)
 
 %.bin: %.xexe
 	$(OBJCOPY) -O binary $^ $@
