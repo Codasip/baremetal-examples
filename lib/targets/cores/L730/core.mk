@@ -3,12 +3,23 @@
 CORE_DIR := $(subst /core.mk,,$(lastword $(MAKEFILE_LIST)))
 
 # ----[ VARIABLES ]----
-
+ifeq ($(CONFIG_HAS_FPU_DP),Y)
+# EXT-D
+MARCH := rv32imfdc_zicsr_zifencei_zba_zbb_zbs_zicbom_zicboz
+MABI  := ilp32d
+else
 MARCH := rv32imfc_zicsr_zifencei_zba_zbb_zbs_zicbom_zicboz
-MABI  := ilp32
+MABI  := ilp32f
+endif
+
 XLEN  := 32
 
+ifneq ($(CC_TYPE), codasip_clang)
+# Only define ARCH and ABI for non-Codasip compilers,
+# a Codasip SDK defaults to the correct ARCH & ABI for the associated core
 CPPFLAGS += -march=$(MARCH) -mabi=$(MABI)
+endif
+
 CFLAGS   += -I$(CORE_DIR)
 ASFLAGS  += -I$(CORE_DIR)
 LDFLAGS  += -Wl,--defsym=_NUM_HARTS=$(CONFIG_NUM_HARTS)

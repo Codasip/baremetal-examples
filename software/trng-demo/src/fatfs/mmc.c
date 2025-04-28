@@ -25,10 +25,21 @@ static bm_spi_t  *sd_spi  = NULL;
 
 #define CS_LOW()  bm_spi_cs_assert(sd_spi)   /* Set MMC_CS = low */
 #define CS_HIGH() bm_spi_cs_deassert(sd_spi) /* Set MMC_CS = high */
+
 #define MMC_WP    0 /* Test if write protected. yes:true, no:false, default:false */
 
-#define FCLK_SLOW() bm_gpio_clear(sd_gpio, TARGET_GPIO_SD_FAST_CLOCK)
-#define FCLK_FAST() bm_gpio_set(sd_gpio, TARGET_GPIO_SD_FAST_CLOCK)
+#define FCLK_SLOW()                                        \
+    {                                                      \
+        bm_gpio_clear(sd_gpio, TARGET_GPIO_SD_FAST_CLOCK); \
+        bm_delay_ms(1);                                    \
+    }
+#define FCLK_FAST()                                      \
+    {                                                    \
+        bm_gpio_set(sd_gpio, TARGET_GPIO_SD_FAST_CLOCK); \
+        bm_delay_ms(1);                                  \
+    }
+#define FCLK_INIT() \
+    bm_gpio_dir_set(sd_gpio, TARGET_GPIO_SD_FAST_CLOCK, BM_GPIO_DIR_OUTPUT) /* Set GPIO as output */
 
 /* MMC card type flags (MMC_GET_TYPE) */
 #define CT_MMC3  0x01 /* MMC ver 3 */
@@ -87,6 +98,12 @@ static void power_on(void)
 static void power_off(void)
 {
     bm_gpio_set(sd_gpio, TARGET_GPIO_SD_POWER_ENABLE);
+}
+
+static void power_init(void)
+{
+    power_off();
+    bm_gpio_dir_set(sd_gpio, TARGET_GPIO_SD_POWER_ENABLE, BM_GPIO_DIR_OUTPUT);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -293,7 +310,19 @@ DSTATUS MMC_disk_initialize(void)
     {
         sd_gpio = target_peripheral_get(BM_PERIPHERAL_GPIO_SD);
         sd_spi  = target_peripheral_get(BM_PERIPHERAL_SPI_SD);
+
+        /* Reset and power off */
+        bm_spi_reset(sd_spi);
+        FCLK_INIT();
+
+        power_init();
         bm_spi_init(sd_spi);
+
+        bm_delay_ms(100); /* Wait for 100ms */
+
+        /* Power on */
+        power_on();     /* Turn on the socket power */
+        bm_delay_ms(1); /* Wait for 1ms */
     }
 
     Stat = Stat & ~STA_NODISK;
@@ -303,19 +332,14 @@ DSTATUS MMC_disk_initialize(void)
         Stat |= STA_NODISK;
     }
 
-    FCLK_SLOW();
-
-    CS_LOW();
-    power_off(); /* Turn off the socket power to reset the card */
-
-    bm_delay_ms(100); /* Wait for 100ms */
     if (Stat & STA_NODISK)
         return Stat; /* No card in the socket? */
 
-    power_on(); /* Turn on the socket power */
     FCLK_SLOW();
+    select();
+
     for (n = 10; n; n--)
-        write_byte(0xFF); /* 80 dummy clocks */
+        write_byte(0xFF); /* 80 dummy clocks (minimum) */
 
     ty = 0;
     if (send_cmd(CMD0, 0) == 1)

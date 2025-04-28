@@ -24,8 +24,7 @@ RTOS_ASM_DIR = $(RTOS_SRC_DIR)/portable/GCC/RISC-V
 CPPFLAGS += -I $(LIB_DIR)/include -I $(LIB_DIR)/targets/platforms \
             -I $(DEMO_DIR)/src -I $(DEMO_DIR)/src/FreeRTOS \
             -I $(RTOS_SRC_DIR)/include -I $(RTOS_SRC_DIR)/portable/GCC/RISC-V \
-            -I $(RTOS_SRC_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RV32I_CLINT_no_extensions \
-            -I $(RTOS_DIR)/Demo/Common/include
+            -I $(RTOS_SRC_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RV32I_CLINT_no_extensions
 
 APP       =	FreeRTOS-demo
 SOURCES   =	$(DEMO_DIR)/src/FreeRTOS-demo.c \

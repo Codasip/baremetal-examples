@@ -19,6 +19,8 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #include $(THIS_DIR)/lib/targets/configs/config-l110-eagle.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l110-andromeda.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l730-pearl.mk
+#include $(THIS_DIR)/lib/targets/configs/config-l730-ruby.mk
+#include $(THIS_DIR)/lib/targets/configs/config-l730-amethyst.mk
 #include $(THIS_DIR)/lib/targets/configs/config-x730-default.mk
 
 # If building from top-level, uncomment one of the following lines to select demo to build

@@ -61,6 +61,13 @@ void bm_spi_txrx_bufs(bm_spi_t *spi, const uint8_t *txbuf, uint8_t *rxbuf, size_
  */
 void bm_spi_init(bm_spi_t *spi);
 
+/**
+ * \brief Reset the SPI controller device
+ *
+ * \param spi Pointer to the SPI device to initialize
+ */
+void bm_spi_reset(bm_spi_t *spi);
+
 #ifdef __cplusplus
 }
 #endif

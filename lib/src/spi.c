@@ -46,6 +46,13 @@ struct bm_spi_regs {
 #define SSEL_DEASSERT_ALL   0xFFFFFFFF
 #define SSEL_ASSERT_0       0xFFFFFFFE
 
+void bm_spi_reset(bm_spi_t *spi)
+{
+    bm_spi_cs_deassert(spi);
+
+    spi->regs->SRR = 0x0000000a; /* Software reset SPI */
+}
+
 void bm_spi_init(bm_spi_t *spi)
 {
     bm_spi_cs_deassert(spi);
