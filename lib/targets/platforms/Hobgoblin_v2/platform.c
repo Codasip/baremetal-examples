@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/platform.h"
@@ -17,7 +17,7 @@
 
 // Include Memory Map and Interrupt Map files for platform
 #include "platforms/maps/interrupt_map_v1.0.h"
-#include "platforms/maps/memory_map_v1.0.h"
+#include "platforms/maps/memory_map_v2.0.h"
 
 /**
  * \brief Peripherals available on this target

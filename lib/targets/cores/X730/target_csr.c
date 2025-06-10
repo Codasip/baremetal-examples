@@ -44,7 +44,7 @@ xlen_t target_csr_read(const int csr)
             break;
 #endif
         default:
-            bm_fatal("Unsupported CSR.");
+            bm_fatal("Unsupported CSR 0x%x", csr);
     }
     return value;
 }
@@ -86,7 +86,7 @@ void target_csr_write(const int csr, const xlen_t value)
             break;
 #endif
         default:
-            bm_fatal("Unsupported CSR.");
+            bm_fatal("Unsupported CSR 0x%x", csr);
     }
 }
 
@@ -127,7 +127,7 @@ void target_csr_set_mask(const int csr, const xlen_t mask)
             break;
 #endif
         default:
-            bm_fatal("Unsupported CSR.");
+            bm_fatal("Unsupported CSR 0x%x", csr);
     }
 }
 
@@ -168,6 +168,6 @@ void target_csr_clear_mask(const int csr, const xlen_t mask)
             break;
 #endif
         default:
-            bm_fatal("Unsupported CSR");
+            bm_fatal("Unsupported CSR 0x%x", csr);
     }
 }

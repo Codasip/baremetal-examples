@@ -21,12 +21,9 @@
 
 #include <stdint.h>
 
-static void bm_irq_handler_unset(unsigned offset UNUSED)
-{
-    bm_fatal("An interrupt with unset handler was triggered.");
-}
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
-static void bm_exception_handler_unset(unsigned offset)
+static void bm_exception_print_details(xlen_t offset)
 {
     bm_warn("Exception handler was called:");
 
@@ -75,41 +72,56 @@ static void bm_exception_handler_unset(unsigned offset)
             bm_warn("Store page fault.");
             break;
         default:
-            bm_warn("Unknown exception.");
+            bm_warn("Unknown exception " BM_FMT_XLEN, offset);
             break;
     }
-    bm_fatal("Fatal, ending execution.");
+
+    bm_warn("  CSR mcause: " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MCAUSE));
+    bm_warn("  CSR mepc:   " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MEPC));
+    bm_warn("  CSR mtval:  " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MTVAL));
 }
 
 /** \brief Table with handlers for individual exception sources */
-static void (*bm_exc_handler_table[16])(void) = {0};
+static bm_intr_handler_t bm_exc_handler_table[16] = {0};
 
 #ifdef TARGET_HAS_CLIC
 /** \brief Table with handlers for individual interrupt sources */
-static void (*bm_interrupt_handler_table[TARGET_CLIC_NUM_INPUTS])(void) = {0};
+static bm_intr_handler_t bm_interrupt_handler_table[TARGET_CLIC_NUM_INPUTS] = {0};
 #else
 /** \brief Table with handlers for individual interrupt sources */
-static void (*bm_interrupt_handler_table[16])(void) = {0};
+static bm_intr_handler_t bm_interrupt_handler_table[16] = {0};
 
 /** \brief Table with handlers for individual external interrupt sources */
-static void (*bm_ext_irq_handler_table[32])(void) = {0};
+static bm_intr_handler_t bm_ext_irq_handler_table[32] = {0};
 
 /** \brief Internal handler for external interrupts */
 void bm_ext_irq_handler(void)
 {
     int pending = bm_ext_irq_claim();
 
-    if (pending == -1)
+    if (pending < 0)
     {
-        return;
+        if (pending == -1)
+        {
+            // no interrupt pending
+            return;
+        }
+        bm_fatal("Interrupt claiming failed with error code %d", pending);
     }
 
-    if (!bm_ext_irq_handler_table[pending])
+    unsigned int irq = (unsigned int)pending;
+    if (irq >= ARRAY_SIZE(bm_ext_irq_handler_table))
+    {
+        bm_fatal("Encountered external interrupt %u is out of handled range", irq);
+    }
+
+    bm_intr_handler_t handler = bm_ext_irq_handler_table[irq];
+    if (!handler)
     {
         bm_fatal("An external interrupt with unset handler was triggered.");
     }
 
-    bm_ext_irq_handler_table[pending]();
+    handler();
 
     bm_ext_irq_complete(pending);
 }
@@ -326,25 +338,36 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode)
 
     if (cause >> (__riscv_xlen - 1))
     {
-        // Handling an interrupt, highest cause bit is 1
-        if (!bm_interrupt_handler_table[offset])
+        if (offset >= ARRAY_SIZE(bm_interrupt_handler_table))
         {
-            bm_irq_handler_unset(offset);
+            bm_fatal("Encountered interrupt " BM_FMT_XLEN "is out of handled range", offset);
         }
 
+        // Handling an interrupt, highest cause bit is 1
+        bm_intr_handler_t handler = bm_interrupt_handler_table[offset];
+        if (!handler)
+        {
+            bm_fatal("Interrupt " BM_FMT_XLEN " with unset handler was triggered.", offset);
+        }
         // Call the configured handler
-        bm_interrupt_handler_table[offset]();
+        handler();
     }
     else
     {
-        // Handling an exception, highest cause bit is 0
-        if (!bm_exc_handler_table[offset])
+        if (offset >= ARRAY_SIZE(bm_exc_handler_table))
         {
-            bm_exception_handler_unset(offset);
+            bm_fatal("Encountered exception cause " BM_FMT_XLEN " is out of handled range", offset);
         }
 
+        // Handling an exception, highest cause bit is 0
+        bm_intr_handler_t handler = bm_exc_handler_table[offset];
+        if (!handler)
+        {
+            bm_exception_print_details(offset);
+            bm_fatal("Fatal, ending execution.");
+        }
         // Call the configured handler
-        bm_exc_handler_table[offset]();
+        handler();
     }
 
     // Write original privilege mode value to the internal variable
@@ -402,21 +425,21 @@ CREATE_DEFAULT_HANDLER(bm_managed_handler_s, BM_PRIV_MODE_SUPERVISOR, sscratch, 
 CREATE_DEFAULT_HANDLER(bm_managed_handler_u, BM_PRIV_MODE_USER, uscratch, uret)
 #endif
 
-void bm_interrupt_set_handler(bm_interrupt_source_t cause, void (*func)(void))
+void bm_interrupt_set_handler(bm_interrupt_source_t source, bm_intr_handler_t func)
 {
 #ifdef TARGET_HAS_CLIC
-    bm_interrupt_handler_table[bm_clic_get_irq_id(cause)] = func;
+    bm_interrupt_handler_table[bm_clic_get_irq_id(source)] = func;
 #else
-    bm_interrupt_handler_table[cause]    = func;
+    bm_interrupt_handler_table[source]   = func;
 #endif
 }
 
-void bm_exception_set_handler(bm_exception_source_t cause, void (*func)(void))
+void bm_exception_set_handler(bm_exception_source_t source, bm_intr_handler_t func)
 {
-    bm_exc_handler_table[cause] = func;
+    bm_exc_handler_table[source] = func;
 }
 
-void bm_ext_irq_set_handler(unsigned ext_irq_id, void (*func)(void))
+void bm_ext_irq_set_handler(unsigned ext_irq_id, bm_intr_handler_t func)
 {
 #ifdef TARGET_HAS_CLIC
     bm_interrupt_handler_table[bm_clic_get_ext_irq_id(ext_irq_id)] = func;
@@ -425,28 +448,28 @@ void bm_ext_irq_set_handler(unsigned ext_irq_id, void (*func)(void))
 #endif
 }
 
-void bm_interrupt_init(bm_priv_mode_t priv_mode)
+void bm_interrupt_install_handlers(bm_priv_mode_t priv_mode)
 {
-    xlen_t handler;
+    bm_intr_handler_t handler;
     switch (priv_mode)
     {
         case BM_PRIV_MODE_MACHINE:
-            handler = (xlen_t)bm_managed_handler_m;
+            handler = bm_managed_handler_m;
             break;
 #ifdef TARGET_EXT_S
         case BM_PRIV_MODE_SUPERVISOR:
-            handler = (xlen_t)bm_managed_handler_s;
+            handler = bm_managed_handler_s;
             break;
 #endif
 #ifdef TARGET_EXT_N
         case BM_PRIV_MODE_USER:
-            handler = (xlen_t)bm_managed_handler_u;
+            handler = bm_managed_handler_u;
             break;
 #endif
         default:
-            bm_fatal("Unsupported privilege mode.");
+            bm_fatal("Unsupported privilege mode %d.", priv_mode);
     }
-    bm_interrupt_tvec_setup(priv_mode, handler, BM_INTERRUPT_MODE_DIRECT);
+    bm_interrupt_tvec_setup(priv_mode, (xlen_t)handler, BM_INTERRUPT_MODE_DIRECT);
 
 #ifndef TARGET_HAS_CLIC
     bm_interrupt_set_handler(BM_INTERRUPT_MEIP, bm_ext_irq_handler);
@@ -457,9 +480,6 @@ void bm_interrupt_init(bm_priv_mode_t priv_mode)
     bm_interrupt_set_handler(BM_INTERRUPT_UEIP, bm_ext_irq_handler);
     #endif
 #endif
-
-    // Global enable for the given privilege mode, individual interrupt sources need to be enabled manually
-    bm_interrupt_enable(priv_mode);
 }
 
 void bm_ext_irq_init(void)
@@ -468,6 +488,17 @@ void bm_ext_irq_init(void)
     bm_clic_t *clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
     bm_clic_init(clic);
 #endif
+}
+
+void bm_interrupt_init(bm_priv_mode_t priv_mode)
+{
+    // Install handlers for our interrupt framework
+    bm_interrupt_install_handlers(priv_mode);
+
+    // Enable interrupts for the given privilege mode, specific interrupt
+    // sources and individual interrupts still need to be enabled manually in
+    // the core, interrupt controllers and periherals.
+    bm_interrupt_enable(priv_mode);
 }
 
 int bm_ext_irq_claim(void)

@@ -18,6 +18,7 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #include $(THIS_DIR)/lib/targets/configs/config-a730-default.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l110-eagle.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l110-andromeda.mk
+#include $(THIS_DIR)/lib/targets/configs/config-l150-libra.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l730-pearl.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l730-ruby.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l730-amethyst.mk

@@ -148,6 +148,7 @@ LDFLAGS += -Wl,--defsym=_STACK_SIZE=0x4000 -Wl,--defsym=_HEAP_SIZE=0x4000
 # ----[ INCLUDES ]----
 
 CPPFLAGS += -I $(LIB_DIR)/include
+CPPFLAGS += -I $(LIB_DIR)/targets
 
 # ----[ SYSCALLS ]----
 

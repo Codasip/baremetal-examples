@@ -1168,3 +1168,14 @@ void _putchar(char character)
 {
     write(1, &character, 1);
 }
+
+void bm_message(const char *cause, const char *func, const char *msg, ...)
+{
+    va_list arglist;
+
+    printf("%s: %s: ", cause, func);
+    va_start(arglist, msg);
+    vprintf(msg, arglist);
+    va_end(arglist);
+    printf("\n");
+}

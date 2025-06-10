@@ -3,7 +3,6 @@
 
 #include "baremetal/platform.h"
 
-#include "../unified_int_mem_map.h"
 #include "baremetal/aead.h"
 #include "baremetal/clic.h"
 #include "baremetal/clint.h"
@@ -15,6 +14,10 @@
 #include "baremetal/trng.h"
 #include "baremetal/uart.h"
 #include "baremetal/verbose.h"
+
+// Include Memory Map and Interrupt Map files for platform
+#include "platforms/maps/interrupt_map_v1.0.h"
+#include "platforms/maps/memory_map_v1.0.h"
 
 /**
  * \brief Peripherals available on this target

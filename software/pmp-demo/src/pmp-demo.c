@@ -63,7 +63,7 @@ static inline void test_read_write(xlen_t address)
 /**
  * \brief Function testing memory accesses on all configured ranges
  */
-static inline void test_memory_access()
+static inline void test_memory_access(void)
 {
     puts("Range with read and write access alowed globally:");
     test_read_write(program_data_end + 4);

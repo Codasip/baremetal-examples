@@ -28,7 +28,7 @@ typedef struct {
  *
  * \return CLIC interrupt ID for the given source
  */
-unsigned bm_clic_get_irq_id(bm_interrupt_source_t irq);
+unsigned bm_clic_get_irq_id(bm_interrupt_source_t source);
 
 /**
  * \brief Convert external interrupt ID to CLIC interrupt ID

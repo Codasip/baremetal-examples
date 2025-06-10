@@ -369,6 +369,9 @@ void get_misa_string(xlen_t misa, char *out)
 
 int main(void)
 {
+    // setup trap handler
+    bm_interrupt_tvec_setup(BM_PRIV_MODE_MACHINE, (xlen_t)trap_handler, BM_INTERRUPT_MODE_DIRECT);
+
     printf("\n\n----[ Welcome to the Codasip FSBL ]----\n\n");
     printf("Build version:        %s\n", BUILD_VERSION);
     printf("Build ID:             %s\n", BUILD_ID);
@@ -431,9 +434,6 @@ int main(void)
         printf(" - RAM:               " BM_FMT_XLEN " - " BM_FMT_XLEN "\n", ram_start, end_addr);
     }
     printf("\n");
-
-    // setup trap handler
-    bm_interrupt_tvec_setup(BM_PRIV_MODE_MACHINE, (xlen_t)trap_handler, BM_INTERRUPT_MODE_DIRECT);
 
     boot_config_t config = load_payloads();
 

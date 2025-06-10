@@ -30,7 +30,10 @@
 
 #include "core_info.h"
 #include "platform_info.h"
-#include "unified_int_mem_map.h"
+
+// Include Memory Map and Interrupt Map files for platform
+#include "platforms/maps/interrupt_map_v1.0.h"
+#include "platforms/maps/memory_map_v1.0.h"
 
 #include "riscv-reg.h"
 

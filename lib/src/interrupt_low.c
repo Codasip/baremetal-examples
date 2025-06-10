@@ -31,12 +31,9 @@ void bm_interrupt_enable_source(bm_priv_mode_t priv_mode, bm_interrupt_source_t 
 {
 #ifdef TARGET_HAS_CLIC
     (void)priv_mode;
-    static bm_clic_t *clic;
-
-    clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
+    bm_clic_t *clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
     bm_clic_init(clic);
     bm_clic_set_enable(clic, bm_clic_get_irq_id(source), true);
-
 #else
     bm_csr_id xie = bm_priv_get_csr_id(priv_mode, BM_PRIV_CSR_XIE);
     bm_csr_set_mask(xie, 1 << source);
@@ -47,12 +44,9 @@ void bm_interrupt_disable_source(bm_priv_mode_t priv_mode, bm_interrupt_source_t
 {
 #ifdef TARGET_HAS_CLIC
     (void)priv_mode;
-    static bm_clic_t *clic;
-
-    clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
+    bm_clic_t *clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
     bm_clic_init(clic);
     bm_clic_set_enable(clic, bm_clic_get_irq_id(source), false);
-
 #else
     bm_csr_id xie = bm_priv_get_csr_id(priv_mode, BM_PRIV_CSR_XIE);
     bm_csr_clear_mask(xie, 1 << source);

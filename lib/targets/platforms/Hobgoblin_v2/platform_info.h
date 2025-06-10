@@ -1,0 +1,40 @@
+/* Copyright 2025 Codasip s.r.o.         */
+/* SPDX-License-Identifier: BSD-3-Clause */
+
+#define TARGET_PLATFORM_NAME "Hobgoblin_v2"
+
+#if !defined(TARGET_SIMULATION) && defined(CONFIG_PLIC)
+    #define TARGET_HAS_PLIC
+#endif
+
+#define TARGET_TIMER_ADDR           ACLINT_ADDR /* This is required for FreeRTOS support */
+
+#define TARGET_PLATFORM_FREQ        100000000
+
+#define TARGET_GPIO_PORT_LED0       0
+#define TARGET_GPIO_PORT_LED1       1
+#define TARGET_GPIO_PORT_LED2       2
+#define TARGET_GPIO_PORT_LED3       3
+#define TARGET_GPIO_PORT_LED4       4
+#define TARGET_GPIO_PORT_LED5       5
+#define TARGET_GPIO_PORT_LED6       6
+#define TARGET_GPIO_PORT_LED7       7
+
+#define TARGET_GPIO_PORT_SWITCH0    8
+#define TARGET_GPIO_PORT_SWITCH1    9
+#define TARGET_GPIO_PORT_SWITCH2    10
+#define TARGET_GPIO_PORT_SWITCH3    11
+#define TARGET_GPIO_PORT_SWITCH4    12
+#define TARGET_GPIO_PORT_SWITCH5    13
+#define TARGET_GPIO_PORT_SWITCH6    14
+#define TARGET_GPIO_PORT_SWITCH7    15
+
+#define TARGET_GPIO_PORT_BUTTON0    16
+#define TARGET_GPIO_PORT_BUTTON1    17
+#define TARGET_GPIO_PORT_BUTTON2    18
+#define TARGET_GPIO_PORT_BUTTON3    19
+#define TARGET_GPIO_PORT_BUTTON4    20
+
+#define TARGET_GPIO_SD_CARD_DETECT  0
+#define TARGET_GPIO_SD_POWER_ENABLE 1
+#define TARGET_GPIO_SD_FAST_CLOCK   2

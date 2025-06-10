@@ -7,6 +7,8 @@
 #include "baremetal/csr.h"
 #include "baremetal/interrupt_low.h"
 
+typedef void (*bm_intr_handler_t)(void);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,18 +16,18 @@ extern "C" {
 /**
  * \brief Set function to handle given interrupt cause
  *
- * \param cause Interrupt source to handle
+ * \param source Interrupt source to handle
  * \param func Function to set as the handler
  */
-void bm_interrupt_set_handler(bm_interrupt_source_t cause, void (*func)(void));
+void bm_interrupt_set_handler(bm_interrupt_source_t source, bm_intr_handler_t func);
 
 /**
  * \brief Set function to handle given exception cause
  *
- * \param cause Exception source to handle
+ * \param source Exception source to handle
  * \param func Function to set as the handler
  */
-void bm_exception_set_handler(bm_exception_source_t cause, void (*func)(void));
+void bm_exception_set_handler(bm_exception_source_t source, bm_intr_handler_t func);
 
 /**
  * \brief Set function to handle given external interrupt source
@@ -33,7 +35,14 @@ void bm_exception_set_handler(bm_exception_source_t cause, void (*func)(void));
  * \param ext_irq_id External interrupt source ID
  * \param func Function to set as the handler
  */
-void bm_ext_irq_set_handler(unsigned ext_irq_id, void (*func)(void));
+void bm_ext_irq_set_handler(unsigned ext_irq_id, bm_intr_handler_t func);
+
+/**
+ * \brief Installs the interrupt hander for the interrupt framework
+ *
+ * \param priv_mode Privilege mode for the handler
+ */
+void bm_interrupt_install_handlers(bm_priv_mode_t priv_mode);
 
 /**
  * \brief Initialize interrupt handling for given privilege mode and interrupt or exceptions sources

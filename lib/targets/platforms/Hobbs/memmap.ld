@@ -1,7 +1,7 @@
 /* Copyright 2023 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-/* Memories available for Hobbs (L110, L730) platform */
+/* Memories available for Hobbs platform */
 
 MEMORY
 {
