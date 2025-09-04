@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/counter.h"
@@ -48,7 +48,7 @@ static inline int bm_counter_get_csr_id(const bm_counter_id counter)
     return COUNTER_CSR_TABLE[counter];
 }
 
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
 /** \brief Helper table with CSR IDs for higher bits of machine mode counters */
 const int COUNTER_CSR_H_M_TABLE[] = {
     BM_CSR_MCYCLEH,
@@ -91,7 +91,7 @@ static inline int bm_counter_get_csr_h_id(const bm_counter_id counter)
 uint64_t bm_counter_read(const bm_counter_id counter)
 {
     int csr = bm_counter_get_csr_id(counter);
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
     // Counters are split in two CSRs for 32-bit targets, the following sequence ensures
     // correct reading even if the counter increments in between the CSR accesses.
     int csrh = bm_counter_get_csr_h_id(counter);
@@ -113,7 +113,7 @@ void bm_counter_clear(const bm_counter_id counter)
 {
     int csr = bm_counter_get_csr_id(counter);
     bm_csr_write(csr, 0);
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
     int csrh = bm_counter_get_csr_h_id(counter);
     bm_csr_write(csrh, 0);
 #endif

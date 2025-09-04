@@ -1,6 +1,6 @@
 # ----[ PATHS ]----
 
-PLATFORM_DIR := $(subst /platform.mk,,$(lastword $(MAKEFILE_LIST)))
+PLATFORM_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
 # ----[ LDSCRIPT ]----
 
@@ -17,9 +17,11 @@ endif
 
 # ----[ LIB SOURCES ]----
 
+BM_SOURCES += \
+    $(PLATFORM_DIR)/platform.c
+
 ifneq ($(CONFIG_ENVIRONMENT),SIMULATOR)
 BM_SOURCES += \
-    $(PLATFORM_DIR)/platform.c \
     $(LIB_DIR)/src/clint.c \
     $(LIB_DIR)/src/gpio.c \
     $(LIB_DIR)/src/spi.c \

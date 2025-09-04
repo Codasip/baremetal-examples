@@ -21,7 +21,7 @@
  *
  * \param[in] address         Which address to read from
  */
-void read_single_address(volatile width_t *address);
+void read_single_address(volatile xlen_t *address);
 
 /**
  * \brief Read from a single address in memory repeatedly
@@ -29,14 +29,14 @@ void read_single_address(volatile width_t *address);
  *
  * \param[in] address         Which address to read from
  */
-void read_single_address_fenced(volatile width_t *address);
+void read_single_address_fenced(volatile xlen_t *address);
 
 /**
  * \brief Read from consecutive addresses in memory
  *
  * \param[in] address         Which address to start reading at
  */
-void read_consecutive_addresses(volatile width_t *address);
+void read_consecutive_addresses(volatile xlen_t *address);
 
 /**
  * \brief Read from consecutive addresses in memory
@@ -44,14 +44,14 @@ void read_consecutive_addresses(volatile width_t *address);
  *
  * \param[in] address         Which address to start reading at
  */
-void read_consecutive_addresses_fenced(volatile width_t *address);
+void read_consecutive_addresses_fenced(volatile xlen_t *address);
 
 /**
  * \brief Write to a single address in memory repeatedly
  *
  * \param[in] address         Which address to write to
  */
-void write_single_address(volatile width_t *address);
+void write_single_address(volatile xlen_t *address);
 
 /**
  * \brief Write to a single address in memory repeatedly
@@ -59,14 +59,14 @@ void write_single_address(volatile width_t *address);
  *
  * \param[in] address         Which address to write to
  */
-void write_single_address_fenced(volatile width_t *address);
+void write_single_address_fenced(volatile xlen_t *address);
 
 /**
  * \brief Write to consecutive addresses in memory
  *
  * \param[in] address         Which address to start writing at
  */
-void write_consecutive_addresses(volatile width_t *address);
+void write_consecutive_addresses(volatile xlen_t *address);
 
 /**
  * \brief Write to consecutive addresses in memory
@@ -74,6 +74,6 @@ void write_consecutive_addresses(volatile width_t *address);
  *
  * \param[in] address         Which address to start writing at
  */
-void write_consecutive_addresses_fenced(volatile width_t *address);
+void write_consecutive_addresses_fenced(volatile xlen_t *address);
 
 #endif /* MEMORY_H_ */

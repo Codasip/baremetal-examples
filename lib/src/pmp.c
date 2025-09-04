@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/pmp.h"
@@ -46,8 +46,8 @@ void bm_pmp_set(unsigned index, xlen_t address, bm_pmp_address_mode_t address_mo
         bm_fatal("PMP entry index out of range.");
     }
 
-    unsigned config_index      = index / (__riscv_xlen / BM_PMP_CFG_SIZE);
-    unsigned config_reg_offset = BM_PMP_CFG_SIZE * (index % (__riscv_xlen / BM_PMP_CFG_SIZE));
+    unsigned config_index      = index / (RISCV_XLEN / BM_PMP_CFG_SIZE);
+    unsigned config_reg_offset = BM_PMP_CFG_SIZE * (index % (RISCV_XLEN / BM_PMP_CFG_SIZE));
 
     xlen_t config_val = config | address_mode;
 

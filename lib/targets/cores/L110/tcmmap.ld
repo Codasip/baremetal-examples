@@ -1,4 +1,4 @@
-/* Copyright 2024 Codasip s.r.o.         */
+/* Copyright 2024-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 /* Memories available for L110 core */

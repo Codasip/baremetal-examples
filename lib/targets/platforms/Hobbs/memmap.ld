@@ -1,12 +1,12 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 /* Memories available for Hobbs platform */
 
 MEMORY
 {
-    boot_rom (!w) : org = 0x10000000, len = 0x00010000
-    boot_ram (wxa) : org = 0x20070000, len = 0x0010000
+    boot_rom (!w)  : org = 0x10000000, len = 0x00010000
+    boot_ram (wxa) : org = 0x20028000, len = 0x00018000
     ram (wxa) : org = 0x20000000, len = 0x00080000
     ddr (wxa) : org = 0x80000000, len = 0x40000000
 }

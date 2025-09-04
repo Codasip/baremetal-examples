@@ -53,6 +53,7 @@
 #define configISR_STACK_SIZE_WORDS  (2048)
 #define SystemCoreClock             (TARGET_PLATFORM_FREQ)    /* To set configCPU_CLOCK_HZ below */
 
+#if 0 // Moved in to Codasip's CMSIS_6 repo cmsis_gcc.h */
 /* RISC-V Specific functions required for cmsis_os2.c */
 inline void __disable_irq(void)
 {
@@ -63,6 +64,7 @@ inline void __enable_irq(void)
 {
     __asm volatile ( "csrs mstatus, 8" );
 }
+#endif
 
 /* This is a RISC-V port of an ARM register read as follows: */
 /**************************************************************************************************/

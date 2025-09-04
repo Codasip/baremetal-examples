@@ -1,7 +1,8 @@
 # Baremetal application Makefile
-DEMO_DIR := $(subst Makefile,.,$(lastword $(MAKEFILE_LIST)))
+DEMO_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+BM_SDK_DIR ?= $(DEMO_DIR)/../..
 
 APP     = mutex-demo
 SOURCES = $(DEMO_DIR)/src/mutex-demo.c
 
-include $(DEMO_DIR)/../../share/app.mk
+include $(BM_SDK_DIR)/share/app.mk

@@ -1,14 +1,14 @@
 # ----[ PATHS ]----
 
-CORE_DIR := $(subst /core.mk,,$(lastword $(MAKEFILE_LIST)))
+CORE_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
 # ----[ VARIABLES ]----
 ifeq ($(CONFIG_HAS_FPU_DP),Y)
 # EXT-D
-MARCH := rv32imfdc_zicsr_zifencei_zba_zbb_zbs_zicbom_zicboz
+MARCH := rv32imafdc_zicsr_zifencei_zba_zbb_zbs_zicbom_zicboz
 MABI  := ilp32d
 else
-MARCH := rv32imfc_zicsr_zifencei_zba_zbb_zbs_zicbom_zicboz
+MARCH := rv32imafc_zicsr_zifencei_zba_zbb_zbs_zicbom_zicboz
 MABI  := ilp32f
 endif
 

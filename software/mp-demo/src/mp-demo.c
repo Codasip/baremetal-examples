@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/common.h>
@@ -29,7 +29,9 @@ int main(void)
     // start a job on each hart
     bm_hart_execute_all((bm_hart_func_ptr_t)hart_job);
 
-    printf("Observed number of harts was %u, the expected number is %u.\n\n", num_harts, TARGET_NUM_HARTS);
+    printf("Observed number of harts was %" PRIu32 ", the expected number is %u.\n\n",
+           num_harts,
+           (unsigned int)TARGET_NUM_HARTS);
 
     puts("Bye.");
     return EXIT_SUCCESS;

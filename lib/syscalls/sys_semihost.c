@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/common.h"
@@ -257,10 +257,27 @@ void USED _exit(int ret)
         bm_info("Exited with an error.");
     }
 
-    xlen_t addr;
-#if __riscv_xlen == 32
-    addr = (ret == 0) ? (xlen_t)ADP_Stopped_ApplicationExit : (xlen_t)ADP_Stopped_RunTimeErrorUnknown;
+#ifdef TARGET_SIMULATION
+
+    #ifdef TARGET_HALT_ADDR
+
+    // write to MMIO interface at a magic address
+    *((volatile xlen_t *)TARGET_HALT_ADDR) = ret;
+
+    #else
+
+    // write to MMIO interface at a magic address
+    extern volatile uint32_t codasip_syscall;
+    codasip_syscall = ret;
+
+    #endif
+
 #else
+
+    xlen_t addr;
+    #if RISCV_XLEN == 32
+    addr = (ret == 0) ? (xlen_t)ADP_Stopped_ApplicationExit : (xlen_t)ADP_Stopped_RunTimeErrorUnknown;
+    #else
     struct params {
         xlen_t magic;
         xlen_t return_code;
@@ -270,9 +287,11 @@ void USED _exit(int ret)
     my_params.magic       = ADP_Stopped_ApplicationExit;
 
     addr = (xlen_t)&my_params;
-#endif
+    #endif
 
     syscall_semihosting(SEMIHOSTING_SYS_EXIT, addr);
+
+#endif
 
     while (1)
         ;

@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/csr.h"
@@ -7,9 +7,9 @@
 #include "baremetal/verbose.h"
 
 // Helper macros for PMP config registers
-#define TARGET_HAS_PMP_CFG_REG1 ((TARGET_PMP_NUM_REGIONS > 4) && (__riscv_xlen == 32))
+#define TARGET_HAS_PMP_CFG_REG1 ((TARGET_PMP_NUM_REGIONS > 4) && (RISCV_XLEN == 32))
 #define TARGET_HAS_PMP_CFG_REG2 (TARGET_PMP_NUM_REGIONS > 8)
-#define TARGET_HAS_PMP_CFG_REG3 ((TARGET_PMP_NUM_REGIONS > 12) && (__riscv_xlen == 32))
+#define TARGET_HAS_PMP_CFG_REG3 ((TARGET_PMP_NUM_REGIONS > 12) && (RISCV_XLEN == 32))
 
 xlen_t bm_csr_read(const int csr)
 {
@@ -165,7 +165,7 @@ xlen_t bm_csr_read(const int csr)
         case BM_CSR_MENVCFG:
             CSR_READ(BM_CSR_MENVCFG, value);
             break;
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MENVCFGH:
             CSR_READ(BM_CSR_MENVCFGH, value);
             break;
@@ -357,7 +357,7 @@ xlen_t bm_csr_read(const int csr)
         case BM_CSR_MSECCFG:
             CSR_READ(BM_CSR_MSECCFG, value);
             break;
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MSECCFGH:
             CSR_READ(BM_CSR_MSECCFGH, value);
             break;
@@ -510,7 +510,7 @@ xlen_t bm_csr_read(const int csr)
             CSR_READ(BM_CSR_MHPMCOUNTER31, value);
             break;
 #endif
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MCYCLEH:
             CSR_READ(BM_CSR_MCYCLEH, value);
             break;
@@ -705,7 +705,7 @@ xlen_t bm_csr_read(const int csr)
             CSR_READ(BM_CSR_HPMCOUNTER31, value);
             break;
 #endif
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_CYCLEH:
             CSR_READ(BM_CSR_CYCLEH, value);
             break;
@@ -980,7 +980,7 @@ void bm_csr_write(const int csr, const xlen_t value)
         case BM_CSR_MENVCFG:
             CSR_WRITE(BM_CSR_MENVCFG, value);
             break;
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MENVCFGH:
             CSR_WRITE(BM_CSR_MENVCFGH, value);
             break;
@@ -1172,7 +1172,7 @@ void bm_csr_write(const int csr, const xlen_t value)
         case BM_CSR_MSECCFG:
             CSR_WRITE(BM_CSR_MSECCFG, value);
             break;
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MSECCFGH:
             CSR_WRITE(BM_CSR_MSECCFGH, value);
             break;
@@ -1325,7 +1325,7 @@ void bm_csr_write(const int csr, const xlen_t value)
             CSR_WRITE(BM_CSR_MHPMCOUNTER31, value);
             break;
 #endif
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MCYCLEH:
             CSR_WRITE(BM_CSR_MCYCLEH, value);
             break;
@@ -1520,7 +1520,7 @@ void bm_csr_write(const int csr, const xlen_t value)
             CSR_WRITE(BM_CSR_HPMCOUNTER31, value);
             break;
 #endif
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_CYCLEH:
             CSR_WRITE(BM_CSR_CYCLEH, value);
             break;
@@ -1794,7 +1794,7 @@ void bm_csr_set_mask(const int csr, const xlen_t mask)
         case BM_CSR_MENVCFG:
             CSR_SET(BM_CSR_MENVCFG, mask);
             break;
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MENVCFGH:
             CSR_SET(BM_CSR_MENVCFGH, mask);
             break;
@@ -1986,7 +1986,7 @@ void bm_csr_set_mask(const int csr, const xlen_t mask)
         case BM_CSR_MSECCFG:
             CSR_SET(BM_CSR_MSECCFG, mask);
             break;
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MSECCFGH:
             CSR_SET(BM_CSR_MSECCFGH, mask);
             break;
@@ -2139,7 +2139,7 @@ void bm_csr_set_mask(const int csr, const xlen_t mask)
             CSR_SET(BM_CSR_MHPMCOUNTER31, mask);
             break;
 #endif
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MCYCLEH:
             CSR_SET(BM_CSR_MCYCLEH, mask);
             break;
@@ -2334,7 +2334,7 @@ void bm_csr_set_mask(const int csr, const xlen_t mask)
             CSR_SET(BM_CSR_HPMCOUNTER31, mask);
             break;
 #endif
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_CYCLEH:
             CSR_SET(BM_CSR_CYCLEH, mask);
             break;
@@ -2608,7 +2608,7 @@ void bm_csr_clear_mask(const int csr, const xlen_t mask)
         case BM_CSR_MENVCFG:
             CSR_CLEAR(BM_CSR_MENVCFG, mask);
             break;
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MENVCFGH:
             CSR_CLEAR(BM_CSR_MENVCFGH, mask);
             break;
@@ -2800,7 +2800,7 @@ void bm_csr_clear_mask(const int csr, const xlen_t mask)
         case BM_CSR_MSECCFG:
             CSR_CLEAR(BM_CSR_MSECCFG, mask);
             break;
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MSECCFGH:
             CSR_CLEAR(BM_CSR_MSECCFGH, mask);
             break;
@@ -2953,7 +2953,7 @@ void bm_csr_clear_mask(const int csr, const xlen_t mask)
             CSR_CLEAR(BM_CSR_MHPMCOUNTER31, mask);
             break;
 #endif
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_MCYCLEH:
             CSR_CLEAR(BM_CSR_MCYCLEH, mask);
             break;
@@ -3148,7 +3148,7 @@ void bm_csr_clear_mask(const int csr, const xlen_t mask)
             CSR_CLEAR(BM_CSR_HPMCOUNTER31, mask);
             break;
 #endif
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
         case BM_CSR_CYCLEH:
             CSR_CLEAR(BM_CSR_CYCLEH, mask);
             break;

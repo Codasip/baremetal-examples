@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/common.h>
@@ -85,7 +85,7 @@ void do_write(xlen_t address, unsigned size, xlen_t value)
         case 32:
             MEM_WRITE("sw", address, value);
             break;
-#if __riscv_xlen == 64
+#if RISCV_XLEN == 64
         case 64:
             MEM_WRITE("sd", address, value);
             break;
@@ -111,7 +111,7 @@ xlen_t do_read(xlen_t address, unsigned size)
         case 32:
             MEM_READ("lw", address, value);
             break;
-#if __riscv_xlen == 64
+#if RISCV_XLEN == 64
         case 64:
             MEM_READ("ld", address, value);
             break;
@@ -128,7 +128,7 @@ void read_test(xlen_t offset, unsigned size, xlen_t test_value)
 {
     error_flag = false;
 
-    xlen_t mask     = ((xlen_t)-1) >> (__riscv_xlen - size);
+    xlen_t mask     = ((xlen_t)-1) >> (RISCV_XLEN - size);
     xlen_t read_val = do_read(offset, size) & mask;
     xlen_t cur_val  = test_value & mask;
 #if DEBUG
@@ -145,7 +145,7 @@ void read_test(xlen_t offset, unsigned size, xlen_t test_value)
 void write_test(xlen_t offset, unsigned size, xlen_t test_value)
 {
 #if DEBUG
-    xlen_t mask = ((xlen_t)-1) >> (__riscv_xlen - size);
+    xlen_t mask = ((xlen_t)-1) >> (RISCV_XLEN - size);
     printf("DEBUG: %3u-bit write at " BM_FMT_XLEN ": " BM_FMT_XLEN "\n", size, offset, test_value & mask);
 #endif
     do_write(offset, size, test_value);
@@ -158,13 +158,13 @@ unsigned constant_size(void)
 
 /**
  * Iterate over all available access widths
- * 8 -> 16 -> .. -> XLEN
+ * 8 -> 16 -> .. -> RISCV_XLEN
  */
 unsigned iterative_size(void)
 {
-    static unsigned size = __riscv_xlen;
+    static unsigned size = RISCV_XLEN;
 
-    size = (size == __riscv_xlen) ? 8 : size * 2;
+    size = (size == RISCV_XLEN) ? 8 : size * 2;
 
     return size;
 }
@@ -179,8 +179,8 @@ unsigned iterative_size(void)
  */
 unsigned iterative_size_squared(void)
 {
-    static unsigned size        = __riscv_xlen;
-    const unsigned  repetitions = (__riscv_xlen == 64) ? 4 : 3;
+    static unsigned size        = RISCV_XLEN;
+    const unsigned  repetitions = (RISCV_XLEN == 64) ? 4 : 3;
     static unsigned repeat      = repetitions;
 
     repeat = (repeat == 1) ? repetitions : repeat - 1;
@@ -189,7 +189,7 @@ unsigned iterative_size_squared(void)
         return size;
     }
 
-    size = (size == __riscv_xlen) ? 8 : size * 2;
+    size = (size == RISCV_XLEN) ? 8 : size * 2;
 
     return size;
 }
@@ -209,16 +209,16 @@ void iterate_range(xlen_t start,
 {
     srand(0);
 
-    for (xlen_t address = start; address < end; address += __riscv_xlen / 8)
+    for (xlen_t address = start; address < end; address += RISCV_XLEN / 8)
     {
         unsigned size       = size_gen();
         xlen_t   test_value = rand();
-#if __riscv_xlen == 64
+#if RISCV_XLEN == 64
         test_value <<= 32;
         test_value |= rand();
 #endif
 
-        for (xlen_t offset = address; offset < address + __riscv_xlen / 8; offset += size / 8)
+        for (xlen_t offset = address; offset < address + RISCV_XLEN / 8; offset += size / 8)
         {
             mem_access(offset, size, test_value);
 

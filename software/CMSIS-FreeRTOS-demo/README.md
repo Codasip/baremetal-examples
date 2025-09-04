@@ -11,8 +11,12 @@ one task to another outputting information to the UART via `vSendString()`.
 
 In `Makefile` set:
 
+    RTOS_DIR to point to the FreeRTOS-Kernel directory (the one that has the C files and the
+    `include` & `portable` sub-directories in it) containing a clone of the following repo:
+    https://github.com/Codasip/FreeRTOS-Kernel.git
+
     CMSIS_DIR to point to a CMSIS directory containing clones of the following repos:
-    https://github.com/ARM-software/CMSIS_6.git
+    https://github.com/Codasip/CMSIS_6.git
     https://github.com/ARM-software/CMSIS-FreeRTOS.git
 
 In `CMSIS-FreeRTOS-demo.h` set:
@@ -25,36 +29,43 @@ In `CMSIS-FreeRTOS-demo.h` set:
         UART_LOCAL_IRQ_ENABLE = 0 do not use IRQ for the local UART (blocking)
         UART_LOCAL_IRQ_ENABLE = 1 do use IRQ for the local UART
 
-    EXCEPTION_HANDLER_LOCAL_USE = 0 Handle exceptions locally in this file
-    EXCEPTION_HANDLER_LOCAL_USE = 1 Use BareMetal Exception Handler
+    EXCEPTION_HANDLER_LOCAL_USE = 0 Use BareMetal Exception Handler
+    EXCEPTION_HANDLER_LOCAL_USE = 1 Handle exceptions locally in this file
 
 ## Building
 
 To build this demo you need the following repos, clone them from:
 
-    https://github.com/ARM-software/CMSIS_6.git
+    https://github.com/Codasip/FreeRTOS-Kernel.git
+    https://github.com/Codasip/CMSIS_6.git
     https://github.com/ARM-software/CMSIS-FreeRTOS.git
 
-For example, to clone and recursively get all the sub-modules do, from the baremetal-examples root dir:
+For example, to clone them with all submodules into a subdirectory:
 
-    cd ..
-    mkdir -p CMSIS
-    cd CMSIS
-    git clone https://github.com/ARM-software/CMSIS_6.git --recurse-submodules
+    mkdir -p repos
+    cd repos
+    git clone https://github.com/Codasip/FreeRTOS-Kernel.git --recurse-submodules
+    git clone https://github.com/Codasip/CMSIS_6.git --recurse-submodules
     git clone https://github.com/ARM-software/CMSIS-FreeRTOS.git --recurse-submodules
-    cd ../baremetal-examples
+    cd ..
 
-This demo has been tested with `FreeRTOS V11.1.0`.
+This demo has been tested with `FreeRTOS V11.2.0`.
+
+Set up the environment variables to to point to the repos:
+
+    export RTOS_DIR=$(realpath repos/FreeRTOS-Kernel)
+    export CMSIS_6_DIR=$(realpath repos/CMSIS_6)
+    export CMSIS_RTX_DIR=$(realpath repos/CMSIS-RTX)
 
 After configuring `baremetal-examples/config.mk` and adding environment variable `SDK_PREFIX`:
 
-    cd baremetal-examples
+    cd baremetal-examples/softare/CMSIS-FreeRTOS-demo
     make
 
 ## Sample Output
 
 ======================================================
-FreeRTOS Version V11.1.0
+FreeRTOS Version V11.2.0
 BareMetal Examples Version 1.1.1
 
 CMSIS-RTOS2-FreeRTOS multi-task example running

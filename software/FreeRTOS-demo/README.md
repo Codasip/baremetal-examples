@@ -10,7 +10,8 @@ one task to another outputting information to the UART via `vSendString()`.
 
 In `Makefile` set:
 
-    RTOS_DIR to point to the FreeRTOS directory (the one that has Source and Demo sub-directories)
+    RTOS_DIR to point to the FreeRTOS-Kernel directory (the one that has the C files and the
+    `include` & `portable` sub-directories in it).
 
 In `FreeRTOS-demo.c` set:
 
@@ -22,27 +23,27 @@ In `FreeRTOS-demo.c` set:
         UART_LOCAL_IRQ_ENABLE = 0 do not use IRQ for the local UART (blocking)
         UART_LOCAL_IRQ_ENABLE = 1 do use IRQ for the local UART
 
-    EXCEPTION_HANDLER_LOCAL_USE = 0 Handle exceptions locally in this file
-    EXCEPTION_HANDLER_LOCAL_USE = 1 Use BareMetal Exception Handler
+    EXCEPTION_HANDLER_LOCAL_USE = 0 Use BareMetal Exception Handler
+    EXCEPTION_HANDLER_LOCAL_USE = 1 Handle exceptions locally in this file
 
 ## Building
 
-To build this demo you need the `FreeRTOS` repo, clone it from:
+To build this demo you need Codasip's port of `FreeRTOS-Kernel` repo, clone it from:
 
-	https://github.com/FreeRTOS/FreeRTOS.git
+	https://github.com/Codasip/FreeRTOS-Kernel.git
 
-For example, to clone and recursively get all the sub-modules, from the baremetal-examples root dir:
+For example, to clone it with all submodules into a subdirectory:
 
+    mkdir -p repos
+    cd repos
+    git clone https://github.com/Codasip/FreeRTOS-Kernel.git --recurse-submodules
     cd ..
-    git clone https://github.com/FreeRTOS/FreeRTOS.git --recurse-submodules
-    cd ../baremetal-examples
 
-This demo has been tested with `FreeRTOS V11.1.0`.
+This demo has been tested with `FreeRTOS V11.2.0`.
 
+Set up the environment variables to to point to the repo:
 
-Change `RTOS_DIR` to point to FreeRTOS, e.g.:
-
-    RTOS_DIR ?= ../../../../../../FreeRTOS
+    export RTOS_DIR=$(realpath repos/FreeRTOS-Kernel)
 
 After configuring `baremetal-examples/config.mk` and adding environment variable `SDK_PREFIX`:
 
@@ -52,7 +53,7 @@ After configuring `baremetal-examples/config.mk` and adding environment variable
 ## Sample Output
 
     ======================================================
-    FreeRTOS Version V11.1.0+
+    FreeRTOS Version V11.2.0+
     BareMetal Examples Version 1.0.0
 
     FreeRTOS multi-task example running

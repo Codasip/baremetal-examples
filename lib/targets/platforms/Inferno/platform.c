@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/platform.h"
@@ -11,12 +11,13 @@
 #include "baremetal/verbose.h"
 
 // Include Memory Map and Interrupt Map files for platform
-#include "platforms/maps/interrupt_map_v1.0.h"
-#include "platforms/maps/memory_map_v1.0.h"
+#include "interrupt_map.h"
+#include "memory_map.h"
 
 /**
  * \brief Peripherals available on this target
  */
+#ifndef TARGET_SIMULATOR
 static bm_clint_t clint   = {.regs = (bm_clint_regs_t *)CLINT_ADDR, .freq = TARGET_CLK_FREQ};
 static bm_uart_t  uart    = {.regs       = (bm_uart_regs_t *)UART_ADDR,
                              .ext_irq_id = UART_IRQ_ID,
@@ -24,11 +25,13 @@ static bm_uart_t  uart    = {.regs       = (bm_uart_regs_t *)UART_ADDR,
 static bm_spi_t   spi_sd  = {.regs = (bm_spi_regs_t *)SPI_SD_ADDR, .ext_irq_id = SPI_SD_IRQ_ID};
 static bm_gpio_t  gpio_io = {.regs = (bm_gpio_regs_t *)GPIO_IO_ADDR, .ext_irq_id = GPIO_IO_IRQ_ID};
 static bm_gpio_t  gpio_sd = {.regs = (bm_gpio_regs_t *)GPIO_SD_ADDR, .ext_irq_id = GPIO_SD_IRQ_ID};
+#endif
 
 void *target_peripheral_get(int id)
 {
     switch (id)
     {
+#ifndef TARGET_SIMULATOR
         case BM_PERIPHERAL_CLINT:
             return (void *)&clint;
         case BM_PERIPHERAL_UART_CONSOLE:
@@ -39,7 +42,9 @@ void *target_peripheral_get(int id)
             return (void *)&gpio_io;
         case BM_PERIPHERAL_GPIO_SD:
             return (void *)&gpio_sd;
+#endif
         default:
+            bm_fatal("requested unknown peripheral %d", id);
             return NULL;
     }
 }

@@ -1,14 +1,8 @@
-# ----[ PLATFORM CONFIGURATION ]----
 
 CONFIG_PROCESSOR            = L730
-CONFIG_PLATFORM             = Hobbs
-
-#CONFIG_ENVIRONMENT         ?= FPGA_SEMIHOSTING
-#CONFIG_ENVIRONMENT         ?= FPGA_UART
 
 # ----[ CORE CONFIGURATION ]----
 
-CONFIG_CORE_FREQ            ?= 50
 CONFIG_NUM_HARTS            ?= 1
 CONFIG_HAS_FPU              = Y
 CONFIG_HAS_FPU_DP           = Y
@@ -22,6 +16,8 @@ CONFIG_CLIC_INTCTLBITS      = 8
 
 # ----[ PLATFORM CONFIGURATION ]----
 
+CONFIG_PLATFORM             ?= Hobbs$(HOB_PLATFORM_VERSION_STR)
+CONFIG_CORE_FREQ            ?= 50
 CONFIG_PLIC                 = N
 CONFIG_SECURITY             = N
 CONFIG_TSBL                 = Y

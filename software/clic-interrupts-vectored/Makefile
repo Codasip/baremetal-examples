@@ -1,9 +1,11 @@
 # Baremetal application Makefile
-DEMO_DIR := $(subst Makefile,.,$(lastword $(MAKEFILE_LIST)))
+DEMO_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+BM_SDK_DIR ?= $(DEMO_DIR)/../..
 
 REQUIRES += clic
+REQUIRES += gpio_io
 
 APP     = clic-interrupts-vectored
 SOURCES = $(DEMO_DIR)/src/clic-interrupts-vectored.c
 
-include $(DEMO_DIR)/../../share/app.mk
+include $(BM_SDK_DIR)/share/app.mk

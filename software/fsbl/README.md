@@ -6,13 +6,13 @@ in a ROM memory. Codasip platforms also contain a small region of RAM memory
 for use by the bootloader. Alternatively, the demo also supports its execution
 from the main RAM memory for testing purposes.
 
-# CODASIP SECOND STAGE BOOTLOADER (SSBL)
+# CODASIP THIRD STAGE BOOTLOADER (TSBL)
 
 There is an additional linker script that places all of the FSBL in RAM at a high address.
-This is useful as a second stage bootloader if the first stage is for instance, a secure bootloader.
-This SSBL can be encrypted and signed to be booted using the secure bootloader.
-Then the SSBL allows the developer to test many unsigned and unencrypted applications quickly
-without the aditional steps and tools required to sign and encrypt them for the secure bootloader.
+This is useful as a third stage bootloader if the first stage is, for instance, Codasip's Secure-Boot
+(which has two stages). This TSBL can be encrypted and signed to be booted using Secure-Boot.
+Then the TSBL allows the developer to test many unsigned and unencrypted applications quickly
+without the aditional steps and tools required to sign and encrypt them for Secure-Boot.
 
 ## Functional Overview
 

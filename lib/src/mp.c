@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2024 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/mp.h"
@@ -25,6 +25,9 @@ static volatile bm_hart_sync_data_t bm_hart_sync_data[TARGET_NUM_HARTS];
 void __attribute__((noreturn, used)) bm_park_hart(void)
 {
     unsigned hart_id = bm_get_hartid();
+
+    // Initially clear the ready flag as memory my not be cleared yet
+    bm_hart_sync_data[hart_id].ready = false;
 
     // All harts except the main one loop here when inactive
     while (true)

@@ -16,17 +16,20 @@
 #include "baremetal/verbose.h"
 
 // Include Memory Map and Interrupt Map files for platform
-#include "platforms/maps/interrupt_map_v1.0.h"
-#include "platforms/maps/memory_map_v2.0.h"
+#include "interrupt_map.h"
+#include "memory_map.h"
 
 /**
  * \brief Peripherals available on this target
  */
 #ifdef TARGET_HAS_PLIC
+    #ifndef TARGET_SIMULATOR
 static bm_plic_t plic = {.regs = (bm_plic_regs_t *)PLIC_ADDR};
+    #endif
 #elif defined(TARGET_HAS_CLIC)
 static bm_clic_t clic = {.regs = (bm_clic_regs_t *)CLIC_ADDR};
 #endif
+#ifndef TARGET_SIMULATOR
 static bm_clint_t aclint = {.regs = (bm_clint_regs_t *)ACLINT_ADDR, .freq = TARGET_PLATFORM_FREQ};
 static bm_uart_t  uart   = {.regs       = (bm_uart_regs_t *)UART_ADDR,
                             .ext_irq_id = UART_IRQ_ID,
@@ -36,9 +39,10 @@ static bm_spi_t    spi_sd  = {.regs = (bm_spi_regs_t *)SPI_SD_ADDR, .ext_irq_id 
 static bm_gpio_t   gpio_io = {.regs = (bm_gpio_regs_t *)GPIO_IO_ADDR, .ext_irq_id = GPIO_IO_IRQ_ID};
 static bm_gpio_t   gpio_sd = {.regs = (bm_gpio_regs_t *)GPIO_SD_ADDR, .ext_irq_id = GPIO_SD_IRQ_ID};
 static bm_id_reg_t id_reg  = {.regs = (bm_id_regs_t *)PLAT_ID_ADDR};
-#ifdef CONFIG_SECURITY
+    #ifdef CONFIG_SECURITY
 static bm_trng_t trng = {.regs = (bm_trng_regs_t *)TRNG_ADDR};
 static bm_aead_t aead = {.regs = (bm_aead_regs_t *)AEAD_ADDR};
+    #endif
 #endif
 
 void *target_peripheral_get(int id)
@@ -46,12 +50,15 @@ void *target_peripheral_get(int id)
     switch (id)
     {
 #ifdef TARGET_HAS_PLIC
+    #ifndef TARGET_SIMULATOR
         case BM_PERIPHERAL_PLIC:
             return (void *)&plic;
+    #endif
 #elif defined(TARGET_HAS_CLIC)
         case BM_PERIPHERAL_CLIC:
             return (void *)&clic;
 #endif
+#ifndef TARGET_SIMULATOR
         case BM_PERIPHERAL_CLINT:
             return (void *)&aclint;
         case BM_PERIPHERAL_UART_CONSOLE:
@@ -66,13 +73,15 @@ void *target_peripheral_get(int id)
             return (void *)&gpio_sd;
         case BM_PERIPHERAL_ID_REG:
             return (void *)&id_reg;
-#ifdef CONFIG_SECURITY
+    #ifdef CONFIG_SECURITY
         case BM_PERIPHERAL_AEAD:
             return (void *)&aead;
         case BM_PERIPHERAL_TRNG:
             return (void *)&trng;
+    #endif
 #endif
         default:
+            bm_fatal("requested unknown peripheral %d", id);
             return NULL;
     }
 }

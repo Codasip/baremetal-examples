@@ -15,14 +15,30 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #include $(THIS_DIR)/lib/targets/configs/config-l31-copper.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l31-nickel.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l31-zinc.mk
-#include $(THIS_DIR)/lib/targets/configs/config-a730-default.mk
+
+#include $(THIS_DIR)/lib/targets/configs/config-l110-lyra.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l110-eagle.mk
+#include $(THIS_DIR)/lib/targets/configs/config-l110-custom.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l110-andromeda.mk
+
 #include $(THIS_DIR)/lib/targets/configs/config-l150-libra.mk
+
 #include $(THIS_DIR)/lib/targets/configs/config-l730-pearl.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l730-ruby.mk
+#include $(THIS_DIR)/lib/targets/configs/config-l730-topaz.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l730-amethyst.mk
+
+#include $(THIS_DIR)/lib/targets/configs/config-a730-default.mk
 #include $(THIS_DIR)/lib/targets/configs/config-x730-default.mk
+#include $(THIS_DIR)/lib/targets/configs/config-x730-mp4.mk
+
+# Hobbs/Hobgoblin V1/2 Platforms, un-comment and set the following for Hobbs/Hobgoblin (memory map) version:
+# or leave HOB_PLATFORM_VERSION blank for v1:
+#HOB_PLATFORM_VERSION ?= 2
+
+ifneq ($(HOB_PLATFORM_VERSION), )
+  HOB_PLATFORM_VERSION_STR = _v$(HOB_PLATFORM_VERSION)
+endif
 
 # If building from top-level, uncomment one of the following lines to select demo to build
 #DEMO_APP=aead-demo
@@ -36,6 +52,7 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #DEMO_APP=clint-timer
 #DEMO_APP=clint-timer-interrupt
 #DEMO_APP=CMSIS-FreeRTOS-demo
+#DEMO_APP=CMSIS-RTX-demo
 #DEMO_APP=counter-demo
 #DEMO_APP=csr-demo
 #DEMO_APP=ecall-demo
@@ -62,6 +79,7 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #DEMO_APP=privilege-interrupts
 #DEMO_APP=privilege-interrupts-delegated
 #DEMO_APP=rdtime
+#DEMO_APP=sd-card-demo
 #DEMO_APP=spi-demo
 #DEMO_APP=tcm-demo
 #DEMO_APP=timing-demo

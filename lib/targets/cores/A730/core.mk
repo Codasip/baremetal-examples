@@ -1,35 +1,19 @@
 # ----[ PATHS ]----
 
-CORE_DIR := $(subst /core.mk,,$(lastword $(MAKEFILE_LIST)))
+CORE_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
 # ----[ VARIABLES ]----
 
-# For A730 (None-CHERI) we should use rv64imafdc_zicsr_zifencei_zba_zbb_zbs_zcb_zfhmin
-# Trimmed for backwards compatability
-# MARCH := rv64imafdc_zicsr_zifencei_zba_zbb_zbs_zcb_zfhmin
-ifeq ($(findstring codasip-,$(COMPILER_VERSION_STRING)),obilix-)
-# "obilix-" detected
-MARCH := rv64imafdc_zicsr_zifencei_zba_zbb_zbs_zcb_zfhmin
-
-else ifeq ($(findstring codasip-,$(COMPILER_VERSION_STRING)),codasip-)
-# "codasip-" detected
-MARCH := rv64imafdc_zicsr_zifencei_zba_zbb_zbs_zcb_zfhmin
-
-else ifeq ($(findstring clang,$(COMPILER_VERSION_STRING)),clang)
-# "clang" detected
-MARCH := rv64imafdc_zicsr_zifencei_zba_zbb_zbs_zcb_zfhmin
-
-else ifeq ($(findstring gcc,$(COMPILER_VERSION_STRING)),gcc)
-# "gcc" detected
 MARCH := rv64imafdc_zicsr_zifencei_zba_zbb_zbs_zicbom_zicboz
-
-else
-$(error Unrecognised compiler version "$(COMPILER_VERSION_STRING)")
-endif
 MABI  := lp64d
 XLEN  := 64
 
+ifneq ($(CC_TYPE), codasip_clang)
+# Only define ARCH and ABI for non-Codasip compilers,
+# a Codasip SDK defaults to the correct ARCH & ABI for the associated core
 CPPFLAGS += -march=$(MARCH) -mabi=$(MABI)
+endif
+
 CFLAGS   += -I$(CORE_DIR)
 ASFLAGS  += -I$(CORE_DIR)
 LDFLAGS  += -Wl,--defsym=_NUM_HARTS=$(CONFIG_NUM_HARTS)

@@ -1,6 +1,6 @@
 # ----[ PATHS ]----
 
-PLATFORM_DIR := $(subst /platform.mk,,$(lastword $(MAKEFILE_LIST)))
+PLATFORM_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
 # ----[ LDSCRIPT ]----
 
@@ -13,6 +13,7 @@ PROVIDES += clint
 PROVIDES += flash
 PROVIDES += gpio_io
 PROVIDES += sdcard
+PROVIDES += id_registers
 ifeq ($(CONFIG_PLIC),Y)
 PROVIDES += plic
 endif
@@ -26,11 +27,14 @@ endif
 
 # ----[ LIB SOURCES ]----
 
+BM_SOURCES += \
+    $(PLATFORM_DIR)/platform.c
+
 ifneq ($(CONFIG_ENVIRONMENT),SIMULATOR)
 BM_SOURCES += \
-    $(PLATFORM_DIR)/platform.c \
     $(LIB_DIR)/src/clint.c \
     $(LIB_DIR)/src/gpio.c \
+    $(LIB_DIR)/src/id_reg.c \
     $(LIB_DIR)/src/spi.c \
     $(LIB_DIR)/src/uart.c
 ifeq ($(CONFIG_PLIC),Y)

@@ -1,6 +1,6 @@
 # ----[ PATHS ]----
 
-CORE_DIR := $(subst /core.mk,,$(lastword $(MAKEFILE_LIST)))
+CORE_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
 # ----[ VARIABLES ]----
 
@@ -91,4 +91,3 @@ $(info - TCM             : $(CONFIG_HAS_TCMS))
 $(info - Cache control   : $(CONFIG_HAS_CACHES))
 $(info - Number of PIC interrupts : $(CONFIG_PIC_NUM_INTERRUPTS))
 $(info )
-

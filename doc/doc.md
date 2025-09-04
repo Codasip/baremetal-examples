@@ -101,6 +101,7 @@ The following are currently set by the "requires/provides" mechanism described p
 - `gpio_io` - platforms with a Xilinx GPIO peripheral connected to the on-board LEDs and switches
 - `hpm` - cores with HPM counters
 - `i2c_pwr` - platforms with Xilinx I2C peripheral connected to INA219 power monitoring sensors
+- `id_registers` - platforms with an ID Registers that holds information about Core and Platform
 - `supervisor_mode` - cores implementing the S extension
 - `user_mode` - cores implementing the U extension
 - `pic` - cores with Codasip Programmable Interrupt Controller

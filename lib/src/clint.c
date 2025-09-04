@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/clint.h"
@@ -36,7 +36,7 @@ uint64_t bm_clint_get_mtime(bm_clint_t *clint)
 
 void bm_clint_set_mtimecmp(bm_clint_t *clint, unsigned hart_id, uint64_t time_value)
 {
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
     // On 32-bit platforms, 64-bit writes are not necessarily atomic and ordering of accesses is not guaranteed.
     // Write a safe value (0xFFFFFFFF) to high word first to eliminate possible interrupt occurring in the middle.
     volatile uint32_t *reg_ptr = (uint32_t *)&clint->regs->MTIMECMP[hart_id];

@@ -1,5 +1,6 @@
 # Baremetal application Makefile
-DEMO_DIR := $(subst Makefile,.,$(lastword $(MAKEFILE_LIST)))
+DEMO_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+BM_SDK_DIR ?= $(DEMO_DIR)/../..
 
 REQUIRES += trng
 REQUIRES += sdcard
@@ -8,9 +9,11 @@ CPPFLAGS += "-DDATA_LEN=1048576"
 APP     = trng-demo
 SOURCES = \
 	$(DEMO_DIR)/src/trng-demo.c \
-	$(DEMO_DIR)/src/fatfs/diskio.c \
-	$(DEMO_DIR)/src/fatfs/ff.c \
-	$(DEMO_DIR)/src/fatfs/ffunicode.c \
-	$(DEMO_DIR)/src/fatfs/mmc.c
+	$(LIB_DIR)/fatfs/diskio.c \
+	$(LIB_DIR)/fatfs/ff.c \
+	$(LIB_DIR)/fatfs/ffunicode.c \
+	$(LIB_DIR)/fatfs/mmc.c
 
-include $(DEMO_DIR)/../../share/app.mk
+CPPFLAGS += -I $(DEMO_DIR)/src
+
+include $(BM_SDK_DIR)/share/app.mk

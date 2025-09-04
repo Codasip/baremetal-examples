@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/common.h>
@@ -33,7 +33,7 @@ static const register_field_t MSTATUS_FIELDS[] = {
     {20, 1, "TVM" },
     {21, 1, "TW"  },
     {22, 1, "TSR" },
-#if __riscv_xlen == 64
+#if RISCV_XLEN == 64
     {32, 2, "UXL" },
     {34, 2, "SXL" },
     {36, 1, "SBE" },
@@ -43,18 +43,18 @@ static const register_field_t MSTATUS_FIELDS[] = {
 };
 
 static const register_field_t MISA_FIELDS[] = {
-    {0,                1, "EXT_A"},
-    {1,                1, "EXT_B"},
-    {2,                1, "EXT_C"},
-    {3,                1, "EXT_D"},
-    {4,                1, "EXT_E"},
-    {5,                1, "EXT_F"},
-    {8,                1, "EXT_I"},
-    {12,               1, "EXT_M"},
-    {13,               1, "EXT_N"},
-    {18,               1, "EXT_S"},
-    {20,               1, "EXT_U"},
-    {__riscv_xlen - 2, 2, "MXL"  },
+    {0,              1, "EXT_A"},
+    {1,              1, "EXT_B"},
+    {2,              1, "EXT_C"},
+    {3,              1, "EXT_D"},
+    {4,              1, "EXT_E"},
+    {5,              1, "EXT_F"},
+    {8,              1, "EXT_I"},
+    {12,             1, "EXT_M"},
+    {13,             1, "EXT_N"},
+    {18,             1, "EXT_S"},
+    {20,             1, "EXT_U"},
+    {RISCV_XLEN - 2, 2, "MXL"  },
 };
 
 static const unsigned MSTATUS_FIELDS_COUNT = sizeof(MSTATUS_FIELDS) / sizeof(MSTATUS_FIELDS[0]);

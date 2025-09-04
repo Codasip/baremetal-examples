@@ -139,12 +139,12 @@ static void prvQueueReceiveTask(void *pvParameters)
 int main_blinky(void)
 {
     /* Create the queue. */
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
     xQueue = xQueueCreate(mainQUEUE_LENGTH, sizeof(uint32_t));
 
-#elif __riscv_xlen == 64
+#elif RISCV_XLEN == 64
     xQueue = xQueueCreate(mainQUEUE_LENGTH, sizeof(uint64_t));
-#endif /* __riscv_xlen */
+#endif /* RISCV_XLEN */
 
     if (xQueue != NULL)
     {

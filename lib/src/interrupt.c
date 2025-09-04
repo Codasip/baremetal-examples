@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/interrupt.h"
@@ -128,19 +128,21 @@ void bm_ext_irq_handler(void)
 #endif
 
 // clang-format off
-#if __riscv_xlen == 32
+#if RISCV_XLEN == 32
     #define BM_WORD_SIZE  "4"
     #define BM_STORE      "sw"
     #define BM_LOAD       "lw"
     #define BM_STORE_F    "fsw"
     #define BM_LOAD_F     "flw"
-#else
+#elif RISCV_XLEN == 64
     #define BM_WORD_SIZE  "8"
     #define BM_STORE      "sd"
     #define BM_LOAD       "ld"
     #define BM_STORE_F    "fsd"
     #define BM_LOAD_F     "fld"
-#endif
+#else
+    #error "unsupported RISCV_XLEN"
+#endif /* RISCV_XLEN == */
 
 #define TARGET_SAVE_EMB_REGS                            \
     BM_STORE " x2, 1 * " BM_WORD_SIZE " (x1)\n"   \
@@ -336,7 +338,7 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode)
         bm_fatal("Encountered cause is out of handled range");
     }
 
-    if (cause >> (__riscv_xlen - 1))
+    if (cause >> (RISCV_XLEN - 1))
     {
         if (offset >= ARRAY_SIZE(bm_interrupt_handler_table))
         {

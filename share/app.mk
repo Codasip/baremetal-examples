@@ -1,8 +1,13 @@
 # ----[ INCLUDES ]----
 
-THIS_DIR := $(subst /app.mk,,$(lastword $(MAKEFILE_LIST)))
+THIS_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
 include $(THIS_DIR)/common.mk
+
+# the application's makefile must set DEMO_DIR
+ifndef DEMO_DIR
+$(error DEMO_DIR is not set)
+endif
 
 # ----[ VARIABLES ]----
 
@@ -58,6 +63,14 @@ all: $(BUILD_DIR)$(APP).xexe
 $(BUILD_DIR)$(APP).xexe: $(addprefix $(BUILD_DIR), $(APP_OBJS) $(LIB_OBJS) $(CRT_OBJ))
 	$(LINK.c) -Wl,-T$(LDSCRIPT) -o $@ $^ $(LDLIBS)
 
+.PHONY: lst
+lst: $(BUILD_DIR)$(APP).lst
+
+%.lst: %.xexe
+	$(OBJDUMP) -fhp $^ > $@
+	$(OBJDUMP) -t $^ | grep -E "^[0-9a-fA-F]{8}" | sort >> $@
+	$(OBJDUMP) -dSx $^ >> $@
+
 .PHONY: bin
 bin: $(BUILD_DIR)$(APP).bin
 
@@ -71,4 +84,13 @@ run: $(BUILD_DIR)$(APP).xexe
 
 .PHONY: clean
 clean:
-	rm -rf $(addprefix $(BUILD_DIR), $(APP_OBJS) $(LIB_OBJS) $(CRT_OBJ) $(APP).bin $(APP).xexe) $(BUILD_DIR)
+	rm -rf \
+      $(addprefix $(BUILD_DIR), \
+        $(APP_OBJS) \
+        $(LIB_OBJS) \
+        $(CRT_OBJ) \
+        $(APP).bin \
+        $(APP).lst \
+        $(APP).xexe \
+      ) \
+      $(BUILD_DIR)

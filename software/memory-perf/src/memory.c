@@ -25,7 +25,7 @@
     #define UNROLL(x) PRAGMA(GCC unroll x)
 #endif
 
-void read_single_address(volatile width_t *address)
+void read_single_address(volatile xlen_t *address)
 {
     UNROLL(UNROLL_LEN)
     for (unsigned i = 0; i < NUM_ITERATIONS; i++)
@@ -34,7 +34,7 @@ void read_single_address(volatile width_t *address)
     }
 }
 
-void read_single_address_fenced(volatile width_t *address)
+void read_single_address_fenced(volatile xlen_t *address)
 {
     UNROLL(UNROLL_LEN)
     for (unsigned i = 0; i < NUM_ITERATIONS; i++)
@@ -44,7 +44,7 @@ void read_single_address_fenced(volatile width_t *address)
     }
 }
 
-void read_consecutive_addresses(volatile width_t *address)
+void read_consecutive_addresses(volatile xlen_t *address)
 {
     UNROLL(UNROLL_LEN)
     for (unsigned i = 0; i < NUM_ITERATIONS; i++)
@@ -54,7 +54,7 @@ void read_consecutive_addresses(volatile width_t *address)
     }
 }
 
-void read_consecutive_addresses_fenced(volatile width_t *address)
+void read_consecutive_addresses_fenced(volatile xlen_t *address)
 {
     UNROLL(UNROLL_LEN)
     for (unsigned i = 0; i < NUM_ITERATIONS; i++)
@@ -65,7 +65,7 @@ void read_consecutive_addresses_fenced(volatile width_t *address)
     }
 }
 
-void write_single_address(volatile width_t *address)
+void write_single_address(volatile xlen_t *address)
 {
     UNROLL(UNROLL_LEN)
     for (unsigned i = 0; i < NUM_ITERATIONS; i++)
@@ -74,7 +74,7 @@ void write_single_address(volatile width_t *address)
     }
 }
 
-void write_single_address_fenced(volatile width_t *address)
+void write_single_address_fenced(volatile xlen_t *address)
 {
     UNROLL(UNROLL_LEN)
     for (unsigned i = 0; i < NUM_ITERATIONS; i++)
@@ -84,7 +84,7 @@ void write_single_address_fenced(volatile width_t *address)
     }
 }
 
-void write_consecutive_addresses(volatile width_t *address)
+void write_consecutive_addresses(volatile xlen_t *address)
 {
     UNROLL(UNROLL_LEN)
     for (unsigned i = 0; i < NUM_ITERATIONS; i++)
@@ -94,7 +94,7 @@ void write_consecutive_addresses(volatile width_t *address)
     }
 }
 
-void write_consecutive_addresses_fenced(volatile width_t *address)
+void write_consecutive_addresses_fenced(volatile xlen_t *address)
 {
     UNROLL(UNROLL_LEN)
     for (unsigned i = 0; i < NUM_ITERATIONS; i++)

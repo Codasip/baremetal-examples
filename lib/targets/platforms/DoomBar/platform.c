@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/platform.h"
@@ -14,12 +14,13 @@
 #include "baremetal/verbose.h"
 
 // Include Memory Map and Interrupt Map files for platform
-#include "platforms/maps/interrupt_map_v1.0.h"
-#include "platforms/maps/memory_map_v1.0.h"
+#include "interrupt_map.h"
+#include "memory_map.h"
 
 /**
  * \brief Peripherals available on this target
  */
+#ifndef TARGET_SIMULATOR
 static bm_clint_t clint   = {.regs = (bm_clint_regs_t *)CLINT_ADDR, .freq = TARGET_CLK_FREQ};
 static bm_uart_t  uart    = {.regs       = (bm_uart_regs_t *)UART_ADDR,
                              .ext_irq_id = UART_IRQ_ID,
@@ -31,11 +32,13 @@ static bm_gpio_t gpio_sd = {.regs = (bm_gpio_regs_t *)GPIO_SD_ADDR, .ext_irq_id 
 static bm_i2c_t  i2c_pwr = {.regs = (bm_i2c_regs_t *)I2C_PWR_ADDR, .ext_irq_id = I2C_PWR_IRQ_ID};
 static bm_trng_t trng    = {.regs = (bm_trng_regs_t *)TRNG_ADDR};
 static bm_aead_t aead    = {.regs = (bm_aead_regs_t *)AEAD_ADDR};
+#endif
 
 void *target_peripheral_get(int id)
 {
     switch (id)
     {
+#ifndef TARGET_SIMULATOR
         case BM_PERIPHERAL_CLINT:
             return (void *)&clint;
         case BM_PERIPHERAL_UART_CONSOLE:
@@ -54,7 +57,9 @@ void *target_peripheral_get(int id)
             return (void *)&i2c_pwr;
         case BM_PERIPHERAL_AEAD:
             return (void *)&aead;
+#endif
         default:
+            bm_fatal("requested unknown peripheral %d", id);
             return NULL;
     }
 }

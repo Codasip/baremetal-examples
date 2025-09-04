@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "fatfs/ff.h"
@@ -91,7 +91,7 @@ void check_ready(void *arg)
     (void)arg;
 }
 
-void start_payload(void *arg)
+static void start_payload(void *arg)
 {
     boot_config_t *config         = (boot_config_t *)arg;
     payload_func_t launch_payload = (payload_func_t)config->boot_addr;
@@ -131,6 +131,11 @@ static void exit_with_error(void)
     exit(1);
 }
 
+/*
+ * Technically, this trap handler function could also be made static, because
+ * it's referenced only here when settig up the vector. However, having a
+ * public symbol is more convenient for debugging purposes.
+ */
 void __attribute__((aligned(64))) trap_handler(void)
 {
     printf("FSBL trap handler entered.\n");
@@ -151,7 +156,7 @@ static char     bin_filenames[MAX_BIN_FILES][MAX_FILENAME_LEN];
 static uint32_t bin_filenames_num = 0;
 static char     input[16];
 
-void get_bin_files(const char *directory_path)
+static int get_bin_files(const char *directory_path)
 {
     DIR     dir;
     FILINFO entry;
@@ -159,8 +164,7 @@ void get_bin_files(const char *directory_path)
     if (f_findfirst(&dir, &entry, directory_path, "*.bin") != FR_OK)
     {
         printf("Failed to open directory %s.\n", directory_path);
-        exit_with_error();
-        return;
+        return -1;
     }
 
     for (bin_filenames_num = 0; bin_filenames_num < MAX_BIN_FILES;)
@@ -206,133 +210,145 @@ void get_bin_files(const char *directory_path)
     }
 
     f_closedir(&dir);
+    return bin_filenames_num;
 }
-#endif /* TARGET_UART */
 
-boot_config_t load_payloads(void)
+static int load_via_uart_menu(boot_config_t *config)
 {
-    if (init_parser(CONFIG_FILE_PATH))
+    uint32_t    selection = 0;
+    const char *cli_ret;
+
+    printf("Looking for *.bin files in %s.\n", BIN_DIR);
+    int ret = get_bin_files(BIN_DIR);
+    if ((ret < 0) || (bin_filenames_num == 0))
     {
-        printf("Failed to open FSBL configuration file " CONFIG_FILE_PATH ".\n");
-
-#ifndef TARGET_UART
-        exit_with_error();
-
-#else  /* TARGET_UART */
-        uint32_t    selection = 0;
-        const char *cli_ret;
-
-        printf("Looking for *.bin files in " BIN_DIR ".\n");
-        get_bin_files(BIN_DIR);
-
-        if (bin_filenames_num == 0)
-        {
-            printf("Failed to find any *.bin files in " BIN_DIR ".\n");
-            exit_with_error();
-        }
-
-        uint32_t i;
-        do
-        {
-            printf("*.bin files in " BIN_DIR ":\n");
-
-            for (i = 0; i < bin_filenames_num; i++)
-            {
-                printf("%3li %s\n", i, bin_filenames[i]);
-            }
-
-            printf("Select file to load and run at " STRINGIFY(BIN_BOOT_ADDRESS) ": ");
-
-            //i = scanf("%lu", &selection); too much code for the ROM!
-            // Do this the unsafe way:
-            cli_ret   = cli_gets(input, sizeof(input));
-            selection = atoi(input);
-            printf("\nYou selected: %i -> %s\n", selection, bin_filenames[selection]);
-
-        } while (cli_ret == NULL || selection >= bin_filenames_num);
-
-        if (load_sdcard_payload(BIN_BOOT_ADDRESS, bin_filenames[selection]))
-        {
-            printf("\nFailed to load payload '%s'.\n", bin_filenames[selection]);
-            exit_with_error();
-        }
-        return (boot_config_t){BIN_BOOT_ADDRESS};
-#endif /* TARGET_UART */
+        printf("Failed to find any *.bin files in %s.\n", BIN_DIR);
+        return -1;
     }
 
-    xlen_t boot_addr = 0;
+    uint32_t i;
+    do
+    {
+        printf("*.bin files in " BIN_DIR ":\n");
+
+        for (i = 0; i < bin_filenames_num; i++)
+        {
+            printf("%3li %s\n", i, bin_filenames[i]);
+        }
+
+        printf("Select file to load and run at 0x%x: ", BIN_BOOT_ADDRESS);
+
+        //i = scanf("%lu", &selection); too much code for the ROM!
+        // Do this the unsafe way:
+        cli_ret   = cli_gets(input, sizeof(input));
+        selection = atoi(input);
+        printf("\nYou selected: %i -> %s\n", selection, bin_filenames[selection]);
+
+    } while (cli_ret == NULL || selection >= bin_filenames_num);
+
+    if (load_sdcard_payload(BIN_BOOT_ADDRESS, bin_filenames[selection]))
+    {
+        printf("\nFailed to load payload '%s'.\n", bin_filenames[selection]);
+        return -1;
+    }
+
+    config->boot_addr = BIN_BOOT_ADDRESS;
+    return 0;
+}
+
+#endif /* TARGET_UART */
+
+static int process_entry(entry_t *entry, boot_config_t *config)
+{
+    static bm_gpio_t *gpio = NULL;
+    if (!gpio)
+    {
+        gpio = (bm_gpio_t *)target_peripheral_get(BM_PERIPHERAL_GPIO_LEDS_SWITCHES);
+    }
+
+    if ((entry->gpio >= 0) && !bm_gpio_read(gpio, gpio_switches[entry->gpio]))
+    {
+        printf("\nPayload '%s' skipped due to GPIO settings.\n", entry->path);
+        return 0;
+    }
+
+    long payload_size = get_file_size(entry->path);
+    if (payload_size < 0)
+    {
+        printf("\nFailed to get payload size for '%s'.\n", entry->path);
+        return -1;
+    }
+
+    if ((entry->load_addr <= end_addr) &&
+        (((rom_end > ram_start) ? start_addr : ram_start) <= (entry->load_addr + payload_size)))
+    {
+        printf("\nFailed to load payload '%s' due to overlap with FSBL RAM address space.\n",
+               entry->path);
+        return -1;
+    }
+
+    if (load_sdcard_payload(entry->load_addr, entry->path))
+    {
+        printf("\nFailed to load payload '%s'.\n", entry->path);
+        return -1;
+    }
+
+    if (entry->flags & ENTRY_FLAG_BOOT)
+    {
+        config->boot_addr = entry->load_addr;
+    }
 #ifdef TARGET_LINUX_SUPPORT
-    xlen_t opensbi_next_addr = 0, fdt_addr = 0;
+    else if (entry->flags & ENTRY_FLAG_FDT)
+    {
+        config->fdt_addr = entry->load_addr;
+    }
+    else if (entry->flags & ENTRY_FLAG_NXT)
+    {
+        config->next_addr = entry->load_addr;
+    }
 #endif
 
-    bm_gpio_t *gpio = (bm_gpio_t *)target_peripheral_get(BM_PERIPHERAL_GPIO_LEDS_SWITCHES);
+    return 0;
+}
+
+static int load_payloads(boot_config_t *config)
+{
+    // try to access the config file from the SD-card.
+    int ret = init_parser(CONFIG_FILE_PATH);
+    if (ret != 0)
+    {
+        printf("Failed to open FSBL configuration file %s.\n", CONFIG_FILE_PATH);
+#ifdef TARGET_UART
+        // fall back to a boot menu
+        return load_via_uart_menu(config);
+#else
+        return -1;
+#endif
+    }
 
     entry_t entry;
-
     while (parse_entry(&entry))
     {
-        char  *path      = entry.path;
-        xlen_t load_addr = entry.load_addr;
-
-        if (entry.gpio >= 0 && !bm_gpio_read(gpio, gpio_switches[entry.gpio]))
+        ret = process_entry(&entry, config);
+        if (ret != 0)
         {
-            printf("\nPayload '%s' skipped due to GPIO settings.\n", path);
-            continue;
+            printf("Processing configuration file failed\n");
+            ret = -1;
+            break;
         }
-
-        long payload_size = get_file_size(path);
-        if (payload_size < 0)
-        {
-            printf("\nFailed to get payload size for '%s'.\n", path);
-            exit_with_error();
-        }
-
-        if (load_addr <= end_addr &&
-            ((rom_end > ram_start) ? start_addr : ram_start) <= (load_addr + payload_size))
-        {
-            printf("\nFailed to load payload '%s' due to overlap with FSBL RAM address space.\n", path);
-            exit_with_error();
-        }
-
-        if (load_sdcard_payload(load_addr, path))
-        {
-            printf("\nFailed to load payload '%s'.\n", path);
-            exit_with_error();
-        }
-
-        if (!boot_addr && (entry.flags & ENTRY_FLAG_BOOT))
-        {
-            boot_addr = load_addr;
-        }
-#ifdef TARGET_LINUX_SUPPORT
-        else if (!fdt_addr && (entry.flags & ENTRY_FLAG_FDT))
-        {
-            fdt_addr = load_addr;
-        }
-        else if (!opensbi_next_addr && (entry.flags & ENTRY_FLAG_NXT))
-        {
-            opensbi_next_addr = load_addr;
-        }
-#endif
     }
-
     finish_parser();
-
-#ifdef TARGET_LINUX_SUPPORT
-    return (boot_config_t){boot_addr, fdt_addr, opensbi_next_addr};
-#else
-    return (boot_config_t){boot_addr};
-#endif
+    return ret;
 }
 
-void get_misa_string(xlen_t misa, char *out)
+static void get_misa_string(xlen_t misa, char *out)
 {
     unsigned pos = 0;
 
     out[pos++] = 'r';
     out[pos++] = 'v';
 
-    switch (misa >> (__riscv_xlen - 2))
+    switch (misa >> (RISCV_XLEN - 2))
     {
         case 1:
             out[pos++] = '3';
@@ -395,31 +411,47 @@ int main(void)
     printf(" - CSR mimpid:        " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MIMPID));
     printf("\n");
 
+#ifdef ID_REGISTERS
     bm_id_reg_t *id_reg = (bm_id_reg_t *)target_peripheral_get(BM_PERIPHERAL_ID_REG);
-    if (id_reg)
+
+    if (id_reg == NULL)
     {
-        printf("Platform information:\n");
-        printf(" - Platform version:  %u.%u\n",
-               bm_id_get_info(id_reg, BM_ID_PLAT_VERSION_MAJOR),
-               bm_id_get_info(id_reg, BM_ID_PLAT_VERSION_MINOR));
-        int core_type = bm_id_get_info(id_reg, BM_ID_CORE_TYPE);
-        printf(" - Core type:         %s\n",
-               core_type == BM_ID_CORE_A730   ? "A730"
-               : core_type == BM_ID_CORE_L110 ? "L110"
-               : core_type == BM_ID_CORE_L730 ? "L730"
-               : core_type == BM_ID_CORE_L31  ? "L31"
-                                              : "Unknown");
-        printf(" - Core frequency:    %u MHz\n", bm_id_get_info(id_reg, BM_ID_CORE_FREQ));
-        int eth_type = bm_id_get_info(id_reg, BM_ID_ETH_TYPE);
-        printf(" - Ethernet type:     %s\n",
-               eth_type == BM_ID_ETH_LITE      ? "Ethernet Lite"
-               : eth_type == BM_ID_ETH_GIGABIT ? "Gigabit Ethernet"
-                                               : "Unknown");
-        int features = bm_id_get_info(id_reg, BM_ID_FEATURES);
-        printf(" - Features:\n");
-        printf("    - CHERI:          %s\n\n",
-               (features & BM_ID_FEATURE_CHERI) ? "enabled" : "disabled");
+        puts("Error: Failed to get ID_REG peripheral");
+        return EXIT_FAILURE;
     }
+
+    printf("Platform information:\n");
+
+    printf(" - Platform version:  %u.%u\n",
+           bm_id_reg_plat_version_get_major_version(id_reg),
+           bm_id_reg_plat_version_get_minor_version(id_reg));
+
+    bm_id_core_type_t core_type = bm_id_reg_core_type_get_val(id_reg);
+    printf(" - Core type:         %s\n",
+           core_type == BM_ID_CORE_A730   ? "A730"
+           : core_type == BM_ID_CORE_L110 ? "L110"
+           : core_type == BM_ID_CORE_L730 ? "L730"
+           : core_type == BM_ID_CORE_L31  ? "L31"
+           : core_type == BM_ID_CORE_X730 ? "X730"
+           : core_type == BM_ID_CORE_L150 ? "L150"
+           : core_type == BM_ID_CORE_V730 ? "V730"
+                                          : "Unknown");
+
+    printf(" - Core frequency:    %u MHz\n", bm_id_reg_core_f_get_val(id_reg));
+
+    bm_id_eth_type_t eth_type = bm_id_reg_eth_type_get_val(id_reg);
+    printf(" - Ethernet type:     %s\n",
+           eth_type == BM_ID_ETH_LITE      ? "Ethernet Lite"
+           : eth_type == BM_ID_ETH_GIGABIT ? "Gigabit Ethernet"
+                                           : "Unknown");
+
+    printf(" - Features:\n");
+    printf("    - CHERI:          %s\n\n",
+           bm_id_reg_features_get_cheri_enabled(id_reg) ? "enabled" : "disabled");
+
+    printf(" - Security:          %s\n\n",
+           bm_id_reg_security_get_securiry_enabled(id_reg) ? "enabled" : "disabled");
+#endif
 
     printf("Memory occupation:\n");
 
@@ -435,7 +467,13 @@ int main(void)
     }
     printf("\n");
 
-    boot_config_t config = load_payloads();
+    boot_config_t config = {0};
+    int           ret    = load_payloads(&config);
+    if (ret < 0)
+    {
+        printf("Loading payload failed.\n");
+        exit_with_error();
+    }
 
     if (!config.boot_addr)
     {

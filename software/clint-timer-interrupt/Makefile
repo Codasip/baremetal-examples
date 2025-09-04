@@ -1,9 +1,10 @@
 # Baremetal application Makefile
-DEMO_DIR := $(subst Makefile,.,$(lastword $(MAKEFILE_LIST)))
+DEMO_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+BM_SDK_DIR ?= $(DEMO_DIR)/../..
 
 REQUIRES += clint
 
 APP     = clint-timer-interrupt
 SOURCES = $(DEMO_DIR)/src/clint-timer-interrupt.c
 
-include $(DEMO_DIR)/../../share/app.mk
+include $(BM_SDK_DIR)/share/app.mk
