@@ -124,16 +124,12 @@ _READ_WRITE_RETURN_TYPE USED _read(int fd, void *ptr, size_t len)
     return bytes_read;
 }
 
-void USED _exit(int ret)
+void NORETURN USED env_do_exit(int ret UNUSED)
 {
-    if (ret)
-    {
-        bm_info("Exited with an error.");
-    }
-    else
-    {
-        bm_info("Exited normally.");
-    }
+    // ToDo: There is no way to exit in a bare metal FPGA environment. Consider
+    //       calling a core specific function that puts the core in a low power
+    //       mode. Or loop over WFI at least, as this is the generisc RISC-V
+    //       way.
 
     while (1)
         ;

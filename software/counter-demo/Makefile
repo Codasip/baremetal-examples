@@ -6,3 +6,5 @@ APP     = counter-demo
 SOURCES = $(DEMO_DIR)/src/counter-demo.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

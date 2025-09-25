@@ -100,9 +100,11 @@ typedef struct {
 #endif
 } bm_register_file_t;
 
-extern volatile bm_priv_mode_t     bm_current_mode;
-extern volatile bm_register_file_t bm_priv_regs[4];
-extern volatile xlen_t             bm_priv_sp[4];
+extern volatile bm_priv_mode_t bm_current_mode;
+// For systems with more than 1 Hart, this code assumes they are numbered consecutively
+// starting from 0 up to (TARGET_NUM_HARTS - 1).
+// The RISC-V spec. only says there has it be one hart numbered 0, they rest is implementation dependant!
+extern volatile bm_register_file_t *bm_priv_regs[4][TARGET_NUM_HARTS];
 
 /**
  * \brief Get the current privilege level

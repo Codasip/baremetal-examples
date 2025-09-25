@@ -130,157 +130,165 @@ void bm_ext_irq_handler(void)
 // clang-format off
 #if RISCV_XLEN == 32
     #define BM_WORD_SIZE  "4"
+    #define BM_WORD_SFT   "2"
     #define BM_STORE      "sw"
     #define BM_LOAD       "lw"
     #define BM_STORE_F    "fsw"
     #define BM_LOAD_F     "flw"
+    #define BM_REG_SIZE    4
+
 #elif RISCV_XLEN == 64
     #define BM_WORD_SIZE  "8"
+    #define BM_WORD_SFT   "3"
     #define BM_STORE      "sd"
     #define BM_LOAD       "ld"
     #define BM_STORE_F    "fsd"
     #define BM_LOAD_F     "fld"
+    #define BM_REG_SIZE    8
+
 #else
     #error "unsupported RISCV_XLEN"
 #endif /* RISCV_XLEN == */
 
-#define TARGET_SAVE_EMB_REGS                            \
-    BM_STORE " x2, 1 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE " x3, 2 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE " x4, 3 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE " x5, 4 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE " x6, 5 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE " x7, 6 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE " x8, 7 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE " x9, 8 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE " x10, 9 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x11, 10 * " BM_WORD_SIZE " (x1)\n" \
-    BM_STORE " x12, 11 * " BM_WORD_SIZE " (x1)\n" \
-    BM_STORE " x13, 12 * " BM_WORD_SIZE " (x1)\n" \
-    BM_STORE " x14, 13 * " BM_WORD_SIZE " (x1)\n" \
-    BM_STORE " x15, 14 * " BM_WORD_SIZE " (x1)\n"
+#define TARGET_SAVE_EMB_REGS                      \
+    BM_STORE " x1, 0 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE " x2, 1 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE " x3, 2 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE " x4, 3 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE " x5, 4 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE " x6, 5 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE " x7, 6 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE " x8, 7 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE " x9, 8 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE " x10, 9 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x11, 10 * " BM_WORD_SIZE " (sp)\n" \
+    BM_STORE " x12, 11 * " BM_WORD_SIZE " (sp)\n" \
+    BM_STORE " x13, 12 * " BM_WORD_SIZE " (sp)\n" \
+    BM_STORE " x14, 13 * " BM_WORD_SIZE " (sp)\n" \
+    BM_STORE " x15, 14 * " BM_WORD_SIZE " (sp)\n"
 
-#define TARGET_LOAD_EMB_REGS                            \
-    BM_LOAD " x2, 1 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD " x3, 2 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD " x4, 3 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD " x5, 4 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD " x6, 5 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD " x7, 6 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD " x8, 7 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD " x9, 8 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD " x10, 9 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x11, 10 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_LOAD " x12, 11 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_LOAD " x13, 12 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_LOAD " x14, 13 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_LOAD " x15, 14 * " BM_WORD_SIZE " (x1)\n"
+#define TARGET_LOAD_EMB_REGS                      \
+    BM_LOAD " x1, 0 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD " x2, 1 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD " x3, 2 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD " x4, 3 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD " x5, 4 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD " x6, 5 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD " x7, 6 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD " x8, 7 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD " x9, 8 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD " x10, 9 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x11, 10 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_LOAD " x12, 11 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_LOAD " x13, 12 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_LOAD " x14, 13 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_LOAD " x15, 14 * " BM_WORD_SIZE " (sp)\n"
 
-#define TARGET_SAVE_ALL_REGS                             \
-    TARGET_SAVE_EMB_REGS                                 \
-    BM_STORE " x16, 15 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x17, 16 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x18, 17 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x19, 18 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x20, 19 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x21, 20 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x22, 21 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x23, 22 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x24, 23 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x25, 24 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x26, 25 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x27, 26 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x28, 27 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x29, 28 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x30, 29 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE " x31, 30 * " BM_WORD_SIZE " (x1)\n"
+#define TARGET_SAVE_ALL_REGS                       \
+    TARGET_SAVE_EMB_REGS                           \
+    BM_STORE " x16, 15 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x17, 16 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x18, 17 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x19, 18 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x20, 19 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x21, 20 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x22, 21 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x23, 22 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x24, 23 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x25, 24 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x26, 25 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x27, 26 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x28, 27 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x29, 28 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x30, 29 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE " x31, 30 * " BM_WORD_SIZE " (sp)\n"
 
-#define TARGET_LOAD_ALL_REGS                             \
-    TARGET_LOAD_EMB_REGS                                 \
-    BM_LOAD " x16, 15 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x17, 16 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x18, 17 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x19, 18 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x20, 19 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x21, 20 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x22, 21 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x23, 22 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x24, 23 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x25, 24 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x26, 25 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x27, 26 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x28, 27 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x29, 28 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x30, 29 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD " x31, 30 * " BM_WORD_SIZE " (x1)\n"
+#define TARGET_LOAD_ALL_REGS                       \
+    TARGET_LOAD_EMB_REGS                           \
+    BM_LOAD " x16, 15 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x17, 16 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x18, 17 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x19, 18 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x20, 19 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x21, 20 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x22, 21 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x23, 22 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x24, 23 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x25, 24 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x26, 25 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x27, 26 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x28, 27 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x29, 28 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x30, 29 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD " x31, 30 * " BM_WORD_SIZE " (sp)\n"
 
-#define TARGET_SAVE_FLOAT_REGS                             \
-    BM_STORE_F " f0, 31 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE_F " f1, 32 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE_F " f2, 33 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE_F " f3, 34 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE_F " f4, 35 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE_F " f5, 36 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE_F " f6, 37 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE_F " f7, 38 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE_F " f8, 39 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE_F " f9, 40 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_STORE_F " f10, 41 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f11, 42 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f12, 43 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f13, 44 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f14, 45 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f15, 46 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f16, 47 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f17, 48 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f18, 49 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f19, 50 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f20, 51 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f21, 52 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f22, 53 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f23, 54 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f24, 55 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f25, 56 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f26, 57 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f27, 58 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f28, 59 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f29, 60 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f30, 61 * " BM_WORD_SIZE " (x1)\n"  \
-    BM_STORE_F " f31, 62 * " BM_WORD_SIZE " (x1)\n"
+#define TARGET_SAVE_FLOAT_REGS                       \
+    BM_STORE_F " f0, 31 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE_F " f1, 32 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE_F " f2, 33 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE_F " f3, 34 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE_F " f4, 35 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE_F " f5, 36 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE_F " f6, 37 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE_F " f7, 38 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE_F " f8, 39 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE_F " f9, 40 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_STORE_F " f10, 41 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f11, 42 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f12, 43 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f13, 44 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f14, 45 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f15, 46 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f16, 47 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f17, 48 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f18, 49 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f19, 50 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f20, 51 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f21, 52 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f22, 53 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f23, 54 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f24, 55 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f25, 56 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f26, 57 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f27, 58 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f28, 59 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f29, 60 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f30, 61 * " BM_WORD_SIZE " (sp)\n"  \
+    BM_STORE_F " f31, 62 * " BM_WORD_SIZE " (sp)\n"
 
-#define TARGET_LOAD_FLOAT_REGS                             \
-    BM_LOAD_F " f0, 31 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD_F " f1, 32 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD_F " f2, 33 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD_F " f3, 34 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD_F " f4, 35 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD_F " f5, 36 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD_F " f6, 37 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD_F " f7, 38 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD_F " f8, 39 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD_F " f9, 40 * " BM_WORD_SIZE " (x1)\n"    \
-    BM_LOAD_F " f10, 41 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f11, 42 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f12, 43 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f13, 44 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f14, 45 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f15, 46 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f16, 47 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f17, 48 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f18, 49 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f19, 50 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f20, 51 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f21, 52 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f22, 53 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f23, 54 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f24, 55 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f25, 56 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f26, 57 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f27, 58 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f28, 59 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f29, 60 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f30, 61 * " BM_WORD_SIZE " (x1)\n"   \
-    BM_LOAD_F " f31, 62 * " BM_WORD_SIZE " (x1)\n"
+#define TARGET_LOAD_FLOAT_REGS                       \
+    BM_LOAD_F " f0, 31 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD_F " f1, 32 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD_F " f2, 33 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD_F " f3, 34 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD_F " f4, 35 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD_F " f5, 36 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD_F " f6, 37 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD_F " f7, 38 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD_F " f8, 39 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD_F " f9, 40 * " BM_WORD_SIZE " (sp)\n"    \
+    BM_LOAD_F " f10, 41 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f11, 42 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f12, 43 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f13, 44 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f14, 45 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f15, 46 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f16, 47 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f17, 48 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f18, 49 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f19, 50 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f20, 51 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f21, 52 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f22, 53 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f23, 54 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f24, 55 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f25, 56 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f26, 57 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f27, 58 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f28, 59 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f29, 60 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f30, 61 * " BM_WORD_SIZE " (sp)\n"   \
+    BM_LOAD_F " f31, 62 * " BM_WORD_SIZE " (sp)\n"
 // clang-format on
 
 /**
@@ -303,6 +311,8 @@ void bm_ext_irq_handler(void)
     #define TARGET_LOAD_REGS TARGET_LOAD_ALL_REGS
     #define TARGET_NUM_REGS  31
 #endif
+
+#define TARGET_STACK_SIZE (TARGET_NUM_REGS * BM_REG_SIZE)
 
 /**
  * \brief Internal interrupt/exception handler routine
@@ -379,53 +389,70 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode)
 // clang-format off
 /**
  * \brief Helper macro for creating default handler functions for different privilege modes
- *
- * - Save all registers in the dedicated structure for the handlers privilege mode.
- * - Check whether a previous stack pointer is saved for the handlers privilege mode
- *   - if yes, load the saved value to the stack pointer.
- *   - otherwise, we are in handler called from the same privilege mode, and continue with the current stack.
+ * - Save all registers on the current stack.
+ * - Get the Hart ID. For User and Supervisor modes the HartID was stored in u/sscratch CSRs by crt0.S.
+ * - Save the stack pointer in the bm_priv_regs[priv_mode][hartid] for use by rdtime and ecall-demo demos.
  * - Call internal C function to handle the interrupt.
- * - Restore all registers, including stack pointer, from the dedicated structure.
+ * - Restore all registers from the current stack.
  * - Exit the interrupt handler using mret, sret or uret instruction.
  */
-#define CREATE_DEFAULT_HANDLER(name, priv_mode, scratch, ret) \
-    void __attribute__((naked, aligned(64))) name(void)       \
-    {                                                         \
-        __asm__ volatile("csrw " #scratch ", x1\n"            \
-                         "la x1, %0\n"                        \
-                         TARGET_SAVE_REGS                     \
-                         "mv t0, x1\n"                        \
-                         "csrr x1, " #scratch " \n"           \
-                         BM_STORE " x1, 0(t0)\n"              \
-                         "la t0, %1\n"                        \
-                         BM_LOAD " t0, 0 (t0)\n"              \
-                         "beqz t0, 1f\n"                      \
-                         "mv sp, t0\n"                        \
-                         "1:\n"                               \
-                         "la t0, %2\n"                        \
-                         "li a0, %3\n"                        \
-                         "jalr t0\n"                          \
-                         "la x1, %0\n"                        \
-                         TARGET_LOAD_REGS                     \
-                         BM_LOAD " x1, 0(x1)\n"               \
-                         #ret                                 \
-                         ::"i"(&bm_priv_regs[priv_mode]),     \
-                         "i"(&bm_priv_sp[priv_mode]),         \
-                         "i"(bm_managed_handler_inner),       \
-                         "i"(priv_mode));                     \
+#define CREATE_DEFAULT_HANDLER(name, priv_mode, csr_hartid, ret)  \
+    void __attribute__((naked, aligned(64))) name(void)           \
+    {                                                             \
+        __asm__ volatile("addi sp, sp, -%3\n"                     \
+                         TARGET_SAVE_REGS                         \
+                         "csrr t1, " #csr_hartid "\n"             \
+                         "slli t1, t1, " BM_WORD_SFT "\n"         \
+                         "la t0, %0\n"                            \
+                         "add t0, t0, t1\n"                       \
+                         BM_STORE " sp, 0(t0)\n"                  \
+                         "la t0, %1\n"                            \
+                         "li a0, %2\n"                            \
+                         "jalr t0\n"                              \
+                         TARGET_LOAD_REGS                         \
+                         "addi sp, sp, %3\n"                      \
+                         #ret                                     \
+                         ::"i"(&bm_priv_regs[priv_mode][0]),      \
+                         "i"(bm_managed_handler_inner),           \
+                         "i"(priv_mode),                          \
+                         "i"(TARGET_STACK_SIZE));                 \
     }
 // clang-format on
 
 /**
  * \brief Separate trap vector for each privilege mode
  */
-CREATE_DEFAULT_HANDLER(bm_managed_handler_m, BM_PRIV_MODE_MACHINE, mscratch, mret)
+CREATE_DEFAULT_HANDLER(bm_managed_handler_m, BM_PRIV_MODE_MACHINE, mhartid, mret)
 #ifdef TARGET_EXT_S
 CREATE_DEFAULT_HANDLER(bm_managed_handler_s, BM_PRIV_MODE_SUPERVISOR, sscratch, sret)
 #endif
 #ifdef TARGET_EXT_N
 CREATE_DEFAULT_HANDLER(bm_managed_handler_u, BM_PRIV_MODE_USER, uscratch, uret)
 #endif
+
+// The following is an example on how to use the interrupt attributes.
+// This is here to show a simple way to handle interrupts.
+// Using these works for most Baremetal Examples except 'rdtime' and 'ecall-demo' which require
+// access to the saved registers.
+//
+// void __attribute__((interrupt("machine"), aligned(64))) bm_managed_handler_m(void)
+// {
+//     bm_managed_handler_inner(BM_PRIV_MODE_MACHINE);
+// }
+//
+// #ifdef TARGET_EXT_S
+// void __attribute__((interrupt("supervisor"), aligned(64))) bm_managed_handler_s(void)
+// {
+//     bm_managed_handler_inner(BM_PRIV_MODE_SUPERVISOR);
+// }
+// #endif
+//
+// #ifdef TARGET_EXT_N
+// void __attribute__((interrupt("user"), aligned(64))) bm_managed_handler_u(void)
+// {
+//     bm_managed_handler_inner(BM_PRIV_MODE_USER);
+// }
+// #endif
 
 void bm_interrupt_set_handler(bm_interrupt_source_t source, bm_intr_handler_t func)
 {

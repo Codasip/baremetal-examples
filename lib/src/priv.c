@@ -6,18 +6,15 @@
 #include "baremetal/common.h"
 #include "baremetal/csr.h"
 #include "baremetal/interrupt_low.h"
+#include "baremetal/mp.h"
 #include "baremetal/verbose.h"
 
 // Current privilege level
 volatile bm_priv_mode_t bm_current_mode = BM_PRIV_MODE_MACHINE;
 
-// Stack pointers saved for each privilege level,
-// stack pointer only needs to be saved once lower privilege mode is entered
-volatile xlen_t bm_priv_sp[4] = {0};
-
 // Registers from execution in previous privilege mode saved upon trapping
 // to highed privilege mode on interrupt/exception
-volatile bm_register_file_t bm_priv_regs[4] = {{0}};
+volatile bm_register_file_t *bm_priv_regs[4][TARGET_NUM_HARTS] = {{0}};
 
 bm_priv_mode_t bm_get_priv_mode(void)
 {
@@ -115,11 +112,8 @@ void __attribute__((noreturn)) bm_priv_enter_mode(bm_priv_mode_t mode, xlen_t en
 {
     if (mode >= bm_current_mode)
     {
-        bm_fatal("Only dropping privilege to lover level is possible.");
+        bm_fatal("Only dropping privilege to lower level is possible.");
     }
-
-    // Save stack pointer for the current privilege mode
-    __asm__ volatile("mv %0, sp\n" : "=r"(bm_priv_sp[bm_current_mode]));
 
     // Update internal variable holding privilege mode
     bm_priv_mode_t prev_mode = bm_current_mode;

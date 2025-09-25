@@ -9,3 +9,5 @@ APP     = pmp-demo
 SOURCES = $(DEMO_DIR)/src/pmp-demo.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

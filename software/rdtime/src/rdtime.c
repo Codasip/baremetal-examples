@@ -6,6 +6,7 @@
 #include <baremetal/counter.h>
 #include <baremetal/csr.h>
 #include <baremetal/interrupt.h>
+#include <baremetal/mp.h>
 #include <baremetal/platform.h>
 #include <baremetal/pmp.h>
 #include <baremetal/time.h>
@@ -47,8 +48,9 @@ void unsuported_instruction_handler(void)
         }
 
         // Update register encoded in the instruction's binary
-        unsigned reg = (instruction & INST_RDTIME_REG_MASK) >> INST_RDTIME_REG_OFFSET;
-        volatile bm_register_file_t *regs = &bm_priv_regs[bm_get_priv_mode()];
+        unsigned reg    = (instruction & INST_RDTIME_REG_MASK) >> INST_RDTIME_REG_OFFSET;
+        unsigned hartid = bm_get_hartid();
+        volatile bm_register_file_t *regs = bm_priv_regs[bm_get_priv_mode()][hartid];
         ((xlen_t *)regs)[reg - 1] = reg_val; // x0 register is not saved in the register file
     }
     else
@@ -61,7 +63,7 @@ void unsuported_instruction_handler(void)
     bm_csr_write(BM_CSR_MEPC, inst_addr + inst_size);
 }
 
-static xlen_t get_time(void)
+static inline xlen_t get_time(void)
 {
     xlen_t result;
 

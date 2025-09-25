@@ -9,6 +9,8 @@ SOURCES = $(DEMO_DIR)/src/tcm-demo.c
 
 include $(BM_SDK_DIR)/share/app.mk
 
+CFLAGS  += -Werror
+
 ifneq ($(CC_TYPE),riscv_gcc)
 CFLAGS += -mlong-calls
 endif

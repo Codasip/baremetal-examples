@@ -8,3 +8,5 @@ APP     = clint-timer-interrupt
 SOURCES = $(DEMO_DIR)/src/clint-timer-interrupt.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

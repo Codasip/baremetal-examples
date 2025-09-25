@@ -17,3 +17,5 @@ SOURCES = \
 CPPFLAGS += -I $(DEMO_DIR)/src
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

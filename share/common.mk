@@ -111,6 +111,11 @@ ifeq ($(COMMIT),)
 COMMIT=Unknown
 endif
 
+# Configure Hobgoblin V2 Memory Map, if required
+ifneq ($(HOB_PLATFORM_VERSION), )
+  HOB_PLATFORM_VERSION_STR = _v$(HOB_PLATFORM_VERSION)
+endif
+
 # ----[ CONFIG MAKE INCLUDE ]----
 
 CONFIG_FILE ?= $(TOP_DIR)/config.mk
@@ -169,6 +174,7 @@ CPPFLAGS += -I $(LIB_DIR)/targets
 
 BM_SOURCES += \
     $(LIB_DIR)/syscalls/sys_sbrk.c \
+    $(LIB_DIR)/syscalls/sys_exit.c \
     $(LIB_DIR)/syscalls/sys_empty.c
 
 ifeq ($(CONFIG_ENVIRONMENT),FPGA_SEMIHOSTING)

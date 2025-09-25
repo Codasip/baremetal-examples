@@ -246,17 +246,8 @@ off_t USED _lseek(int fd, off_t offset, int whence)
 #define ADP_Stopped_ApplicationExit     0x20026
 #define ADP_Stopped_RunTimeErrorUnknown 0x20023
 
-void USED _exit(int ret)
+void NORETURN USED env_do_exit(int ret)
 {
-    if (ret == 0)
-    {
-        bm_info("Exited normally.");
-    }
-    else
-    {
-        bm_info("Exited with an error.");
-    }
-
 #ifdef TARGET_SIMULATION
 
     #ifdef TARGET_HALT_ADDR
@@ -293,6 +284,8 @@ void USED _exit(int ret)
 
 #endif
 
+    // this is not supposed to return.
+    bm_warn("Exit syscall returned, running infinite loop.");
     while (1)
         ;
 }

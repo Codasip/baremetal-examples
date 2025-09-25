@@ -44,6 +44,14 @@ _reset_handler:
     csrw mtvec, t0
 
     csrr t0, mhartid
+#ifdef TARGET_EXT_S
+    // Store the Hart ID in the sScratch CSR for Supervisor Mode Interrupt Wrapper use (see interrupt.c)
+    csrw sscratch, t0
+#endif
+#ifdef TARGET_EXT_N
+    // Store the Hart ID in the uScratch CSR for User Mode Interrupt Wrapper use (see interrupt.c)
+    csrw uscratch, t0
+#endif
     bnez t0, _code_start
     jal ra, clear_bss
     jal ra, init_ram

@@ -78,6 +78,8 @@ RTOS_CRT_OBJS := $(subst $(CMSIS_RTX_DIR),RTOS,$(RTOS_CRT_OBJS))
 
 include $(BM_SDK_DIR)/share/app.mk
 
+CFLAGS  += -Werror
+
 BUILD ?= build
 BUILD_DIR := $(BUILD)/
 

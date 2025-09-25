@@ -117,19 +117,12 @@ off_t USED _lseek(int fildes, off_t offset, int whence)
     return nexus_syscall(&params, 0);
 }
 
-void USED _exit(int ret)
+void NORETURN USED env_do_exit(int ret)
 {
-    if (ret)
-    {
-        bm_info("Exited with an error.");
-    }
-    else
-    {
-        bm_info("Exited normally.");
-    }
-
     nexus_syscall(CODASIP_SYSCALL_EXIT_PARAM, ret);
 
+    // this is not supposed to return.
+    bm_warn("Exit syscall returned, running infinite loop.");
     while (1)
         ;
 }

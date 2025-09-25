@@ -194,14 +194,14 @@ bool write_test_phase(void)
         }
     }
 
-    uint32_t end_ms = bm_get_time_ms(); // Get end time in ms
+    unsigned end_ms = bm_get_time_ms(); // Get end time in ms
 
     printf("Closing file...\n");
     f_close(&f); // Close the file
 
-    uint32_t write_time = end_ms - start_ms; // Calculate write time
-    uint32_t kb_written = FILE_SIZE_MB * 1024;
-    uint32_t kbps       = (write_time > 0) ? (kb_written * 1000) / write_time : 0;
+    unsigned write_time = end_ms - start_ms; // Calculate write time
+    unsigned kb_written = FILE_SIZE_MB * 1024;
+    unsigned kbps       = (write_time > 0) ? (kb_written * 1000) / write_time : 0;
     printf("Write complete in %u ms (%u KB/s)\n", write_time, kbps);
 
     return true;
@@ -223,7 +223,7 @@ bool read_verify_test_phase(void)
 
     printf("Reading from the file...\n");
 
-    uint32_t start_ms = bm_get_time_ms(); // Get start time in ms
+    unsigned start_ms = bm_get_time_ms(); // Get start time in ms
 
     for (size_t i = 0; i < (size_t)TOTAL_BLOCKS; i++)
     {
@@ -260,14 +260,14 @@ bool read_verify_test_phase(void)
 #endif
     }
 
-    uint32_t end_ms = bm_get_time_ms(); // Get end time in ms
+    unsigned end_ms = bm_get_time_ms(); // Get end time in ms
 
     printf("Closing file...\n");
     f_close(&f);
 
-    uint32_t read_time  = end_ms - start_ms; // Calculate read time
-    uint32_t kb_written = FILE_SIZE_MB * 1024;
-    uint32_t kbps       = (read_time > 0) ? (kb_written * 1000) / read_time : 0;
+    unsigned read_time  = end_ms - start_ms; // Calculate read time
+    unsigned kb_written = FILE_SIZE_MB * 1024;
+    unsigned kbps       = (read_time > 0) ? (kb_written * 1000) / read_time : 0;
     printf("Write complete in %u ms (%u KB/s)\n", read_time, kbps);
 
     return true;

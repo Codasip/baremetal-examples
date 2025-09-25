@@ -18,38 +18,54 @@ void bm_barrier_wait(bm_barrier_t *barrier UNUSED) {}
 
 void bm_barrier_init(bm_barrier_t *barrier)
 {
+    unsigned hartid;
+
     barrier->waiting = 0;
-    barrier->done    = 0;
+    for (hartid = 0; hartid < TARGET_NUM_HARTS; hartid++)
+    {
+        barrier->counter[hartid] = 0;
+    }
+    barrier->done = 0;
 
     // Ensure updated data is visible from all harts
     bm_exec_fence();
 }
 
+// This is a sense-counting barrier, it prevents a subtle race condition that can happen
+// with a “reset-and-go” barrier.
+//
+// Subtle race condition: without a per-hart counter (or sense variable),
+// a hart can enter the next barrier while others are still spinning in
+// the previous one, causing deadlock. This barrier avoids that by tagging
+// each hart's participation (sense-counting).
 void bm_barrier_wait(bm_barrier_t *barrier)
 {
-    uint32_t tmp = 1;
-    __asm__ volatile("amoadd.w x0, %0, (%1)\n" : : "r"(tmp), "r"(&barrier->waiting));
+    unsigned hartid = bm_get_hartid();
+    uint32_t old;
 
-    // Wait until all harts are in this loop
-    while (barrier->waiting != TARGET_NUM_HARTS)
-        ;
+    // Increment this hart's counter
+    barrier->counter[hartid]++;
 
-    __asm__ volatile("amoadd.w x0, %0, (%1)\n" : : "r"(tmp), "r"(&barrier->done));
+    // Atomically increment the number of harts waiting in this barrier
+    __asm__ volatile("amoadd.w %0, %1, (%2)\n"
+                     : "=r"(old)
+                     : "r"(1), "r"(&barrier->waiting)
+                     : "memory");
 
-    if (bm_get_hartid() == 0)
+    if (old == TARGET_NUM_HARTS - 1)
     {
-        // Wait until all harts are past the main loop
-        while (barrier->done != TARGET_NUM_HARTS)
-            ;
+        // This is the last hart to reach this barrier, so release it
+        barrier->waiting = 0;
+        barrier->done++;
 
-        // Clean the barrier
-        bm_barrier_init(barrier);
+        // Ensure updated data is visible from all harts
+        bm_exec_fence();
     }
     else
     {
-        // Wait until the barrier is cleaned
-        while (barrier->done != 0)
-            ;
+        // Wait until this barrier is released
+        while (barrier->counter[hartid] != barrier->done)
+        {}
     }
 }
 #endif

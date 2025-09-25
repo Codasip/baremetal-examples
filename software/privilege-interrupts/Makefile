@@ -10,3 +10,5 @@ APP     = privilege-interrupts
 SOURCES = $(DEMO_DIR)/src/privilege-interrupts.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

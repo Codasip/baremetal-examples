@@ -8,3 +8,5 @@ APP     = gpio-interrupt-demo
 SOURCES = $(DEMO_DIR)/src/gpio-interrupt-demo.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

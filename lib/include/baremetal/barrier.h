@@ -20,6 +20,9 @@ extern "C" {
 typedef struct {
     volatile uint32_t waiting;
     volatile uint32_t done;
+    // If required for performance, add padding so each counter is on a seperate cache line.
+    // This will prevent cache-thrashing when multiple harts update/read adjacent counters.
+    volatile uint32_t counter[TARGET_NUM_HARTS];
 } bm_barrier_t;
 
 /**

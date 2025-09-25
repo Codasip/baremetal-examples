@@ -16,17 +16,35 @@
     #include <target_tcm.h>
 #endif
 
-#define TEST_START      0x80000000
-#define TEST_END        0xC0000000
-#define TEST_FAST       1
-#define DEBUG           0
-#define ERROR_THRESHOLD 128
-#define FAST_THRESHOLD  0x100000
+// =====================================
+// Memory regions to be tested
+// =====================================
 
-extern int _start;
-extern int _end;
-xlen_t     program_data_start = (xlen_t)(uintptr_t)(&_start);
-xlen_t     program_data_end   = (xlen_t)(uintptr_t)(&_end);
+#define DDR_ADDR_START  0x80000000
+#define DDR_ADDR_END    0xC0000000
+
+#define SRAM_ADDR_START 0x20000000
+#define SRAM_ADDR_END   0x20080000
+
+// =====================================
+// Test configuration
+// =====================================
+
+#define MEM_FAST_ACCESS_WIDTH 32
+
+#define TEST_SAFE             1
+#define TEST_FAST             1
+
+#define DEBUG                 0
+
+#define ERROR_THRESHOLD       128
+#define FAST_THRESHOLD        0x100000
+
+#define INSTR_SIZE            0x04
+
+// =====================================
+// Memory access macros
+// =====================================
 
 // clang-format off
 #define MEM_READ(inst, addr, val)        \
@@ -45,6 +63,17 @@ xlen_t     program_data_end   = (xlen_t)(uintptr_t)(&_end);
                      :: "r"(val), "r"(addr));
 // clang-format on
 
+// Typedef for memory size generator and mem access functions
+typedef unsigned (*mem_size_gen_t)(void);
+typedef void (*mem_access_t)(xlen_t offset, unsigned size, xlen_t cur_val);
+
+// Get program data start and end addresses for overlap checks
+extern int _start;
+extern int _end;
+xlen_t     program_data_start = (xlen_t)(uintptr_t)(&_start);
+xlen_t     program_data_end   = (xlen_t)(uintptr_t)(&_end);
+
+// Error count mechanism global variables
 static unsigned error_count = 0;
 static bool     error_flag  = false;
 
@@ -69,7 +98,7 @@ void mem_error_handler(void)
     log_error();
 
     // Move past offending instrcution to continue
-    bm_csr_write(BM_CSR_MEPC, bm_csr_read(BM_CSR_MEPC) + 0x4);
+    bm_csr_write(BM_CSR_MEPC, bm_csr_read(BM_CSR_MEPC) + INSTR_SIZE);
 }
 
 void do_write(xlen_t address, unsigned size, xlen_t value)
@@ -151,16 +180,18 @@ void write_test(xlen_t offset, unsigned size, xlen_t test_value)
     do_write(offset, size, test_value);
 }
 
-unsigned constant_size(void)
+/**
+ * Returns a fixed memory access width for fast memory tests
+ */
+unsigned mem_constant_size(void)
 {
-    return 32;
+    return MEM_FAST_ACCESS_WIDTH;
 }
 
 /**
- * Iterate over all available access widths
- * 8 -> 16 -> .. -> RISCV_XLEN
+ * Returns next memory access width in sequence (8->16->32)
  */
-unsigned iterative_size(void)
+unsigned mem_iterative_size(void)
 {
     static unsigned size = RISCV_XLEN;
 
@@ -170,14 +201,9 @@ unsigned iterative_size(void)
 }
 
 /**
- * Iterate over all available access widths, repeating each width multiple times
- * to ensure all pairs are tested when combined with iterative_size.
- * For RV32 this generates:
- * 8 -> 8 -> 8 -> 16 -> 16 -> 16 -> 32 -> 32 -> 32
- * while iterative_size generates:
- * 8 -> 16 -> 32 -> 8 -> 16 -> 32 -> 8 -> 16 -> 32
+ * Returns next memory access width in repeated sequence for pairwise testing
  */
-unsigned iterative_size_squared(void)
+unsigned mem_iterative_size_repeated(void)
 {
     static unsigned size        = RISCV_XLEN;
     const unsigned  repetitions = (RISCV_XLEN == 64) ? 4 : 3;
@@ -202,10 +228,7 @@ unsigned iterative_size_squared(void)
  * \param mem_access Memory access function to test
  * \param size_gen Function to generate memory access widths
  */
-void iterate_range(xlen_t start,
-                   xlen_t end,
-                   void (*mem_access)(xlen_t offset, unsigned size, xlen_t cur_val),
-                   unsigned (*size_gen)(void))
+void iterate_range(xlen_t start, xlen_t end, mem_access_t mem_access, mem_size_gen_t size_gen)
 {
     srand(0);
 
@@ -213,6 +236,7 @@ void iterate_range(xlen_t start,
     {
         unsigned size       = size_gen();
         xlen_t   test_value = rand();
+
 #if RISCV_XLEN == 64
         test_value <<= 32;
         test_value |= rand();
@@ -232,18 +256,18 @@ void iterate_range(xlen_t start,
  *
  * \param start Start of the memory to test
  * \param end End of the memory to test
- * \param fast Toggle a fast mode testing
+ * \param fast_mode_enabled Toggle a fast mode testing
  */
-void test(xlen_t start, xlen_t end, bool fast)
+void test(xlen_t start, xlen_t end, bool fast_mode_enabled)
 {
-    bool test_whole_range        = !fast || (end - start < 2 * FAST_THRESHOLD);
-    unsigned (*size_gen_w)(void) = fast ? constant_size : iterative_size;
-    unsigned (*size_gen_r)(void) = fast ? constant_size : iterative_size_squared;
+    bool           test_whole_range = !fast_mode_enabled || (end - start < 2 * FAST_THRESHOLD);
+    mem_size_gen_t size_gen_w       = fast_mode_enabled ? mem_constant_size : mem_iterative_size;
+    mem_size_gen_t size_gen_r = fast_mode_enabled ? mem_constant_size : mem_iterative_size_repeated;
 
     printf("Testing memory range from 0x%llx to 0x%llx, mode: %s.\n",
            (unsigned long long)start,
            (unsigned long long)end,
-           fast ? "fast" : "normal");
+           fast_mode_enabled ? "fast" : "normal");
 
     if (test_whole_range)
     {
@@ -271,15 +295,66 @@ void test(xlen_t start, xlen_t end, bool fast)
     }
 }
 
-int main(void)
+/**
+ * \brief Safely test a memory range, optionally skipping program data to avoid corruption. Use this function if tested memory range may contain program data.
+ * 
+ * \param start_addr Start address of the memory range
+ * \param end_addr End address of the memory range
+ * \param fast_mode_enabled Enable fast mode
+ * \param safe_test_enabled Enable safe mode to skips program data 
+ */
+void safe_test(xlen_t start, xlen_t end, bool fast_mode_enabled, bool safe_mode_enabled)
 {
-    if (program_data_start < (xlen_t)TEST_END && (xlen_t)TEST_START < program_data_end)
+    // Check if tested range overlaps with program data
+    bool overlaps_program = program_data_start < end && start < program_data_end;
+
+    if (!safe_mode_enabled)
     {
-        printf("WARNING: tested range overlaps program range (" BM_FMT_XLEN " - " BM_FMT_XLEN
-               "), program may fail or loop!\n",
+        // Safe mode is disabled: warn if overlap exists
+        if (overlaps_program)
+        {
+            printf("WARNING: SAFE TEST DISABLED!\n");
+            printf("Memory range (" BM_FMT_XLEN " - " BM_FMT_XLEN
+                   ") overlaps program data (" BM_FMT_XLEN " - " BM_FMT_XLEN ").\n",
+                   start,
+                   end,
+                   program_data_start,
+                   program_data_end);
+            printf("This may overwrite code, global variables, or stack!\n");
+        }
+
+        test(start, end, fast_mode_enabled);
+        return;
+    }
+
+    // Safe mode is enabled: skip program data
+    if (overlaps_program)
+    {
+        printf("SAFE TEST ENABLED: skipping program data range (" BM_FMT_XLEN " - " BM_FMT_XLEN
+               ").\n",
                program_data_start,
                program_data_end);
+
+        if (start < program_data_start)
+        {
+            test(start, program_data_start, fast_mode_enabled);
+        }
+        if (program_data_end < end)
+        {
+            test(program_data_end, end, fast_mode_enabled);
+        }
     }
+    else
+    {
+        // No overlap: safe test enabled, test full range
+        printf("SAFE TEST ENABLED: memory is safe for full test.\n");
+        test(start, end, fast_mode_enabled);
+    }
+}
+
+int main(void)
+{
+    puts("Welcome to the Memory test demo!\n");
 
 #ifdef TARGET_HAS_TCM
     xlen_t itcm_start, itcm_size;
@@ -302,11 +377,12 @@ int main(void)
     bm_exception_set_handler(BM_EXCEPTION_SAF, mem_error_handler);
 
 #ifdef TARGET_HAS_TCM
-    test((xlen_t)itcm_start, (xlen_t)itcm_start + itcm_size, TEST_FAST);
-    test((xlen_t)dtcm_start, (xlen_t)dtcm_start + dtcm_size, TEST_FAST);
+    safe_test((xlen_t)itcm_start, (xlen_t)itcm_start + itcm_size, TEST_FAST, TEST_SAFE);
+    safe_test((xlen_t)dtcm_start, (xlen_t)dtcm_start + dtcm_size, TEST_FAST, TEST_SAFE);
 #endif
 
-    test((xlen_t)TEST_START, (xlen_t)TEST_END, TEST_FAST);
+    safe_test((xlen_t)DDR_ADDR_START, (xlen_t)DDR_ADDR_END, TEST_FAST, TEST_SAFE);
+    safe_test((xlen_t)SRAM_ADDR_START, (xlen_t)SRAM_ADDR_END, TEST_FAST, TEST_SAFE);
 
     printf("Test %s\n", error_count == 0 ? "passed." : "failed!");
 

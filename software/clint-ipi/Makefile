@@ -8,3 +8,5 @@ APP     = clint-ipi
 SOURCES = $(DEMO_DIR)/src/clint-ipi.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

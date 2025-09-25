@@ -8,3 +8,5 @@ APP     = i2c-demo
 SOURCES = $(DEMO_DIR)/src/i2c-demo.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

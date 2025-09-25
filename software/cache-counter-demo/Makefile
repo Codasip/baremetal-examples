@@ -8,3 +8,5 @@ APP     = cache-counter-demo
 SOURCES = $(DEMO_DIR)/src/cache-counter-demo.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

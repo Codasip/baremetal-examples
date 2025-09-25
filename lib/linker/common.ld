@@ -47,6 +47,17 @@ SECTIONS
     PROVIDE (___DTOR_END__ = .);
   } >ram
 
+  /* Clang creates this for the Zcmt extension. */
+  .tbljal : ALIGN(64) {
+    *(.tbljal .tbljal.*)
+  } >ram
+
+  .rodata : ALIGN(8) {
+    *(.srodata .srodata.*)
+    *(.rodata .rodata.*)
+    *(.gnu.linkonce.r.*)
+  } >ram
+
   .data : ALIGN(8) {
     __data_begin = .;
     *(.data .data.*)
@@ -56,6 +67,27 @@ SECTIONS
     *(.sdata .sdata.*)
     *(.gnu.linkonce.s.*)
   } >ram
+
+  .eh_frame : ALIGN(8) {
+    __eh_frame_start = .;
+    KEEP(*(.eh_frame))
+    __eh_frame_end = .;
+  } >ram
+
+  .eh_frame_hdr : ALIGN(8) {
+    KEEP(*(.eh_frame_hdr))
+  } >ram
+  __eh_frame_hdr_start = SIZEOF(.eh_frame_hdr) > 0 ? ADDR(.eh_frame_hdr) : 0;
+  __eh_frame_hdr_end = SIZEOF(.eh_frame_hdr) > 0 ? . : 0;
+
+  .gcc_except_table : ALIGN(8) {
+    KEEP(*(.gcc_except_table .gcc_except_table.*))
+  } >ram
+
+  .scs (NOLOAD) : ALIGN(16) {
+    . += __SCS_SIZE;
+  } >ram
+  _scs = SIZEOF(.scs) > 0 ? ADDR(.scs) + SIZEOF(.scs) : 0;
 
   .bss (NOLOAD) : ALIGN(8) {
     __bss_start = .;
@@ -67,41 +99,6 @@ SECTIONS
     . = ALIGN(8);
     __bss_end = .;
   } >ram
-
-  .rodata : ALIGN(8) {
-    *(.srodata .srodata.*)
-    *(.rodata .rodata.*)
-    *(.gnu.linkonce.r.*)
-  } >ram
-
-  .eh_frame : ALIGN(8) {
-    __eh_frame_start = .;
-    KEEP(*(.eh_frame))
-    __eh_frame_end = .;
-
-  } >ram
-
-  .eh_frame_hdr : ALIGN(8) {
-    KEEP(*(.eh_frame_hdr))
-  } >ram
-
-  .gcc_except_table : ALIGN(8) {
-    KEEP(*(.gcc_except_table .gcc_except_table.*))
-  } >ram
-
-  .scs (NOLOAD) : ALIGN(16) {
-    . += __SCS_SIZE;
-  } >ram
-
-  /* Code to be placed to ITCM */
-  .itcm : ALIGN(8) {
-    *(.itcm .itcm.*)
-  } >itcm AT>ram
-
-  /* Data to be placed to DTCM */
-  .dtcm : ALIGN(8) {
-    *(.dtcm .dtcm.*)
-  } >dtcm AT>ram
 
   .heap (NOLOAD) : ALIGN(8) {
     _heap = .;
@@ -117,14 +114,22 @@ SECTIONS
     _stack = .;
   } >ram
 
+  _end = .;
+
   __global_pointer$ = MIN(__sdata_begin + 0x800,
                       MAX(__data_begin + 0x800, __bss_end - 0x800));
-  _scs = SIZEOF(.scs) > 0 ? ADDR(.scs) + SIZEOF(.scs) : 0;
-  __eh_frame_hdr_start = SIZEOF(.eh_frame_hdr) > 0 ? ADDR(.eh_frame_hdr) : 0;
-  __eh_frame_hdr_end = SIZEOF(.eh_frame_hdr) > 0 ? . : 0;
+
+  /* Code to be placed to ITCM */
+  .itcm : ALIGN(8) {
+    *(.itcm .itcm.*)
+  } >itcm AT>ram
   __itcm_data_start = LOADADDR(.itcm);
   __itcm_data_end = LOADADDR(.itcm) + SIZEOF(.itcm);
+
+  /* Data to be placed to DTCM */
+  .dtcm : ALIGN(8) {
+    *(.dtcm .dtcm.*)
+  } >dtcm AT>ram
   __dtcm_data_start = LOADADDR(.dtcm);
   __dtcm_data_end = LOADADDR(.dtcm) + SIZEOF(.dtcm);
-  _end = .;
 }

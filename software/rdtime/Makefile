@@ -10,4 +10,4 @@ SOURCES = $(DEMO_DIR)/src/rdtime.c
 
 include $(BM_SDK_DIR)/share/app.mk
 
-CFLAGS  +=-O2
+CFLAGS  += -Werror -O2

@@ -13,12 +13,22 @@ endif
 
 APP_OBJS      = $(SOURCES:.c=.o)
 APP_OBJS     := $(APP_OBJS:.S=.o)
-LIB_OBJS      = $(BM_SOURCES:.c=.o)
-CRT_OBJ       = $(BM_CRT0:.S=.o)
+APP_OBJS     := $(foreach obj, $(APP_OBJS), \
+                    $(if $(filter $(DEMO_DIR)/%, $(obj)), \
+                         $(patsubst $(DEMO_DIR)/%, ./app/%, $(obj)), \
+                         $(if $(filter $(LIB_DIR)/%, $(obj)), \
+                             $(patsubst $(LIB_DIR)/%, ./lib/%, $(obj)), \
+                             ./ext/$(obj) \
+                         ) \
+                     ) \
+                 )
 
-APP_OBJS     := $(subst $(DEMO_DIR),.,$(APP_OBJS))
-LIB_OBJS     := $(subst $(TOP_DIR),.,$(LIB_OBJS))
-CRT_OBJ      := $(subst $(TOP_DIR),.,$(CRT_OBJ))
+LIB_OBJS      = $(BM_SOURCES:.c=.o)
+LIB_OBJS     := $(LIB_OBJS:.S=.o)
+LIB_OBJS     := $(patsubst $(LIB_DIR)/%, ./lib/%, $(LIB_OBJS))
+
+CRT_OBJ       = $(BM_CRT0:.S=.o)
+CRT_OBJ      := $(patsubst $(LIB_DIR)/%, ./lib/%, $(CRT_OBJ))
 
 CFLAGS  += -std=gnu11 -pedantic -Wall -Wextra -Os
 CFLAGS  += -g3 -Wno-unused-command-line-argument -ffunction-sections -fdata-sections
@@ -41,19 +51,27 @@ $(if $(MISSING_REQUIRES), \
 BUILD ?= build
 BUILD_DIR := $(BUILD)/
 
-$(BUILD_DIR)%.o : $(DEMO_DIR)/%.c
+$(BUILD_DIR)./app/%.o : $(DEMO_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $^
 
-$(BUILD_DIR)./lib%.o : $(LIB_DIR)/%.c
+$(BUILD_DIR)./lib/%.o : $(LIB_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $^
 
-$(BUILD_DIR)%.o : $(DEMO_DIR)/%.S
+$(BUILD_DIR)./ext/%.o : %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $^
+
+$(BUILD_DIR)./app/%.o : $(DEMO_DIR)/%.S
 	@mkdir -p $(dir $@)
 	$(CC) $(ASFLAGS) $(CPPFLAGS) -c -o $@ $^
 
-$(BUILD_DIR)./lib%.o : $(LIB_DIR)/%.S
+$(BUILD_DIR)./lib/%.o : $(LIB_DIR)/%.S
+	@mkdir -p $(dir $@)
+	$(CC) $(ASFLAGS) $(CPPFLAGS) -c -o $@ $^
+
+$(BUILD_DIR)./ext/%.o : %.S
 	@mkdir -p $(dir $@)
 	$(CC) $(ASFLAGS) $(CPPFLAGS) -c -o $@ $^
 
@@ -67,9 +85,9 @@ $(BUILD_DIR)$(APP).xexe: $(addprefix $(BUILD_DIR), $(APP_OBJS) $(LIB_OBJS) $(CRT
 lst: $(BUILD_DIR)$(APP).lst
 
 %.lst: %.xexe
-	$(OBJDUMP) -fhp $^ > $@
+	$(OBJDUMP) -afhp $^ > $@
 	$(OBJDUMP) -t $^ | grep -E "^[0-9a-fA-F]{8}" | sort >> $@
-	$(OBJDUMP) -dSx $^ >> $@
+	$(OBJDUMP) -drS $^ >> $@
 
 .PHONY: bin
 bin: $(BUILD_DIR)$(APP).bin

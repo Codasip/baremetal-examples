@@ -6,3 +6,5 @@ APP     = memory-test
 SOURCES = $(DEMO_DIR)/src/memory-test.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

@@ -10,3 +10,5 @@ SOURCES = $ \
 CFLAGS  = -O1
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

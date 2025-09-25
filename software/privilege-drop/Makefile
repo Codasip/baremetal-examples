@@ -8,3 +8,5 @@ APP     = privilege-drop
 SOURCES = $(DEMO_DIR)/src/privilege-drop.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

@@ -10,3 +10,5 @@ SOURCES = $(DEMO_DIR)/src/spi-demo.c \
 
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

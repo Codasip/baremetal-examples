@@ -6,3 +6,5 @@ APP     = csr-demo
 SOURCES = $(DEMO_DIR)/src/csr-demo.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

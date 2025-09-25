@@ -8,3 +8,5 @@ APP     = clint-timer
 SOURCES = $(DEMO_DIR)/src/clint-timer.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

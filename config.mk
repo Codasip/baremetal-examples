@@ -36,10 +36,6 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 # or leave HOB_PLATFORM_VERSION blank for v1:
 #HOB_PLATFORM_VERSION ?= 2
 
-ifneq ($(HOB_PLATFORM_VERSION), )
-  HOB_PLATFORM_VERSION_STR = _v$(HOB_PLATFORM_VERSION)
-endif
-
 # If building from top-level, uncomment one of the following lines to select demo to build
 #DEMO_APP=aead-demo
 #DEMO_APP=cache-counter-demo
@@ -64,6 +60,7 @@ endif
 #DEMO_APP=hello-world
 #DEMO_APP=hpmcounter-demo
 #DEMO_APP=i2c-demo
+#DEMO_APP=id-registers-demo
 #DEMO_APP=interrupts-simple
 #DEMO_APP=interrupts-vectored
 #DEMO_APP=memory-test

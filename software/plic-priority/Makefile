@@ -10,3 +10,5 @@ APP     = plic-priority
 SOURCES = $(DEMO_DIR)/src/plic-priority.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

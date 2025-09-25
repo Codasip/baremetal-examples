@@ -34,7 +34,7 @@ LIB_OBJS    := $(subst $(TOP_DIR),.,$(LIB_OBJS))
 CRT_OBJ     := $(subst $(TOP_DIR),.,$(CRT_OBJ))
 CRT_ROM_OBJ := $(subst $(DEMO_DIR),.,$(CRT_ROM_OBJ))
 
-CFLAGS  += -std=gnu11 -pedantic -Wall -Wextra
+CFLAGS  += -std=gnu11 -pedantic -Wall -Wextra -Werror
 CFLAGS  += -g3 -Wno-unused-command-line-argument
 CFLAGS  += -Os -ffunction-sections -fdata-sections -flto
 ASFLAGS += -g3 -Wno-unused-command-line-argument

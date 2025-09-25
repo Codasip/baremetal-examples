@@ -8,3 +8,5 @@ APP     = pic-interrupts
 SOURCES = $(DEMO_DIR)/src/pic-interrupts.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

@@ -9,3 +9,5 @@ APP     = plic-interrupts
 SOURCES = $(DEMO_DIR)/src/plic-interrupts.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

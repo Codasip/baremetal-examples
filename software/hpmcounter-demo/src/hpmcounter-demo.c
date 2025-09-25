@@ -21,7 +21,7 @@ static xlen_t a = (xlen_t)&a;
 static xlen_t b = (xlen_t)&b;
 
 /** \brief Function executing two independent load instructions */
-void independent_loads()
+void independent_loads(void)
 {
     __asm__ volatile("lw t1, 0 (%0)\n"
                      "lw t2, 0 (%1)\n" ::"r"(a),
@@ -30,7 +30,7 @@ void independent_loads()
 }
 
 /** \brief Function executing two load instructions, value obtained by the first one is used by the second */
-void dependant_loads()
+void dependant_loads(void)
 {
     // Note, that variable b is unused, but still present, to instruct
     // the compiler to generate similar code as in independent loads function
@@ -41,7 +41,7 @@ void dependant_loads()
 }
 
 /** \brief Function executing several dependant load instructions with nops inbetween */
-void sparse_loads()
+void sparse_loads(void)
 {
     __asm__ volatile("lw t1, 0 (%0)\n"
                      "nop\n"
@@ -62,7 +62,7 @@ void sparse_loads()
 }
 
 /** \brief Function executing several dependant load instructions and nops afterwards */
-void grouped_loads()
+void grouped_loads(void)
 {
     __asm__ volatile("lw t1, 0 (%0)\n"
                      "lw t1, 0 (t1)\n"
@@ -87,7 +87,7 @@ void grouped_loads()
  *
  * \param test Test sequence
  */
-void check_counters(void (*test)())
+void check_counters(void (*test)(void))
 {
     // Clear counters
     bm_counter_clear(BM_COUNTER_INSTRET);

@@ -8,3 +8,5 @@ APP     = gpio-demo
 SOURCES = $(DEMO_DIR)/src/gpio-demo.c
 
 include $(BM_SDK_DIR)/share/app.mk
+
+CFLAGS  += -Werror

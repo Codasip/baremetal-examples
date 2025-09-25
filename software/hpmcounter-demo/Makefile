@@ -9,6 +9,8 @@ SOURCES = $(DEMO_DIR)/src/hpmcounter-demo.c
 
 include $(BM_SDK_DIR)/share/app.mk
 
+CFLAGS  += -Werror
+
 ifeq ($(CONFIG_PROCESSOR),L31)
 CPPFLAGS += -DTEST_HPM_EVENT=BM_HPM_LOAD_STALLS
 else ifeq ($(CONFIG_PROCESSOR),A730)
