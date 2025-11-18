@@ -31,6 +31,8 @@ typedef uint64_t xlen_t;
     #error "unsupported RISCV_XLEN"
 #endif /* RISCV_XLEN == */
 
+#define BM_ARRAY_ELEMENTS(x) (sizeof(x) / sizeof(x[0]))
+
 /**
  * \brief Environment specific function implementing the actual way to exit
  *

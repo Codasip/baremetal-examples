@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/clint.h>
@@ -31,7 +31,9 @@ void __attribute__((interrupt, aligned(16))) exception_handler(void)
     puts("Exception handler running!");
 
     // Move past offending instrcution to continue
-    bm_csr_write(BM_CSR_MEPC, bm_csr_read(BM_CSR_MEPC) + 0x4);
+    xlen_t csr_val = 0;
+    BM_CSR_READ(BM_CSR_MEPC, csr_val);
+    BM_CSR_WRITE(BM_CSR_MEPC, csr_val + 0x04);
 }
 
 /**

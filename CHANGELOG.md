@@ -2,6 +2,26 @@
 
 This file contains all the major changes in different releases.
 
+## v1.1.7
+
+### Feature
+- add support for V730 core family
+- add support for V739-Spinel
+- clean up CSR read/write mechanisms:
+    - improved CSR access wrapper functions (`CSR_READ()` renamed to `BM_CSR_READ()`)
+    - updated API for accessing CSRs at different privilege levels: `bm_priv_csr_read()`, `bm_priv_csr_write()`, `bm_priv_csr_set()`, `bm_priv_csr_clear()`
+
+### Miscellaneous
+- minor code cleanup and adjustments
+- rename config-X730-mp4 to config-X730-lux
+- ARCH and ABI are based on core config files
+- add helper functions and macros: `BM_ARRAY_ELEMENTS()`, `bm_fatal_check_index()`
+- remove config flag `TARGET_HAS_CUSTOM_CSR`
+
+### Fix
+- fix bm_interrupt_tvec_get_mode() function
+- fix sloppy assembly usage in interrupt.c file
+
 ## v1.1.6
 
 ### Feature

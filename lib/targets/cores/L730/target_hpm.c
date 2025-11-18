@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/counter.h"
@@ -13,7 +13,7 @@
 /**
  * \brief Table with bm_counter_id of supported HPM counters
  */
-const bm_counter_id supported_hpm_counter_table[MAX_SUPPORTED_COUNTERS] = {
+static const bm_counter_id supported_hpm_counter_table[MAX_SUPPORTED_COUNTERS] = {
     BM_COUNTER_HPM3,
     BM_COUNTER_HPM4,
     BM_COUNTER_HPM5,
@@ -23,12 +23,42 @@ const bm_counter_id supported_hpm_counter_table[MAX_SUPPORTED_COUNTERS] = {
 /**
  * \brief Table with bm_hpm_event_t of supported HPM event CSRs
  */
-const bm_csr_id supported_hpm_csr_table[MAX_SUPPORTED_COUNTERS] = {
+static const bm_csr_id_t supported_hpm_csr_table[MAX_SUPPORTED_COUNTERS] = {
     BM_CSR_MHPMEVENT3,
     BM_CSR_MHPMEVENT4,
     BM_CSR_MHPMEVENT5,
     BM_CSR_MHPMEVENT6,
 };
+
+/**
+ * \brief Writes a value to a CSR HPM registers using a macro resolved from the CSR name variable.
+ *
+ * This local inline function converts the given CSR name (as a variable) into a macro,
+ * and writes the specified value to the corresponding CSR (Control and Status Register).
+ *
+ * \param csr Name of the CSR register (as a variable)
+ * \param val Value to be written to the CSR register
+ */
+static inline void csr_hpm_write(bm_csr_id_t csr, xlen_t val)
+{
+    switch (csr)
+    {
+        case BM_CSR_MHPMEVENT3:
+            BM_CSR_WRITE(BM_CSR_MHPMEVENT3, val);
+            break;
+        case BM_CSR_MHPMEVENT4:
+            BM_CSR_WRITE(BM_CSR_MHPMEVENT4, val);
+            break;
+        case BM_CSR_MHPMEVENT5:
+            BM_CSR_WRITE(BM_CSR_MHPMEVENT5, val);
+            break;
+        case BM_CSR_MHPMEVENT6:
+            BM_CSR_WRITE(BM_CSR_MHPMEVENT6, val);
+            break;
+        default:
+            bm_fatal("Unsupported CSR 0x%x", csr);
+    }
+}
 
 static int claimed_hpm_counter_table[MAX_SUPPORTED_COUNTERS] = {-1, -1, -1, -1};
 
@@ -51,7 +81,7 @@ static inline int get_counter_id(bm_hpm_event_t event)
     if (avail != -1)
     {
         claimed_hpm_counter_table[avail] = event;
-        bm_csr_write(supported_hpm_csr_table[avail], (xlen_t)event);
+        csr_hpm_write(supported_hpm_csr_table[avail], (xlen_t)event);
         return supported_hpm_counter_table[avail];
     }
 
@@ -98,7 +128,7 @@ int bm_hpmcounter_stop(bm_hpm_event_t event)
     {
         if (claimed_hpm_counter_table[i] == (int)event)
         {
-            bm_csr_write(supported_hpm_csr_table[i], 0);
+            csr_hpm_write(supported_hpm_csr_table[i], 0);
             claimed_hpm_counter_table[i] = -1;
             return 0;
         }

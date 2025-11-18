@@ -21,8 +21,6 @@
 
 #include <stdint.h>
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-
 static void bm_exception_print_details(xlen_t offset)
 {
     bm_warn("Exception handler was called:");
@@ -76,9 +74,16 @@ static void bm_exception_print_details(xlen_t offset)
             break;
     }
 
-    bm_warn("  CSR mcause: " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MCAUSE));
-    bm_warn("  CSR mepc:   " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MEPC));
-    bm_warn("  CSR mtval:  " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MTVAL));
+    xlen_t csr_val = 0;
+
+    BM_CSR_READ(BM_CSR_MCAUSE, csr_val);
+    bm_warn("  CSR mcause: " BM_FMT_XLEN, csr_val);
+
+    BM_CSR_READ(BM_CSR_MEPC, csr_val);
+    bm_warn("  CSR mepc:   " BM_FMT_XLEN, csr_val);
+
+    BM_CSR_READ(BM_CSR_MTVAL, csr_val);
+    bm_warn("  CSR mtval:  " BM_FMT_XLEN, csr_val);
 }
 
 /** \brief Table with handlers for individual exception sources */
@@ -110,7 +115,7 @@ void bm_ext_irq_handler(void)
     }
 
     unsigned int irq = (unsigned int)pending;
-    if (irq >= ARRAY_SIZE(bm_ext_irq_handler_table))
+    if (irq >= BM_ARRAY_ELEMENTS(bm_ext_irq_handler_table))
     {
         bm_fatal("Encountered external interrupt %u is out of handled range", irq);
     }
@@ -333,8 +338,7 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode)
     bm_current_mode          = new_mode;
 
     // Get the value of [m,s,u]cause register
-    bm_csr_id xcause = bm_priv_get_csr_id(bm_get_priv_mode(), BM_PRIV_CSR_XCAUSE);
-    xlen_t    cause  = bm_csr_read(xcause);
+    xlen_t cause = bm_priv_csr_read(bm_get_priv_mode(), BM_PRIV_CSR_XCAUSE);
 
     // Get the offset in handler tables by clearing highest cause bit (interrupt bit)
 #ifdef TARGET_HAS_CLIC
@@ -350,7 +354,7 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode)
 
     if (cause >> (RISCV_XLEN - 1))
     {
-        if (offset >= ARRAY_SIZE(bm_interrupt_handler_table))
+        if (offset >= BM_ARRAY_ELEMENTS(bm_interrupt_handler_table))
         {
             bm_fatal("Encountered interrupt " BM_FMT_XLEN "is out of handled range", offset);
         }
@@ -366,7 +370,7 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode)
     }
     else
     {
-        if (offset >= ARRAY_SIZE(bm_exc_handler_table))
+        if (offset >= BM_ARRAY_ELEMENTS(bm_exc_handler_table))
         {
             bm_fatal("Encountered exception cause " BM_FMT_XLEN " is out of handled range", offset);
         }

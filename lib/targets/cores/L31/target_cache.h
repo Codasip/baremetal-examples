@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef BAREMETAL_TARGET_CACHE_H
@@ -79,7 +79,9 @@ typedef enum {
  */
 static inline CACHE_Type *bm_cache_get_regs(void)
 {
-    return (CACHE_Type *)bm_csr_read(BM_CSR_ML1CACHE_START);
+    xlen_t csr_val = 0;
+    BM_CSR_READ(BM_CSR_ML1CACHE_START, csr_val);
+    return (CACHE_Type *)csr_val;
 }
 
 /**

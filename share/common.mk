@@ -5,6 +5,11 @@
 # - detect and set compiler
 # - export variables needed for the build
 
+# ----[ Helpers ]----
+
+empty :=
+space := $(empty) $(empty)
+
 # ----[ TOOLCHAIN ]----
 
 OS_SUFFIX =
@@ -156,13 +161,101 @@ ifeq ("$(wildcard $(PLATFORM_CONFIG_FILE))","")
 endif
 include $(PLATFORM_CONFIG_FILE)
 
+# ----[ COMPILER CONFIGURATION: ARCH]----
+
+CC_ARCH_ITEMS :=
+
+ifeq ($(CONFIG_HAS_EXT_I),Y)
+CC_ARCH_ITEMS += i
+else ifeq ($(CONFIG_HAS_EXT_E),Y)
+CC_ARCH_ITEM += e
+else
+# ToDo: support CONFIG_HAS_EXT_Y for CHERI
+$(error Unknown RISC-V architecture)
+endif
+
+ifeq ($(CONFIG_HAS_EXT_M),Y)
+CC_ARCH_ITEMS += m
+endif
+
+ifeq ($(CONFIG_HAS_EXT_A),Y)
+CC_ARCH_ITEMS += a
+endif
+
+ifeq ($(CONFIG_HAS_FPU),Y)
+CC_ARCH_ITEMS += f
+ifeq ($(CONFIG_HAS_FPU_DP),Y)
+CC_ARCH_ITEMS += d
+endif
+endif
+
+ifeq ($(CONFIG_HAS_EXT_C),Y)
+CC_ARCH_ITEMS += c
+endif
+
+# Use MARCH if this is set explicitly. Otherwise set it using the string build
+# from the config - unless this is explicitly disabled.
+CONFIG_CC_ARCH := rv$(XLEN)$(subst $(space),,$(CC_ARCH_ITEMS))$(subst $(space),,$(addprefix _,$(CONFIG_EXT_Z)))
+ifneq ($(CONFIG_CC_USE_DEFAULT_ARCH),Y)
+MARCH ?= $(CONFIG_CC_ARCH)
+endif
+ifneq ($(MARCH),)
+CPPFLAGS += -march=$(MARCH)
+endif
+
+# ----[ COMPILER CONFIGURATION: ABI]----
+
+CC_ABI_ITEMS :=
+
+ifeq ($(XLEN),32)
+CC_ABI_ITEMS += i
+endif
+
+CC_ABI_ITEMS += lp$(XLEN)
+
+ifeq ($(CONFIG_HAS_FPU),Y)
+ifeq ($(CONFIG_HAS_FPU_DP),Y)
+CC_ABI_ITEMS += d
+else
+CC_ABI_ITEMS += f
+endif
+endif
+
+# Use MABI if this is set explicitly. Otherwise set it using the string build
+# from the config - unless this is explicitly disabled.
+CONFIG_CC_ABI := $(subst $(space),,$(CC_ABI_ITEMS))
+ifneq ($(CONFIG_CC_USE_DEFAULT_MABI),Y)
+MABI ?= $(CONFIG_CC_ABI)
+endif
+ifneq ($(MABI),)
+CPPFLAGS += -mabi=$(MABI)
+endif
+
+# ----[ PRINTOUTS ]----
+
+$(info Compiler Configuration:)
+ifneq ($(MARCH),$(CONFIG_CC_ARCH))
+$(info - CONFIG_CC_ARCH  : $(CONFIG_CC_ARCH))
+endif
+$(info - ARCH            : $(if $(MARCH),$(MARCH),(toolchain default)))
+
+ifneq ($(MABI),$(CONFIG_CC_ABI))
+$(info - CONFIG_CC_ABI   : $(CONFIG_CC_ABI))
+endif
+$(info - ABI             : $(if $(MABI),$(MABI),(toolchain default)))
+
 # ----[ LDSCRIPT ]----
 
 LDSCRIPT ?= $(LD_TARGET)$(XLEN).ld
 LDFLAGS += -Wl,-L$(CORE_DIR)
 LDFLAGS += -Wl,-L$(PLATFORM_DIR)
 LDFLAGS += -Wl,-L$(LIB_DIR)/linker
-LDFLAGS += -Wl,--defsym=_STACK_SIZE=0x4000 -Wl,--defsym=_HEAP_SIZE=0x4000
+LDFLAGS += -Wl,--defsym=_STACK_SIZE=0x4000
+LDFLAGS += -Wl,--defsym=_HEAP_SIZE=0x4000
+
+ifdef CONFIG_NUM_HARTS
+LDFLAGS += -Wl,--defsym=_NUM_HARTS=$(CONFIG_NUM_HARTS)
+endif
 
 # ----[ INCLUDES ]----
 
@@ -200,7 +293,6 @@ BM_CRT0 += $(LIB_DIR)/startup/crt0.S
 BM_SOURCES += \
     $(LIB_DIR)/src/barrier.c \
     $(LIB_DIR)/src/counter.c \
-    $(LIB_DIR)/src/csr.c \
     $(LIB_DIR)/src/id_reg.c \
     $(LIB_DIR)/src/interrupt.c \
     $(LIB_DIR)/src/interrupt_low.c \

@@ -8,7 +8,6 @@ ENTRY (_start)
 __TEXT_START_ADDR = DEFINED(_TEXT_START_ADDR) ? _TEXT_START_ADDR : ORIGIN(ram);
 __HEAP_SIZE = DEFINED(_HEAP_SIZE) ? _HEAP_SIZE : 0x0;
 __STACK_SIZE = DEFINED(_STACK_SIZE) ? _STACK_SIZE : 0x4000;
-__MP_EXTRA_STACK_SIZE = __STACK_SIZE * (DEFINED(_NUM_HARTS) ? _NUM_HARTS - 1 : 0);
 __SCS_SIZE = DEFINED(_SCS_SIZE) ? _SCS_SIZE : 0x00000000;
 
 SECTIONS
@@ -107,7 +106,9 @@ SECTIONS
   } >ram
 
   .stack (NOLOAD) : ALIGN(16) {
-    . += __MP_EXTRA_STACK_SIZE;
+    /* secondary hart stacks for MP configurations */
+    . += DEFINED(_NUM_HARTS) ? (__STACK_SIZE * ( _NUM_HARTS - 1)) : 0;
+    /* primary hart stack */
     _stack_end = .;
     . += __STACK_SIZE;
     . = ALIGN(16);

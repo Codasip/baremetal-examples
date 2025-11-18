@@ -139,10 +139,21 @@ static void exit_with_error(void)
 void __attribute__((aligned(64))) trap_handler(void)
 {
     printf("FSBL trap handler entered.\n");
-    printf(" - CSR mcause:        " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MCAUSE));
-    printf(" - CSR mstatus:       " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MSTATUS));
-    printf(" - CSR mepc:          " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MEPC));
-    printf(" - CSR mtval:         " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MTVAL));
+
+    xlen_t csr_val = 0;
+
+    BM_CSR_READ(BM_CSR_MCAUSE, csr_val);
+    printf(" - CSR mcause:        " BM_FMT_XLEN "\n", csr_val);
+
+    BM_CSR_READ(BM_CSR_MSTATUS, csr_val);
+    printf(" - CSR mstatus:       " BM_FMT_XLEN "\n", csr_val);
+
+    BM_CSR_READ(BM_CSR_MEPC, csr_val);
+    printf(" - CSR mepc:          " BM_FMT_XLEN "\n", csr_val);
+
+    BM_CSR_READ(BM_CSR_MTVAL, csr_val);
+    printf(" - CSR mtval:         " BM_FMT_XLEN "\n", csr_val);
+
     exit_with_error();
 }
 
@@ -401,14 +412,26 @@ int main(void)
     printf("\n");
     printf("Machine information:\n");
 
-    char misa_string[32];
-    get_misa_string(bm_csr_read(BM_CSR_MISA), misa_string);
+    xlen_t csr_val = 0;
+    char   misa_string[32];
+
+    BM_CSR_READ(BM_CSR_MISA, csr_val);
+    get_misa_string(csr_val, misa_string);
 
     printf(" - ISA string:        %s \n", misa_string);
-    printf(" - CSR misa:          " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MISA));
-    printf(" - CSR mvendorid:     " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MVENDORID));
-    printf(" - CSR marchid:       " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MARCHID));
-    printf(" - CSR mimpid:        " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MIMPID));
+
+    BM_CSR_READ(BM_CSR_MISA, csr_val);
+    printf(" - CSR misa:          " BM_FMT_XLEN "\n", csr_val);
+
+    BM_CSR_READ(BM_CSR_MVENDORID, csr_val);
+    printf(" - CSR mvendorid:     " BM_FMT_XLEN "\n", csr_val);
+
+    BM_CSR_READ(BM_CSR_MARCHID, csr_val);
+    printf(" - CSR marchid:       " BM_FMT_XLEN "\n", csr_val);
+
+    BM_CSR_READ(BM_CSR_MIMPID, csr_val);
+    printf(" - CSR mimpid:        " BM_FMT_XLEN "\n", csr_val);
+
     printf("\n");
 
 #ifdef ID_REGISTERS

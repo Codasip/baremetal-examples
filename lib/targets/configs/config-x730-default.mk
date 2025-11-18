@@ -6,7 +6,6 @@ CONFIG_PROCESSOR            = X730
 CONFIG_NUM_HARTS            ?= 1
 CONFIG_HAS_PMP              = N
 CONFIG_HAS_TCMS             = N
-CONFIG_HAS_CHERI            = Y
 
 # ----[ PLATFORM CONFIGURATION ]----
 

@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef BAREMETAL_PRIV_H
@@ -119,7 +119,56 @@ bm_priv_mode_t bm_get_priv_mode(void);
  *
  * \return CSR ID
  */
-bm_csr_id bm_priv_get_csr_id(bm_priv_mode_t priv_mode, bm_csr_type_t csr);
+bm_csr_id_t bm_priv_get_csr_id(bm_priv_mode_t priv_mode, bm_csr_type_t csr);
+
+/**
+ * \brief Reads the value from CSR registers using a macro resolved from the CSR name variable.
+ *
+ * This function converts the given CSR name (as a variable) into a macro,
+ * and reads the value.
+ *
+ * \param priv_mode Privilege mode
+ * \param csr CSR type
+ *
+ * \return Value of the CSR
+ */
+xlen_t bm_priv_csr_read(bm_priv_mode_t priv_mode, bm_csr_type_t csr);
+
+/**
+ * \brief Writes a value to a CSR register using a macro resolved from the CSR name variable.
+ *
+ * This function converts the given CSR name (as a variable) into a macro,
+ * and writes the specified value to the corresponding CSR (Control and Status Register).
+ *
+ * \param priv_mode Privilege mode
+ * \param csr CSR type
+ * \param val Value to be written to the CSR register
+ */
+void bm_priv_csr_write(bm_priv_mode_t priv_mode, bm_csr_type_t csr, xlen_t val);
+
+/**
+ * \brief Sets bits in a specified CSR register using a bitmask.
+ *
+ * This function takes a CSR register identifier and applies a bitwise set operation
+ * using the provided mask value. It uses predefined macros to access and modify the appropriate CSR.
+ *
+ * \param priv_mode Privilege mode
+ * \param csr CSR type
+ * \param mask Bitmask indicating which bits to set in the specified CSR
+ */
+void bm_priv_csr_set(bm_priv_mode_t priv_mode, bm_csr_type_t csr, xlen_t mask);
+
+/**
+ * \brief Clears bits in a specified CSR register using a bitmask.
+ *
+ * This function takes a CSR register identifier and applies a bitwise set operation
+ * using the provided mask value. It uses predefined macros to access and modify the appropriate CSR.
+ *
+ * \param priv_mode Privilege mode
+ * \param csr CSR type
+ * \param mask Bitmask indicating which bits to clear in the specified CSR
+ */
+void bm_priv_csr_clear(bm_priv_mode_t priv_mode, bm_csr_type_t csr, xlen_t mask);
 
 /**
  * \brief Enter a lower privilege level

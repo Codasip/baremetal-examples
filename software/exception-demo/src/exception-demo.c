@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/common.h>
@@ -13,15 +13,23 @@ void ilegal_instruction_handler(void)
 {
     puts("Entered custom handler, check out what caused the exception:");
 
+    xlen_t csr_val = 0;
+
     // Should be 0x2 - ilegal instruction
-    printf("  - CSR mcause : " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MCAUSE));
+    BM_CSR_READ(BM_CSR_MCAUSE, csr_val);
+    printf("  - CSR mcause : " BM_FMT_XLEN "\n", csr_val);
+
     // Should be a few instructions after the address printed from main
-    printf("  - CSR mepc : " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MEPC));
+    BM_CSR_READ(BM_CSR_MEPC, csr_val);
+    printf("  - CSR mepc : " BM_FMT_XLEN "\n", csr_val);
+
     // Should be 0x0 - the binary value of the instruction
-    printf("  - CSR mtval : " BM_FMT_XLEN "\n\n", bm_csr_read(BM_CSR_MTVAL));
+    BM_CSR_READ(BM_CSR_MTVAL, csr_val);
+    printf("  - CSR mtval : " BM_FMT_XLEN "\n\n", csr_val);
 
     // Move past the offending instruction to continue
-    bm_csr_write(BM_CSR_MEPC, bm_csr_read(BM_CSR_MEPC) + 0x4);
+    BM_CSR_READ(BM_CSR_MEPC, csr_val);
+    BM_CSR_WRITE(BM_CSR_MEPC, csr_val + 0x04);
 }
 
 int main(void)

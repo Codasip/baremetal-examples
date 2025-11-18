@@ -1,4 +1,4 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef BAREMETAL_TARGET_TCM_H
@@ -25,7 +25,7 @@ extern "C" {
 static inline xlen_t bm_tcm_itcm_get_base_address(void)
 {
     xlen_t val = 0;
-    BM_CSR_READ(BM_CSR_MITCMADDR, val);
+    BM_CSR_READ(BM_CSR_MITCMBASEADDR, val);
     return val;
 }
 
@@ -37,7 +37,7 @@ static inline xlen_t bm_tcm_itcm_get_base_address(void)
 static inline xlen_t bm_tcm_dtcm_get_base_address(void)
 {
     xlen_t val = 0;
-    BM_CSR_READ(BM_CSR_MDTCMADDR, val);
+    BM_CSR_READ(BM_CSR_MDTCMBASEADDR, val);
     return val;
 }
 
@@ -46,7 +46,7 @@ static inline xlen_t bm_tcm_dtcm_get_base_address(void)
  */
 static inline void bm_tcm_itcm_enable(void)
 {
-    BM_CSR_WRITE(BM_CSR_MITCMEN, 1);
+    BM_CSR_SET(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__ITCM_ENABLE_MASK);
 }
 
 /**
@@ -54,7 +54,7 @@ static inline void bm_tcm_itcm_enable(void)
  */
 static inline void bm_tcm_dtcm_enable(void)
 {
-    BM_CSR_WRITE(BM_CSR_MDTCMEN, 1);
+    BM_CSR_SET(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__DTCM_ENABLE_MASK);
 }
 
 /**
@@ -62,7 +62,7 @@ static inline void bm_tcm_dtcm_enable(void)
  */
 static inline void bm_tcm_itcm_disable(void)
 {
-    BM_CSR_WRITE(BM_CSR_MITCMEN, 0);
+    BM_CSR_CLEAR(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__ITCM_ENABLE_MASK);
 }
 
 /**
@@ -70,7 +70,7 @@ static inline void bm_tcm_itcm_disable(void)
  */
 static inline void bm_tcm_dtcm_disable(void)
 {
-    BM_CSR_WRITE(BM_CSR_MDTCMEN, 0);
+    BM_CSR_CLEAR(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__DTCM_ENABLE_MASK);
 }
 
 /**
@@ -80,9 +80,13 @@ static inline void bm_tcm_dtcm_disable(void)
  */
 static inline xlen_t bm_tcm_itcm_get_size(void)
 {
-    xlen_t val = 0;
-    BM_CSR_READ(BM_CSR_MITCMSIZE, val);
-    return val;
+    bm_csr_mtcmcfg_t mtcmcfg;
+    xlen_t           val = 0;
+
+    BM_CSR_READ(BM_CSR_MTCMCFG, val);
+    mtcmcfg.reg = val;
+
+    return mtcmcfg.itcm_size * 1024;
 }
 
 /**
@@ -92,9 +96,13 @@ static inline xlen_t bm_tcm_itcm_get_size(void)
  */
 static inline xlen_t bm_tcm_dtcm_get_size(void)
 {
-    xlen_t val = 0;
-    BM_CSR_READ(BM_CSR_MDTCMSIZE, val);
-    return val;
+    bm_csr_mtcmcfg_t mtcmcfg;
+    xlen_t           val = 0;
+
+    BM_CSR_READ(BM_CSR_MTCMCFG, val);
+    mtcmcfg.reg = val;
+
+    return mtcmcfg.dtcm_size * 1024;
 }
 
 // Symbols defined in the linker script

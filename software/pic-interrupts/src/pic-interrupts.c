@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/csr.h>
@@ -26,7 +26,7 @@ void __attribute__((interrupt, aligned(16))) my_handler(void)
 static void fire_interrupt(void)
 {
     puts("Firing interrupt.\n");
-    bm_csr_set_mask(BM_CSR_MPICFLAG, 1 << PIC_INTERRUPT_NUM);
+    BM_CSR_SET(BM_CSR_MPICFLAG, 1 << PIC_INTERRUPT_NUM);
 }
 
 static void enable_interrupts(void)

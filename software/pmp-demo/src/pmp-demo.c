@@ -26,7 +26,9 @@ void load_access_failed_handler(void)
     puts("Read access failed!");
 
     // Move past the offending instruction to continue
-    bm_csr_write(BM_CSR_MEPC, bm_csr_read(BM_CSR_MEPC) + 0x4);
+    xlen_t csr_val = 0;
+    BM_CSR_READ(BM_CSR_MEPC, csr_val);
+    BM_CSR_WRITE(BM_CSR_MEPC, csr_val + 0x04);
 }
 
 /**
@@ -39,7 +41,9 @@ void store_access_failed_handler(void)
     puts("Write access failed!");
 
     // Move past the offending instruction to continue
-    bm_csr_write(BM_CSR_MEPC, bm_csr_read(BM_CSR_MEPC) + 0x4);
+    xlen_t csr_val = 0;
+    BM_CSR_READ(BM_CSR_MEPC, csr_val);
+    BM_CSR_WRITE(BM_CSR_MEPC, csr_val + 0x04);
 }
 
 /**

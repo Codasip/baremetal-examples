@@ -76,7 +76,6 @@ The following preprocessor defines are currently passed during build:
 - `TARGET_GPIO_PORT_<LED/SWITCH/BUTTON><N>` - port numbers for IO GPIO
 - `TARGET_GPIO_SD_<CARD_DETECT/POWER_ENABLE/FAST_CLOCK>` - port number for SD GPIO
 - `TARGET_HAS_CACHE` - cores with Codasip cache management
-- `TARGET_HAS_CUSTOM_CSR` - cores implementing custom CSR registers
 - `TARGET_HAS_HPM` - cores with HPM counters
 - `TARGET_HAS_PIC` - cores with Codasip Programmable Interrupt Controller
   - `TARGET_PIC_NUM_INTERRUPTS` - number of PIC interrupts
@@ -119,7 +118,7 @@ The following are currently set by the "requires/provides" mechanism described p
 Folders _lib/targets/cores/\<core\>_ hold core-specific sources. The build can be configured to include any sources in the _core.mk_ file. However, certain contents are required in the target core directories if specific features are provided:
 
 - Cores requiring some extra startup instructions define this in the `_core_init` routine (for example see: _lib/targets/cores/A730/core_init.S_), called from _lib/startup/crt0.S_.
-- Cores with additional custom CSR registers define functions `target_csr_read`, `target_csr_write`, `target_csr_set_mask` and `target_csr_clear_mask` (for example see: _lib/targets/cores/L31/target_csr.c_), following the declarations in _lib/include/baremetal/csr.h_. Header file _lib/targets/cores/\<core\>/target_csr.h_ provides the enumeration of the custom CSRs.
+- Cores with additional custom CSR registers have a header file _lib/targets/cores/\<core\>/target_csr.h_ provides the list of the custom CSRs.
 - Cores implementing Hardware Performance Monitor (HPM) counters define functions `bm_hpmcounter_start`, `bm_hpmcounter_stop`, `bm_hpmcounter_pause`, `bm_hpmcounter_resume` and `bm_hpmcounter_read` (for example see: _lib/targets/cores/A730/target_hpm.c_), following the declarations in _lib/include/baremetal/hpm.h_. Header _lib/targets/cores/\<core\>/target_hpm.h_ provides the enumeration of supported HPM events.
 
 Please refer to the relevant _README_ files for supported core configuration options:

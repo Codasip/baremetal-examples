@@ -17,14 +17,12 @@
 
 void bm_interrupt_enable(bm_priv_mode_t priv_mode)
 {
-    bm_csr_id xstatus = bm_priv_get_csr_id(priv_mode, BM_PRIV_CSR_XSTATUS);
-    bm_csr_set_mask(xstatus, 1 << priv_mode);
+    bm_priv_csr_set(priv_mode, BM_PRIV_CSR_XSTATUS, 1 << priv_mode);
 }
 
 void bm_interrupt_disable(bm_priv_mode_t priv_mode)
 {
-    bm_csr_id xstatus = bm_priv_get_csr_id(priv_mode, BM_PRIV_CSR_XSTATUS);
-    bm_csr_clear_mask(xstatus, 1 << priv_mode);
+    bm_priv_csr_clear(priv_mode, BM_PRIV_CSR_XSTATUS, 1 << priv_mode);
 }
 
 void bm_interrupt_enable_source(bm_priv_mode_t priv_mode, bm_interrupt_source_t source)
@@ -35,8 +33,7 @@ void bm_interrupt_enable_source(bm_priv_mode_t priv_mode, bm_interrupt_source_t 
     bm_clic_init(clic);
     bm_clic_set_enable(clic, bm_clic_get_irq_id(source), true);
 #else
-    bm_csr_id xie = bm_priv_get_csr_id(priv_mode, BM_PRIV_CSR_XIE);
-    bm_csr_set_mask(xie, 1 << source);
+    bm_priv_csr_set(priv_mode, BM_PRIV_CSR_XIE, 1 << source);
 #endif
 }
 
@@ -48,8 +45,7 @@ void bm_interrupt_disable_source(bm_priv_mode_t priv_mode, bm_interrupt_source_t
     bm_clic_init(clic);
     bm_clic_set_enable(clic, bm_clic_get_irq_id(source), false);
 #else
-    bm_csr_id xie = bm_priv_get_csr_id(priv_mode, BM_PRIV_CSR_XIE);
-    bm_csr_clear_mask(xie, 1 << source);
+    bm_priv_csr_clear(priv_mode, BM_PRIV_CSR_XIE, 1 << source);
 #endif
 }
 
@@ -65,17 +61,17 @@ void bm_interrupt_delegate_source(bm_priv_mode_t priv_mode, bm_interrupt_source_
     {
     #ifdef TARGET_EXT_S
         case BM_PRIV_MODE_SUPERVISOR:
-            bm_csr_set_mask(BM_CSR_MIDELEG, 1 << source);
+            BM_CSR_SET(BM_CSR_MIDELEG, 1 << source);
             break;
     #endif
     #ifdef TARGET_EXT_N
         case BM_PRIV_MODE_USER:
             if (bm_get_priv_mode() == BM_PRIV_MODE_MACHINE)
             {
-                bm_csr_set_mask(BM_CSR_MIDELEG, 1 << source);
+                BM_CSR_SET(BM_CSR_MIDELEG, 1 << source);
             }
         #ifdef TARGET_EXT_S
-            bm_csr_set_mask(BM_CSR_SIDELEG, 1 << source);
+            BM_CSR_SET(BM_CSR_SIDELEG, 1 << source);
         #endif
             break;
     #endif
@@ -95,17 +91,17 @@ void bm_exception_delegate_source(bm_priv_mode_t priv_mode, bm_exception_source_
     {
     #ifdef TARGET_EXT_S
         case BM_PRIV_MODE_SUPERVISOR:
-            bm_csr_set_mask(BM_CSR_MEDELEG, 1 << exception);
+            BM_CSR_SET(BM_CSR_MEDELEG, 1 << exception);
             break;
     #endif
     #ifdef TARGET_EXT_N
         case BM_PRIV_MODE_USER:
             if (bm_get_priv_mode() == BM_PRIV_MODE_MACHINE)
             {
-                bm_csr_set_mask(BM_CSR_MEDELEG, 1 << exception);
+                BM_CSR_SET(BM_CSR_MEDELEG, 1 << exception);
             }
         #ifdef TARGET_EXT_S
-            bm_csr_set_mask(BM_CSR_SEDELEG, 1 << exception);
+            BM_CSR_SET(BM_CSR_SEDELEG, 1 << exception);
         #endif
             break;
     #endif
@@ -117,22 +113,24 @@ void bm_exception_delegate_source(bm_priv_mode_t priv_mode, bm_exception_source_
 
 xlen_t bm_interrupt_tvec_get_address(bm_priv_mode_t priv_mode)
 {
-    bm_csr_id tvec = bm_priv_get_csr_id(priv_mode, BM_PRIV_CSR_XTVEC);
-    return bm_csr_read(tvec) & ~(xlen_t)0x3;
+    xlen_t tvec = bm_priv_csr_read(priv_mode, BM_PRIV_CSR_XTVEC);
+    return tvec & ~(xlen_t)0x03;
 }
 
 bm_interrupt_mode_t bm_interrupt_tvec_get_mode(bm_priv_mode_t priv_mode)
 {
-    bm_csr_id tvec = bm_priv_get_csr_id(priv_mode, BM_PRIV_CSR_XTVEC);
+    xlen_t tvec = bm_priv_csr_read(priv_mode, BM_PRIV_CSR_XTVEC);
     return (tvec & 1) ? BM_INTERRUPT_MODE_VECTOR : BM_INTERRUPT_MODE_DIRECT;
 }
 
 void bm_interrupt_tvec_setup(bm_priv_mode_t priv_mode, xlen_t address, bm_interrupt_mode_t mode)
 {
-    const xlen_t value = (mode == BM_INTERRUPT_MODE_DIRECT) ? 0 : 1;
-
-    bm_csr_id tvec = bm_priv_get_csr_id(priv_mode, BM_PRIV_CSR_XTVEC);
-    bm_csr_write(tvec, (address & ~(xlen_t)0x3) | value);
+    xlen_t tvec = (address & ~(xlen_t)0x03);
+    if (mode == BM_INTERRUPT_MODE_VECTOR)
+    {
+        tvec |= 0x01;
+    }
+    bm_priv_csr_write(priv_mode, BM_PRIV_CSR_XTVEC, tvec);
 }
 
 void bm_wfi(void)

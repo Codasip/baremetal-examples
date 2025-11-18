@@ -90,15 +90,20 @@ void log_error(void)
 
 void mem_error_handler(void)
 {
-    xlen_t mcause = bm_csr_read(BM_CSR_MCAUSE);
-    xlen_t mtval  = bm_csr_read(BM_CSR_MTVAL);
+    xlen_t mcause = 0;
+    xlen_t mtval  = 0;
+
+    BM_CSR_READ(BM_CSR_MCAUSE, mcause);
+    BM_CSR_READ(BM_CSR_MTVAL, mtval);
 
     printf("Failed to %s at " BM_FMT_XLEN "\n", mcause == BM_EXCEPTION_LAF ? "read" : "write", mtval);
 
     log_error();
 
     // Move past offending instrcution to continue
-    bm_csr_write(BM_CSR_MEPC, bm_csr_read(BM_CSR_MEPC) + INSTR_SIZE);
+    xlen_t csr_val = 0;
+    BM_CSR_READ(BM_CSR_MEPC, csr_val);
+    BM_CSR_WRITE(BM_CSR_MEPC, csr_val + INSTR_SIZE);
 }
 
 void do_write(xlen_t address, unsigned size, xlen_t value)

@@ -1,4 +1,4 @@
-/* Copyright 2024 Codasip s.r.o.         */
+/* Copyright 2024-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/clic.h>
@@ -16,7 +16,12 @@ static bm_clic_t *clic;
 
 void __attribute__((interrupt, aligned(64))) my_handler(void)
 {
-    unsigned pending = bm_csr_read(BM_CSR_MCAUSE) & 0x7ff;
+    xlen_t csr_val = 0;
+
+    BM_CSR_READ(BM_CSR_MCAUSE, csr_val);
+
+    unsigned pending = csr_val & 0x7ff;
+
     if (pending == bm_clic_get_ext_irq_id(gpio0->ext_irq_id))
     {
         puts("=== Handling GPIO INTERRUPT 0 ===");

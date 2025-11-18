@@ -1,7 +1,7 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#define TARGET_CORE_NAME "L730"
+#define TARGET_CORE_NAME "V730"
 
 #define TARGET_CLK_FREQ  CONFIG_CORE_FREQ
 #define TARGET_NUM_HARTS CONFIG_NUM_HARTS
@@ -23,6 +23,10 @@
 #ifdef CONFIG_HAS_PMP
     #define TARGET_HAS_PMP
     #define TARGET_PMP_NUM_REGIONS CONFIG_PMP_NUM_REGIONS
+#endif
+
+#ifdef CONFIG_HAS_CHERI
+    #define TARGET_HAS_CHERI
 #endif
 
 #ifdef CONFIG_HAS_CACHES

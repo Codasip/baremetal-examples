@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/priv.h"
@@ -21,7 +21,7 @@ bm_priv_mode_t bm_get_priv_mode(void)
     return bm_current_mode;
 }
 
-bm_csr_id bm_priv_get_csr_id(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
+bm_csr_id_t bm_priv_get_csr_id(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
 {
     switch (priv_mode)
     {
@@ -43,7 +43,7 @@ bm_csr_id bm_priv_get_csr_id(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
                 case BM_PRIV_CSR_XTVEC:
                     return BM_CSR_MTVEC;
                 default:
-                    bm_fatal("Unknown csr type.");
+                    bm_fatal("No M-mode CSR for type %d.", csr_type);
             }
 #ifdef TARGET_EXT_S
         case BM_PRIV_MODE_SUPERVISOR:
@@ -64,7 +64,7 @@ bm_csr_id bm_priv_get_csr_id(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
                 case BM_PRIV_CSR_XTVEC:
                     return BM_CSR_STVEC;
                 default:
-                    bm_fatal("Unknown csr type.");
+                    bm_fatal("No S-mode CSR for type %d.", csr_type);
             }
 #endif
 #ifdef TARGET_EXT_N
@@ -86,11 +86,327 @@ bm_csr_id bm_priv_get_csr_id(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
                 case BM_PRIV_CSR_XTVEC:
                     return BM_CSR_UTVEC;
                 default:
-                    bm_fatal("Unknown csr type.");
+                    bm_fatal("No U-mode CSR for type %d.", csr_type);
             }
 #endif
         default:
-            bm_fatal("Unsupported privilege mode.");
+            bm_fatal("Unsupported privilege mode %d.", priv_mode);
+    }
+}
+
+xlen_t bm_priv_csr_read(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
+{
+    bm_csr_id_t csr = bm_priv_get_csr_id(priv_mode, csr_type);
+    xlen_t      val = 0;
+
+    switch (csr)
+    {
+        case BM_CSR_MCAUSE:
+            BM_CSR_READ(BM_CSR_MCAUSE, val);
+            break;
+        case BM_CSR_MEPC:
+            BM_CSR_READ(BM_CSR_MEPC, val);
+            break;
+        case BM_CSR_MIE:
+            BM_CSR_READ(BM_CSR_MIE, val);
+            break;
+        case BM_CSR_MIP:
+            BM_CSR_READ(BM_CSR_MIP, val);
+            break;
+        case BM_CSR_MSTATUS:
+            BM_CSR_READ(BM_CSR_MSTATUS, val);
+            break;
+        case BM_CSR_MTVAL:
+            BM_CSR_READ(BM_CSR_MTVAL, val);
+            break;
+        case BM_CSR_MTVEC:
+            BM_CSR_READ(BM_CSR_MTVEC, val);
+            break;
+#ifdef TARGET_EXT_S
+        case BM_CSR_SCAUSE:
+            BM_CSR_READ(BM_CSR_SCAUSE, val);
+            break;
+        case BM_CSR_SEPC:
+            BM_CSR_READ(BM_CSR_SEPC, val);
+            break;
+        case BM_CSR_SIE:
+            BM_CSR_READ(BM_CSR_SIE, val);
+            break;
+        case BM_CSR_SIP:
+            BM_CSR_READ(BM_CSR_SIP, val);
+            break;
+        case BM_CSR_SSTATUS:
+            BM_CSR_READ(BM_CSR_SSTATUS, val);
+            break;
+        case BM_CSR_STVAL:
+            BM_CSR_READ(BM_CSR_STVAL, val);
+            break;
+        case BM_CSR_STVEC:
+            BM_CSR_READ(BM_CSR_STVEC, val);
+            break;
+#endif // TARGET_EXT_S
+#ifdef TARGET_EXT_N
+        case BM_CSR_UCAUSE:
+            BM_CSR_READ(BM_CSR_UCAUSE, val);
+            break;
+        case BM_CSR_UEPC:
+            BM_CSR_READ(BM_CSR_UEPC, val);
+            break;
+        case BM_CSR_UIE:
+            BM_CSR_READ(BM_CSR_UIE, val);
+            break;
+        case BM_CSR_UIP:
+            BM_CSR_READ(BM_CSR_UIP, val);
+            break;
+        case BM_CSR_USTATUS:
+            BM_CSR_READ(BM_CSR_USTATUS, val);
+            break;
+        case BM_CSR_UTVAL:
+            BM_CSR_READ(BM_CSR_UTVAL, val);
+            break;
+        case BM_CSR_UTVEC:
+            BM_CSR_READ(BM_CSR_UTVEC, val);
+            break;
+#endif // TARGET_EXT_N
+        default:
+            bm_fatal("Unsupported CSR 0x%x", csr);
+            break;
+    }
+
+    return val;
+}
+
+void bm_priv_csr_write(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type, xlen_t val)
+{
+    bm_csr_id_t csr = bm_priv_get_csr_id(priv_mode, csr_type);
+    switch (csr)
+    {
+        case BM_CSR_MCAUSE:
+            BM_CSR_WRITE(BM_CSR_MCAUSE, val);
+            break;
+        case BM_CSR_MEPC:
+            BM_CSR_WRITE(BM_CSR_MEPC, val);
+            break;
+        case BM_CSR_MIE:
+            BM_CSR_WRITE(BM_CSR_MIE, val);
+            break;
+        case BM_CSR_MIP:
+            BM_CSR_WRITE(BM_CSR_MIP, val);
+            break;
+        case BM_CSR_MSTATUS:
+            BM_CSR_WRITE(BM_CSR_MSTATUS, val);
+            break;
+        case BM_CSR_MTVAL:
+            BM_CSR_WRITE(BM_CSR_MTVAL, val);
+            break;
+        case BM_CSR_MTVEC:
+            BM_CSR_WRITE(BM_CSR_MTVEC, val);
+            break;
+#ifdef TARGET_EXT_S
+        case BM_CSR_SCAUSE:
+            BM_CSR_WRITE(BM_CSR_SCAUSE, val);
+            break;
+        case BM_CSR_SEPC:
+            BM_CSR_WRITE(BM_CSR_SEPC, val);
+            break;
+        case BM_CSR_SIE:
+            BM_CSR_WRITE(BM_CSR_SIE, val);
+            break;
+        case BM_CSR_SIP:
+            BM_CSR_WRITE(BM_CSR_SIP, val);
+            break;
+        case BM_CSR_SSTATUS:
+            BM_CSR_WRITE(BM_CSR_SSTATUS, val);
+            break;
+        case BM_CSR_STVAL:
+            BM_CSR_WRITE(BM_CSR_STVAL, val);
+            break;
+        case BM_CSR_STVEC:
+            BM_CSR_WRITE(BM_CSR_STVEC, val);
+            break;
+#endif // TARGET_EXT_S
+#ifdef TARGET_EXT_N
+        case BM_CSR_UCAUSE:
+            BM_CSR_WRITE(BM_CSR_UCAUSE, val);
+            break;
+        case BM_CSR_UEPC:
+            BM_CSR_WRITE(BM_CSR_UEPC, val);
+            break;
+        case BM_CSR_UIE:
+            BM_CSR_WRITE(BM_CSR_UIE, val);
+            break;
+        case BM_CSR_UIP:
+            BM_CSR_WRITE(BM_CSR_UIP, val);
+            break;
+        case BM_CSR_USTATUS:
+            BM_CSR_WRITE(BM_CSR_USTATUS, val);
+            break;
+        case BM_CSR_UTVAL:
+            BM_CSR_WRITE(BM_CSR_UTVAL, val);
+            break;
+        case BM_CSR_UTVEC:
+            BM_CSR_WRITE(BM_CSR_UTVEC, val);
+            break;
+#endif // TARGET_EXT_N
+        default:
+            bm_fatal("Unsupported CSR 0x%x", csr);
+            break;
+    }
+}
+
+void bm_priv_csr_set(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type, xlen_t mask)
+{
+    bm_csr_id_t csr = bm_priv_get_csr_id(priv_mode, csr_type);
+    switch (csr)
+    {
+        case BM_CSR_MCAUSE:
+            BM_CSR_SET(BM_CSR_MCAUSE, mask);
+            break;
+        case BM_CSR_MEPC:
+            BM_CSR_SET(BM_CSR_MEPC, mask);
+            break;
+        case BM_CSR_MIE:
+            BM_CSR_SET(BM_CSR_MIE, mask);
+            break;
+        case BM_CSR_MIP:
+            BM_CSR_SET(BM_CSR_MIP, mask);
+            break;
+        case BM_CSR_MSTATUS:
+            BM_CSR_SET(BM_CSR_MSTATUS, mask);
+            break;
+        case BM_CSR_MTVAL:
+            BM_CSR_SET(BM_CSR_MTVAL, mask);
+            break;
+        case BM_CSR_MTVEC:
+            BM_CSR_SET(BM_CSR_MTVEC, mask);
+            break;
+#ifdef TARGET_EXT_S
+        case BM_CSR_SCAUSE:
+            BM_CSR_SET(BM_CSR_SCAUSE, mask);
+            break;
+        case BM_CSR_SEPC:
+            BM_CSR_SET(BM_CSR_SEPC, mask);
+            break;
+        case BM_CSR_SIE:
+            BM_CSR_SET(BM_CSR_SIE, mask);
+            break;
+        case BM_CSR_SIP:
+            BM_CSR_SET(BM_CSR_SIP, mask);
+            break;
+        case BM_CSR_SSTATUS:
+            BM_CSR_SET(BM_CSR_SSTATUS, mask);
+            break;
+        case BM_CSR_STVAL:
+            BM_CSR_SET(BM_CSR_STVAL, mask);
+            break;
+        case BM_CSR_STVEC:
+            BM_CSR_SET(BM_CSR_STVEC, mask);
+            break;
+#endif // TARGET_EXT_S
+#ifdef TARGET_EXT_N
+        case BM_CSR_UCAUSE:
+            BM_CSR_SET(BM_CSR_UCAUSE, mask);
+            break;
+        case BM_CSR_UEPC:
+            BM_CSR_SET(BM_CSR_UEPC, mask);
+            break;
+        case BM_CSR_UIE:
+            BM_CSR_SET(BM_CSR_UIE, mask);
+            break;
+        case BM_CSR_UIP:
+            BM_CSR_SET(BM_CSR_UIP, mask);
+            break;
+        case BM_CSR_USTATUS:
+            BM_CSR_SET(BM_CSR_USTATUS, mask);
+            break;
+        case BM_CSR_UTVAL:
+            BM_CSR_SET(BM_CSR_UTVAL, mask);
+            break;
+        case BM_CSR_UTVEC:
+            BM_CSR_SET(BM_CSR_UTVEC, mask);
+            break;
+#endif // TARGET_EXT_N
+        default:
+            bm_fatal("Unsupported CSR 0x%x", csr);
+            break;
+    }
+}
+
+void bm_priv_csr_clear(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type, xlen_t mask)
+{
+    bm_csr_id_t csr = bm_priv_get_csr_id(priv_mode, csr_type);
+    switch (csr)
+    {
+        case BM_CSR_MCAUSE:
+            BM_CSR_CLEAR(BM_CSR_MCAUSE, mask);
+            break;
+        case BM_CSR_MEPC:
+            BM_CSR_CLEAR(BM_CSR_MEPC, mask);
+            break;
+        case BM_CSR_MIE:
+            BM_CSR_CLEAR(BM_CSR_MIE, mask);
+            break;
+        case BM_CSR_MIP:
+            BM_CSR_CLEAR(BM_CSR_MIP, mask);
+            break;
+        case BM_CSR_MSTATUS:
+            BM_CSR_CLEAR(BM_CSR_MSTATUS, mask);
+            break;
+        case BM_CSR_MTVAL:
+            BM_CSR_CLEAR(BM_CSR_MTVAL, mask);
+            break;
+        case BM_CSR_MTVEC:
+            BM_CSR_CLEAR(BM_CSR_MTVEC, mask);
+            break;
+#ifdef TARGET_EXT_S
+        case BM_CSR_SCAUSE:
+            BM_CSR_CLEAR(BM_CSR_SCAUSE, mask);
+            break;
+        case BM_CSR_SEPC:
+            BM_CSR_CLEAR(BM_CSR_SEPC, mask);
+            break;
+        case BM_CSR_SIE:
+            BM_CSR_CLEAR(BM_CSR_SIE, mask);
+            break;
+        case BM_CSR_SIP:
+            BM_CSR_CLEAR(BM_CSR_SIP, mask);
+            break;
+        case BM_CSR_SSTATUS:
+            BM_CSR_CLEAR(BM_CSR_SSTATUS, mask);
+            break;
+        case BM_CSR_STVAL:
+            BM_CSR_CLEAR(BM_CSR_STVAL, mask);
+            break;
+        case BM_CSR_STVEC:
+            BM_CSR_CLEAR(BM_CSR_STVEC, mask);
+            break;
+#endif // TARGET_EXT_S
+#ifdef TARGET_EXT_N
+        case BM_CSR_UCAUSE:
+            BM_CSR_CLEAR(BM_CSR_UCAUSE, mask);
+            break;
+        case BM_CSR_UEPC:
+            BM_CSR_CLEAR(BM_CSR_UEPC, mask);
+            break;
+        case BM_CSR_UIE:
+            BM_CSR_CLEAR(BM_CSR_UIE, mask);
+            break;
+        case BM_CSR_UIP:
+            BM_CSR_CLEAR(BM_CSR_UIP, mask);
+            break;
+        case BM_CSR_USTATUS:
+            BM_CSR_CLEAR(BM_CSR_USTATUS, mask);
+            break;
+        case BM_CSR_UTVAL:
+            BM_CSR_CLEAR(BM_CSR_UTVAL, mask);
+            break;
+        case BM_CSR_UTVEC:
+            BM_CSR_CLEAR(BM_CSR_UTVEC, mask);
+            break;
+#endif // TARGET_EXT_N
+        default:
+            bm_fatal("Unsupported CSR 0x%x", csr);
+            break;
     }
 }
 
@@ -122,9 +438,9 @@ void __attribute__((noreturn)) bm_priv_enter_mode(bm_priv_mode_t mode, xlen_t en
     switch (prev_mode)
     {
         case BM_PRIV_MODE_MACHINE:
-            bm_csr_clear_mask(BM_CSR_MSTATUS, BM_MSTATUS_MPP_MASK << BM_MSTATUS_MPP_OFFSET);
-            bm_csr_set_mask(BM_CSR_MSTATUS, mode << BM_MSTATUS_MPP_OFFSET);
-            bm_csr_write(BM_CSR_MEPC, (xlen_t)entry);
+            BM_CSR_CLEAR(BM_CSR_MSTATUS, BM_MSTATUS_MPP_MASK << BM_MSTATUS_MPP_OFFSET);
+            BM_CSR_SET(BM_CSR_MSTATUS, mode << BM_MSTATUS_MPP_OFFSET);
+            BM_CSR_WRITE(BM_CSR_MEPC, (xlen_t)entry);
 
             __asm__ volatile("la ra, %0\n"
                              "mv sp, %1\n"
@@ -133,9 +449,9 @@ void __attribute__((noreturn)) bm_priv_enter_mode(bm_priv_mode_t mode, xlen_t en
             break;
 #ifdef TARGET_EXT_S
         case BM_PRIV_MODE_SUPERVISOR:
-            bm_csr_clear_mask(BM_CSR_SSTATUS, BM_MSTATUS_SPP_MASK << BM_MSTATUS_SPP_OFFSET);
-            bm_csr_set_mask(BM_CSR_SSTATUS, mode << BM_MSTATUS_SPP_OFFSET);
-            bm_csr_write(BM_CSR_SEPC, (xlen_t)entry);
+            BM_CSR_CLEAR(BM_CSR_SSTATUS, BM_MSTATUS_SPP_MASK << BM_MSTATUS_SPP_OFFSET);
+            BM_CSR_SET(BM_CSR_SSTATUS, mode << BM_MSTATUS_SPP_OFFSET);
+            BM_CSR_WRITE(BM_CSR_SEPC, (xlen_t)entry);
 
             __asm__ volatile("la ra, %0\n"
                              "mv sp, %1\n"

@@ -5,6 +5,7 @@ CONFIG_PROCESSOR            = L730
 
 CONFIG_NUM_HARTS            ?= 1
 CONFIG_HAS_FPU              = Y
+CONFIG_HAS_FPU_DP           = N
 CONFIG_HAS_PMP              = Y
 CONFIG_PMP_NUM_REGIONS      = 16
 CONFIG_HAS_TCMS             = Y

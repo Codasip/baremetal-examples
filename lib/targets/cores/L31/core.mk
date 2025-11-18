@@ -4,20 +4,21 @@ CORE_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
 # ----[ VARIABLES ]----
 
-MARCH := rv32imc
-MABI  := ilp32
-XLEN  := 32
-
-ifeq ($(CONFIG_HAS_FPU),Y)
-MARCH := rv32imfc
-MABI  := ilp32f
-endif
-
-MARCH :=$(MARCH)_zicsr_zifencei
-
-CPPFLAGS += -march=$(MARCH) -mabi=$(MABI)
 CFLAGS   += -I$(CORE_DIR)
 ASFLAGS  += -I$(CORE_DIR)
+
+# ----[ Basic Core Configuration ]----
+
+XLEN                := 32
+
+CONFIG_HAS_EXT_I    := Y
+CONFIG_HAS_EXT_M    := Y
+CONFIG_HAS_EXT_C    := Y
+
+CONFIG_HAS_EXT_U    := Y
+
+CONFIG_EXT_Z        += zicsr
+CONFIG_EXT_Z        += zifencei
 
 # ----[ DEFINES ]----
 
@@ -67,7 +68,6 @@ endif
 # ----[ LIB SOURCES ]----
 
 BM_SOURCES += \
-    $(CORE_DIR)/target_csr.c \
     $(LIB_DIR)/src/pic.c
 
 ifeq ($(CONFIG_HAS_HPM),Y)

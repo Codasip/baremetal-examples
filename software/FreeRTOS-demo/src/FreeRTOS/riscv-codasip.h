@@ -1,7 +1,7 @@
 /*
  * FreeRTOS V202212.00
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * 
+ *
  * Changes: Copyright (C) 2024 Codasip s.r.o.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of

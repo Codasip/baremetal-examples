@@ -1,4 +1,4 @@
-/* Copyright 2024 Codasip s.r.o.         */
+/* Copyright 2024-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/clint.h>
@@ -28,9 +28,14 @@ static bool rdtime_handler_called = false;
 
 void unsuported_instruction_handler(void)
 {
-    xlen_t   inst_addr   = bm_csr_read(BM_CSR_MEPC);
-    xlen_t   instruction = bm_csr_read(BM_CSR_MTVAL);
-    unsigned inst_size   = 4; // Has to be updated if compressed instruction is decoded
+    xlen_t inst_addr   = 0;
+    xlen_t instruction = 0;
+
+    // Get inst_addr and instruction values from CSR registers
+    BM_CSR_READ(BM_CSR_MEPC, inst_addr);
+    BM_CSR_READ(BM_CSR_MTVAL, instruction);
+
+    unsigned inst_size = 4; // Has to be updated if compressed instruction is decoded
 
     if (((instruction & INST_RDTIME_MASK) == INST_RDTIME) ||
         ((instruction & INST_RDTIME_MASK) == INST_RDTIMEH))
@@ -60,7 +65,7 @@ void unsuported_instruction_handler(void)
     }
 
     // Move past the offending instruction to continue
-    bm_csr_write(BM_CSR_MEPC, inst_addr + inst_size);
+    BM_CSR_WRITE(BM_CSR_MEPC, inst_addr + inst_size);
 }
 
 static inline xlen_t get_time(void)

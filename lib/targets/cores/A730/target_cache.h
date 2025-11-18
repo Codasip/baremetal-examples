@@ -1,4 +1,4 @@
-/* Copyright 2024 Codasip s.r.o.         */
+/* Copyright 2024-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef BAREMETAL_TARGET_CACHE_H
@@ -62,8 +62,8 @@ static inline void bm_dcache_invalidate_address(xlen_t addr)
  */
 static inline void bm_dcache_flush_all(void)
 {
-    bm_csr_write(BM_CSR_MDCACHECTRL, BM_MDCACHECTRL_CLEAN);
-    bm_csr_write(BM_CSR_ML2CACHECTRL, BM_ML2CACHECTRL_CLEAN);
+    BM_CSR_WRITE(BM_CSR_MDCACHECTRL, BM_MDCACHECTRL_CLEAN);
+    BM_CSR_WRITE(BM_CSR_ML2CACHECTRL, BM_ML2CACHECTRL_CLEAN);
 }
 
 /**
@@ -72,8 +72,8 @@ static inline void bm_dcache_flush_all(void)
 static inline void bm_dcache_invalidate_all(void)
 {
     // clean + invalidate
-    bm_csr_write(BM_CSR_MDCACHECTRL, BM_MDCACHECTRL_FLUSH);
-    bm_csr_write(BM_CSR_ML2CACHECTRL, BM_ML2CACHECTRL_FLUSH);
+    BM_CSR_WRITE(BM_CSR_MDCACHECTRL, BM_MDCACHECTRL_FLUSH);
+    BM_CSR_WRITE(BM_CSR_ML2CACHECTRL, BM_ML2CACHECTRL_FLUSH);
 }
 
 /**
@@ -81,7 +81,7 @@ static inline void bm_dcache_invalidate_all(void)
  */
 static inline void bm_icache_invalidate_all(void)
 {
-    bm_csr_write(BM_CSR_MICACHECTRL, BM_MICACHECTRL_INVALIDATE);
+    BM_CSR_WRITE(BM_CSR_MICACHECTRL, BM_MICACHECTRL_INVALIDATE);
 }
 
 #ifdef __cplusplus

@@ -67,35 +67,44 @@ static void print_register_field(const register_field_t *field, xlen_t reg_value
     printf("    %5s : %2lu\n", field->name, value);
 }
 
-static void print_register(const char             *csr_name,
-                           const int               csr_id,
-                           const register_field_t *csr_fields,
-                           unsigned                fields_count)
-{
-    xlen_t value = bm_csr_read(csr_id);
-    printf("  - CSR %-10s: " BM_FMT_XLEN "\n", csr_name, value);
-
-    for (unsigned i = 0; i < fields_count; i++)
-    {
-        print_register_field(&csr_fields[i], value);
-    }
-}
-
 int main(void)
 {
     puts("Welcome to the CSR demo!");
 
-    printf("  - CSR mvendorid : " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MVENDORID));
-    printf("  - CSR marchid   : " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MARCHID));
-    printf("  - CSR mimpid    : " BM_FMT_XLEN "\n", bm_csr_read(BM_CSR_MIMPID));
+    xlen_t csr_val = 0;
 
-    print_register("misa", BM_CSR_MISA, MISA_FIELDS, MISA_FIELDS_COUNT);
-    print_register("mstatus", BM_CSR_MSTATUS, MSTATUS_FIELDS, MSTATUS_FIELDS_COUNT);
+    BM_CSR_READ(BM_CSR_MVENDORID, csr_val);
+    printf("  - CSR mvendorid : " BM_FMT_XLEN "\n", csr_val);
+
+    BM_CSR_READ(BM_CSR_MARCHID, csr_val);
+    printf("  - CSR marchid   : " BM_FMT_XLEN "\n", csr_val);
+
+    BM_CSR_READ(BM_CSR_MIMPID, csr_val);
+    printf("  - CSR mimpid    : " BM_FMT_XLEN "\n", csr_val);
+
+    BM_CSR_READ(BM_CSR_MISA, csr_val);
+    printf("  - CSR %-10s: " BM_FMT_XLEN "\n", "misa", csr_val);
+    for (unsigned i = 0; i < MISA_FIELDS_COUNT; i++)
+    {
+        print_register_field(&MISA_FIELDS[i], csr_val);
+    }
+
+    BM_CSR_READ(BM_CSR_MSTATUS, csr_val);
+    printf("  - CSR %-10s: " BM_FMT_XLEN "\n", "mstatus", csr_val);
+    for (unsigned i = 0; i < MSTATUS_FIELDS_COUNT; i++)
+    {
+        print_register_field(&MSTATUS_FIELDS[i], csr_val);
+    }
 
     printf("### Enabling interrupts to show a change in 'mstatus' ...\n");
     bm_interrupt_init(BM_PRIV_MODE_MACHINE);
 
-    print_register("mstatus", BM_CSR_MSTATUS, MSTATUS_FIELDS, MSTATUS_FIELDS_COUNT);
+    BM_CSR_READ(BM_CSR_MSTATUS, csr_val);
+    printf("  - CSR %-10s: " BM_FMT_XLEN "\n", "mstatus", csr_val);
+    for (unsigned i = 0; i < MSTATUS_FIELDS_COUNT; i++)
+    {
+        print_register_field(&MSTATUS_FIELDS[i], csr_val);
+    }
 
     puts("Bye.");
     return EXIT_SUCCESS;

@@ -280,7 +280,8 @@ void system_init(void)
     /* Setup any remaining interrupt vectors here, e.g.:
      * mtvt_table[2 upwards] = your_isr_handler_X; */
 
-    bm_csr_write(BM_CSR_MTVT, (xlen_t)mtvt_table);
+    xlen_t val = (xlen_t)mtvt_table;
+    BM_CSR_WRITE(BM_CSR_MTVT, val);
 
     bm_exec_fence_i();
 

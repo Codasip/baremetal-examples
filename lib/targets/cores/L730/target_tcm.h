@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef BAREMETAL_TARGET_TCM_H
@@ -22,9 +22,11 @@ extern "C" {
  *
  * \return Address of ITCM
  */
-xlen_t bm_tcm_itcm_get_base_address(void)
+static inline xlen_t bm_tcm_itcm_get_base_address(void)
 {
-    return bm_csr_read(BM_CSR_MITCMBASEADDR);
+    xlen_t val = 0;
+    BM_CSR_READ(BM_CSR_MITCMBASEADDR, val);
+    return val;
 }
 
 /**
@@ -32,41 +34,43 @@ xlen_t bm_tcm_itcm_get_base_address(void)
  *
 * \return Address of DTCM
 */
-xlen_t bm_tcm_dtcm_get_base_address(void)
+static inline xlen_t bm_tcm_dtcm_get_base_address(void)
 {
-    return bm_csr_read(BM_CSR_MDTCMBASEADDR);
+    xlen_t val = 0;
+    BM_CSR_READ(BM_CSR_MDTCMBASEADDR, val);
+    return val;
 }
 
 /**
  * \brief Enable ITCM
  */
-void bm_tcm_itcm_enable(void)
+static inline void bm_tcm_itcm_enable(void)
 {
-    bm_csr_set_mask(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__ITCM_ENABLE_MASK);
+    BM_CSR_SET(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__ITCM_ENABLE_MASK);
 }
 
 /**
  * \brief Enable DTCM
  */
-void bm_tcm_dtcm_enable(void)
+static inline void bm_tcm_dtcm_enable(void)
 {
-    bm_csr_set_mask(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__DTCM_ENABLE_MASK);
+    BM_CSR_SET(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__DTCM_ENABLE_MASK);
 }
 
 /**
  * \brief Disable ITCM
  */
-void bm_tcm_itcm_disable(void)
+static inline void bm_tcm_itcm_disable(void)
 {
-    bm_csr_clear_mask(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__ITCM_ENABLE_MASK);
+    BM_CSR_CLEAR(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__ITCM_ENABLE_MASK);
 }
 
 /**
  * \brief Disable DTCM
  */
-void bm_tcm_dtcm_disable(void)
+static inline void bm_tcm_dtcm_disable(void)
 {
-    bm_csr_clear_mask(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__DTCM_ENABLE_MASK);
+    BM_CSR_CLEAR(BM_CSR_MTCMCFG, BM_CSR_MTCMCFG__DTCM_ENABLE_MASK);
 }
 
 /**
@@ -74,11 +78,13 @@ void bm_tcm_dtcm_disable(void)
  *
  * \return Size of ITCM
  */
-xlen_t bm_tcm_itcm_get_size(void)
+static inline xlen_t bm_tcm_itcm_get_size(void)
 {
     bm_csr_mtcmcfg_t mtcmcfg;
+    xlen_t           val = 0;
 
-    mtcmcfg.reg = bm_csr_read(BM_CSR_MTCMCFG);
+    BM_CSR_READ(BM_CSR_MTCMCFG, val);
+    mtcmcfg.reg = val;
 
     return mtcmcfg.itcm_size * 1024;
 }
@@ -88,11 +94,13 @@ xlen_t bm_tcm_itcm_get_size(void)
  *
  * \return Size of DTCM
  */
-xlen_t bm_tcm_dtcm_get_size(void)
+static inline xlen_t bm_tcm_dtcm_get_size(void)
 {
     bm_csr_mtcmcfg_t mtcmcfg;
+    xlen_t           val = 0;
 
-    mtcmcfg.reg = bm_csr_read(BM_CSR_MTCMCFG);
+    BM_CSR_READ(BM_CSR_MTCMCFG, val);
+    mtcmcfg.reg = val;
 
     return mtcmcfg.dtcm_size * 1024;
 }
@@ -106,7 +114,7 @@ extern char __dtcm_data_end;
 /**
  * \brief Copy contents of the .itcm section to the instruction TCM
  */
-void bm_tcm_itcm_init(void)
+static inline void bm_tcm_itcm_init(void)
 {
     xlen_t itcm_start    = bm_tcm_itcm_get_base_address();
     void  *itcm_data     = &__itcm_data_start;
@@ -121,7 +129,7 @@ void bm_tcm_itcm_init(void)
 /**
  * \brief Copy contents of the .dtcm section to the data TCM
  */
-void bm_tcm_dtcm_init(void)
+static inline void bm_tcm_dtcm_init(void)
 {
     xlen_t dtcm_start    = bm_tcm_dtcm_get_base_address();
     void  *dtcm_data     = &__dtcm_data_start;

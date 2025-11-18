@@ -1,11 +1,11 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 /*
- * L730 core initialization routine
+ * V730 core initialization routine
  *
  * This file contains assembly method for initializing the
- * L730 core to a known state, namely setting the non-reset
+ * V730 core to a known state, namely setting the non-reset
  * registers.
  */
 

@@ -1,4 +1,4 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/interrupt.h>
@@ -21,7 +21,9 @@ void user_ecall_handler(void)
     volatile bm_register_file_t *regs = bm_priv_regs[bm_get_priv_mode()][0];
     regs->a0                          = call_function(regs->a0, regs->a1, regs->a2);
 
-    bm_csr_write(BM_CSR_MEPC, bm_csr_read(BM_CSR_MEPC) + 0x4);
+    xlen_t csr_val = 0;
+    BM_CSR_READ(BM_CSR_MEPC, csr_val);
+    BM_CSR_WRITE(BM_CSR_MEPC, csr_val + 0x04);
 }
 
 void machine_ecall_handler(void)
@@ -31,7 +33,9 @@ void machine_ecall_handler(void)
     volatile bm_register_file_t *regs = bm_priv_regs[bm_get_priv_mode()][0];
     regs->a0                          = call_function(regs->a0, regs->a1, regs->a2);
 
-    bm_csr_write(BM_CSR_MEPC, bm_csr_read(BM_CSR_MEPC) + 0x4);
+    xlen_t csr_val = 0;
+    BM_CSR_READ(BM_CSR_MEPC, csr_val);
+    BM_CSR_WRITE(BM_CSR_MEPC, csr_val + 0x04);
 }
 
 uint8_t u_stack[0x4000] __attribute__((aligned(16)));

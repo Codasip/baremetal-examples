@@ -3,26 +3,36 @@
 CORE_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
 # ----[ VARIABLES ]----
-ifeq ($(CONFIG_HAS_FPU_DP),Y)
-# EXT-D
-MARCH := rv32imafdc_zicsr_zifencei_zba_zbb_zbs_zicbom_zicboz
-MABI  := ilp32d
-else
-MARCH := rv32imafc_zicsr_zifencei_zba_zbb_zbs_zicbom_zicboz
-MABI  := ilp32f
-endif
-
-XLEN  := 32
-
-ifneq ($(CC_TYPE), codasip_clang)
-# Only define ARCH and ABI for non-Codasip compilers,
-# a Codasip SDK defaults to the correct ARCH & ABI for the associated core
-CPPFLAGS += -march=$(MARCH) -mabi=$(MABI)
-endif
 
 CFLAGS   += -I$(CORE_DIR)
 ASFLAGS  += -I$(CORE_DIR)
-LDFLAGS  += -Wl,--defsym=_NUM_HARTS=$(CONFIG_NUM_HARTS)
+
+# ----[ Basic Core Configuration ]----
+
+XLEN                := 32
+
+CONFIG_HAS_EXT_I    := Y
+CONFIG_HAS_EXT_M    := Y
+CONFIG_HAS_EXT_A    := Y
+CONFIG_HAS_EXT_C    := Y
+
+CONFIG_HAS_EXT_S    := Y
+CONFIG_HAS_EXT_U    := Y
+
+CONFIG_EXT_Z        += zicsr
+CONFIG_EXT_Z        += zifencei
+CONFIG_EXT_Z        += zba
+CONFIG_EXT_Z        += zbb
+CONFIG_EXT_Z        += zbs
+CONFIG_EXT_Z        += zicbom
+CONFIG_EXT_Z        += zicboz
+
+ifeq ($(CC_TYPE), codasip_clang)
+# Only define ARCH/ABI for non-Codasip compilers, a Codasip SDK defaults to the
+# correct setting for the associated core.
+CONFIG_CC_USE_DEFAULT_ARCH := Y
+CONFIG_CC_USE_DEFAULT_ABI  := Y
+endif
 
 # ----[ DEFINES ]----
 
@@ -37,6 +47,7 @@ endif
 
 ifeq ($(CONFIG_HAS_PMP),Y)
 DEFINES += CONFIG_HAS_PMP
+DEFINES += CONFIG_PMP_NUM_REGIONS=$(CONFIG_PMP_NUM_REGIONS)
 endif
 
 ifeq ($(CONFIG_HAS_CACHES),Y)
@@ -77,7 +88,6 @@ BM_CRT0 += \
     $(CORE_DIR)/core_init.S
 
 BM_SOURCES += \
-    $(CORE_DIR)/target_csr.c \
     $(CORE_DIR)/target_hpm.c \
     $(LIB_DIR)/src/clic.c
 

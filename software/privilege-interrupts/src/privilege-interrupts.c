@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/clint.h>
@@ -44,7 +44,7 @@ void mtip_handler(void)
     else
     {
         // Pass every second interrupt to the supervisor handler in machine mode
-        bm_csr_set_mask(BM_CSR_MIP, 1 << BM_INTERRUPT_SSIP);
+        BM_CSR_SET(BM_CSR_MIP, 1 << BM_INTERRUPT_SSIP);
     }
 
     pass = !pass;
@@ -58,7 +58,7 @@ void ssip_handler(void)
     puts("SSIP handler enterred.");
 
     // Clear the interrupt
-    bm_csr_clear_mask(BM_CSR_MIP, 1 << BM_INTERRUPT_SSIP);
+    BM_CSR_CLEAR(BM_CSR_MIP, 1 << BM_INTERRUPT_SSIP);
 }
 
 /**

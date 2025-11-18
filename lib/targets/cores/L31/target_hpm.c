@@ -11,7 +11,7 @@
  * \brief Table with bm_counter_id of counters for supported HPM events,
  * and HPM_EVENT_UNSUPPORTED on the indexes of the unsupported events
  */
-const int supported_hpm_events_counter_table[] = {
+static const int supported_hpm_events_counter_table[] = {
     BM_COUNTER_HPM3,
     BM_COUNTER_HPM4,
     BM_COUNTER_HPM5,

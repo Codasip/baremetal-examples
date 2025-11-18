@@ -2,7 +2,7 @@
 
 PLATFORM_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
-# ----[ LDSCRIPT ]----
+# ----[ VARIABLES ]----
 
 CFLAGS  += -I$(PLATFORM_DIR)
 

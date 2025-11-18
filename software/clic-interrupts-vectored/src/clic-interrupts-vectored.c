@@ -1,4 +1,4 @@
-/* Copyright 2024 Codasip s.r.o.         */
+/* Copyright 2024-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/clic.h>
@@ -45,7 +45,9 @@ int main(void)
     // Setup interrupt handlers
     mtvt_table[bm_clic_get_ext_irq_id(gpio0->ext_irq_id)] = gpio0_handler;
     mtvt_table[bm_clic_get_ext_irq_id(gpio1->ext_irq_id)] = gpio1_handler;
-    bm_csr_write(BM_CSR_MTVT, (xlen_t)mtvt_table);
+
+    xlen_t val = (xlen_t)mtvt_table;
+    BM_CSR_WRITE(BM_CSR_MTVT, val);
 
     bm_exec_fence_i();
 

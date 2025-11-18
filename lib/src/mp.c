@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/mp.h"
@@ -100,5 +100,7 @@ void bm_hart_execute_all(bm_hart_func_ptr_t func)
 
 unsigned bm_get_hartid(void)
 {
-    return (unsigned)bm_csr_read(BM_CSR_MHARTID);
+    xlen_t csr_val = 0;
+    BM_CSR_READ(BM_CSR_MHARTID, csr_val);
+    return (unsigned)csr_val;
 }
