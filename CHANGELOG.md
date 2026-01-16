@@ -2,6 +2,25 @@
 
 This file contains all the major changes in different releases.
 
+## v1.1.8
+
+### Features
+- add RISC-V CHERI architecture (Y-Extension) support
+- add support for KR260 FPGA board
+- add initialization of core registers for L110 and L150 cores
+- add explicitly set section for Zcmt extension in FSBL
+- add support for A730-Flint
+
+### Miscellaneous
+- use register context parameter for interrupt handler
+- drop obsolete TARGET_LINUX_SUPPORT for V730
+- minor configuration and build system cleanups
+- set `CONFIG_PLATFORM` to Version 2 by default. (Hobgoblin/Hoobs v2 platform is now used by default; HOB_PLATFORM_VERSION configuration variable has been removed).
+- add PLIC to `REQUIRES` list for `privilege-interrupts` and `privilege-interrupts-delegated` demos 
+
+### Fix
+- fix typo in variable name used for ABI selection (`CONFIG_CC_USE_DEFAULT_MABI` -> `CONFIG_CC_USE_DEFAULT_ABI`)
+
 ## v1.1.7
 
 ### Feature

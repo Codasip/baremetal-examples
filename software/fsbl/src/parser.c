@@ -125,7 +125,6 @@ int parse_entry(entry_t *entry)
             entry->flags |= ENTRY_FLAG_BOOT;
             pos += 4;
         }
-#ifdef TARGET_LINUX_SUPPORT
         else if (!strncmp(pos, "FDT", 3))
         {
             entry->flags |= ENTRY_FLAG_FDT;
@@ -136,7 +135,6 @@ int parse_entry(entry_t *entry)
             entry->flags |= ENTRY_FLAG_NXT;
             pos += 3;
         }
-#endif
 
         // Check for EOF / EOL
         SKIP_WHITE(pos)

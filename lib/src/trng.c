@@ -5,15 +5,6 @@
 
 #include <stdint.h>
 
-struct bm_trng_regs {
-    volatile uint32_t RAW;
-    volatile uint32_t RAWN;
-    volatile uint32_t RND;
-    volatile uint32_t RNDN;
-    volatile uint32_t CONFIG;
-    volatile uint32_t STATUS;
-};
-
 uint32_t bm_trng_get_raw(bm_trng_t *trng)
 {
     // Wait for available sample

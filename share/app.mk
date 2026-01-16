@@ -33,7 +33,14 @@ CRT_OBJ      := $(patsubst $(LIB_DIR)/%, ./lib/%, $(CRT_OBJ))
 CFLAGS  += -std=gnu11 -pedantic -Wall -Wextra -Os
 CFLAGS  += -g3 -Wno-unused-command-line-argument -ffunction-sections -fdata-sections
 ASFLAGS += -g3 -Wno-unused-command-line-argument -ffunction-sections -fdata-sections
-LDFLAGS += -nostartfiles -Wl,--gc-sections
+LDFLAGS += -Wl,--gc-sections
+ifneq ($(USE_SDK_GLOSS),Y)
+LDFLAGS += -nostartfiles
+endif
+
+ifdef LDSCRIPT
+LDSCRIPTFLAG = -Wl,-T$(LDSCRIPT)
+endif
 
 # ----[ REQUIREMENTS ]----
 
@@ -79,7 +86,7 @@ $(BUILD_DIR)./ext/%.o : %.S
 all: $(BUILD_DIR)$(APP).xexe
 
 $(BUILD_DIR)$(APP).xexe: $(addprefix $(BUILD_DIR), $(APP_OBJS) $(LIB_OBJS) $(CRT_OBJ))
-	$(LINK.c) -Wl,-T$(LDSCRIPT) -o $@ $^ $(LDLIBS)
+	$(LINK.c) $(LDSCRIPTFLAG) -o $@ $^ $(LDLIBS)
 
 .PHONY: lst
 lst: $(BUILD_DIR)$(APP).lst

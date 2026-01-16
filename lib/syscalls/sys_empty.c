@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 _READ_WRITE_RETURN_TYPE WEAK USED _write(int fd UNUSED, const void *ptr UNUSED, size_t len UNUSED)
 {

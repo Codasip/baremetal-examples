@@ -1,6 +1,8 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <baremetal/atomic.h>
+#include <baremetal/bm_cheri.h>
 #include <baremetal/common.h>
 #include <baremetal/mp.h>
 #include <stdint.h>
@@ -19,7 +21,7 @@ void hart_job(bm_hart_func_arg_t arg)
     uint32_t tmp = 1;
 
     // Increment the variable from each hart atomically
-    __asm__ volatile("amoadd.w %0, %1, (%2)\n" : "=r"(tmp) : "r"(tmp), "r"(&num_harts));
+    bm_amoadd_w(tmp, tmp, &num_harts);
 }
 
 int main(void)

@@ -24,12 +24,6 @@
 
 #define CONFIG_FILE_PATH "/config.txt"
 
-#ifdef TARGET_LINUX_SUPPORT
-    #define LINUX_SUPPORT_STR "enabled"
-#else
-    #define LINUX_SUPPORT_STR "disabled"
-#endif
-
 #ifndef __STRINGIFY
     #define __STRINGIFY(s) #s
 #endif
@@ -58,16 +52,21 @@ static const unsigned gpio_switches[] = {TARGET_GPIO_PORT_SWITCH0,
                                          TARGET_GPIO_PORT_SWITCH6,
                                          TARGET_GPIO_PORT_SWITCH7};
 
-#ifdef TARGET_LINUX_SUPPORT
-// See https://github.com/riscv-software-src/opensbi/blob/master/include/sbi/fw_dynamic.h
+// OpenSBI dynamic firmware information block as defined in
+// https://github.com/riscv-software-src/opensbi/blob/master/include/sbi/fw_dynamic.h
+#define OPENSBI_FW_DYNAMIC_INFO_MAGIC_VALUE 0x4942534f // 'OSBI' ASCII String
+#define OPENSBI_FW_DYNAMIC_INFO_VERSION_2   0x2
+#define OPENSBI_FW_DYNAMIC_INFO_NEXT_MODE_U 0x0
+#define OPENSBI_FW_DYNAMIC_INFO_NEXT_MODE_S 0x1
+#define OPENSBI_FW_DYNAMIC_INFO_NEXT_MODE_M 0x3
 typedef struct {
-    unsigned long magic;
-    unsigned long version;
-    unsigned long next_addr;
-    unsigned long next_mode;
-    unsigned long options;
-    unsigned long boot_hart;
-} fw_dynamic_info_t;
+    xlen_t magic;
+    xlen_t version;
+    xlen_t next_addr;
+    xlen_t next_mode;
+    xlen_t options;
+    xlen_t boot_hart;
+} opensbi_fw_dynamic_info_t;
 
 typedef struct {
     xlen_t boot_addr;
@@ -78,13 +77,6 @@ typedef struct {
 } boot_config_t;
 
 typedef void (*payload_func_t)(xlen_t, xlen_t, xlen_t);
-#else
-typedef struct {
-    xlen_t boot_addr;
-} boot_config_t;
-
-typedef void (*payload_func_t)(void);
-#endif
 
 void check_ready(void *arg)
 {
@@ -95,34 +87,27 @@ static void start_payload(void *arg)
 {
     boot_config_t *config         = (boot_config_t *)arg;
     payload_func_t launch_payload = (payload_func_t)config->boot_addr;
+    xlen_t         ftd            = config->fdt_addr;
+    unsigned int   hart_num       = bm_get_hartid();
 
-    bm_exec_fence();
-    bm_exec_fence_i();
-
-#ifdef TARGET_LINUX_SUPPORT
     // Set arguments for OpenSBI, which are passed in the same registers as function arguments.
     // See RISC-V calling conventions - https://riscv.org/wp-content/uploads/2015/01/riscv-calling.pdf
     // and OpenSBI docs - https://github.com/riscv-software-src/opensbi/blob/master/docs/firmware/fw.md
     // Note, that the parameters differ for different OpenSBI Firmwares. If less parameters are required,
     // the remaining registers will not influence further operation.
-
-    fw_dynamic_info_t fw_info = {.magic     = 0x4942534f,
-                                 .version   = 0x2,
-                                 .next_addr = config->next_addr,
-                                 .next_mode = 0x1,
-                                 .options   = 0x0,
-                                 .boot_hart = 0x0};
-
-    xlen_t info_p = config->next_addr ? (xlen_t)&fw_info : 0;
-
-    unsigned int hart_num = bm_get_hartid();
+    opensbi_fw_dynamic_info_t opensbi_fw_dynamic_info = {
+        .magic     = OPENSBI_FW_DYNAMIC_INFO_MAGIC_VALUE,
+        .version   = OPENSBI_FW_DYNAMIC_INFO_VERSION_2,
+        .next_addr = config->next_addr,
+        .next_mode = OPENSBI_FW_DYNAMIC_INFO_NEXT_MODE_S,
+        .options   = 0x0,
+        .boot_hart = 0x0,
+    };
 
     bm_exec_fence();
+    bm_exec_fence_i();
 
-    launch_payload((xlen_t)hart_num, config->fdt_addr, info_p);
-#else
-    launch_payload();
-#endif
+    launch_payload((xlen_t)hart_num, ftd, (xlen_t)&opensbi_fw_dynamic_info);
 }
 
 static void exit_with_error(void)
@@ -308,7 +293,6 @@ static int process_entry(entry_t *entry, boot_config_t *config)
     {
         config->boot_addr = entry->load_addr;
     }
-#ifdef TARGET_LINUX_SUPPORT
     else if (entry->flags & ENTRY_FLAG_FDT)
     {
         config->fdt_addr = entry->load_addr;
@@ -317,7 +301,6 @@ static int process_entry(entry_t *entry, boot_config_t *config)
     {
         config->next_addr = entry->load_addr;
     }
-#endif
 
     return 0;
 }
@@ -408,7 +391,6 @@ int main(void)
     printf(" - Platform:          %s\n", TARGET_PLATFORM_NAME);
     printf(" - Frequency:         %u MHz\n", (unsigned)TARGET_CLK_FREQ / 1000000);
     printf(" - Number of HARTs:   %u\n", TARGET_NUM_HARTS);
-    printf(" - Linux support:     %s\n", LINUX_SUPPORT_STR);
     printf("\n");
     printf("Machine information:\n");
 

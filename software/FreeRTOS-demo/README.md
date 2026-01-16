@@ -6,6 +6,11 @@ flash LEDs, and multiple tasks outputting to the UART via the Mutex protected fu
 `main_blinky.c` is the standard FreeRTOS Demo. Oddly it does not blink LEDs, it sends data from
 one task to another outputting information to the UART via `vSendString()`.
 
+`main_buggy.c` is an alternative FreeRTOS demo which can be used to demonstrate CHERI capabilities.
+It consists of 3 tasks that overflow buffers. It can be run on both CHERI and non-CHERI platforms
+to demonstrate how CHERI can catch and safely handle the buffer overflows whilst data is corrupted
+without CHERI enabled.
+
 ## Additional Setup
 
 In `Makefile` set:
@@ -44,6 +49,15 @@ This demo has been tested with `FreeRTOS V11.2.0`.
 Set up the environment variables to to point to the repo:
 
     export RTOS_DIR=$(realpath repos/FreeRTOS-Kernel)
+
+Set up the environment variables to build your selected demo:
+
+    export FREERTOS_DEMO_APP=blinky
+        or
+    export FREERTOS_DEMO_APP=buggy
+
+    Note: By default FREERTOS_DEMO_APP is set to blinky and does not need setting if this is your
+    desired application.
 
 After configuring `baremetal-examples/config.mk` and adding environment variable `SDK_PREFIX`:
 

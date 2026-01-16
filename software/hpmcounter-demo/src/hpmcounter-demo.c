@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/counter.h>
@@ -17,16 +17,30 @@
 #endif
 
 // Variables used in the test examples
+#ifdef __CHERI_PURE_CAPABILITY__
+static void *a = (void *)&a;
+static void *b = (void *)&b;
+
+#else
 static xlen_t a = (xlen_t)&a;
 static xlen_t b = (xlen_t)&b;
+#endif
 
 /** \brief Function executing two independent load instructions */
 void independent_loads(void)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    __asm__ volatile("clw t1, 0 (%0)\n"
+                     "clw t2, 0 (%1)\n" ::"C"(&a),
+                     "C"(&b)
+                     : "t1", "t2");
+
+#else
     __asm__ volatile("lw t1, 0 (%0)\n"
                      "lw t2, 0 (%1)\n" ::"r"(a),
                      "r"(b)
                      : "t1", "t2");
+#endif
 }
 
 /** \brief Function executing two load instructions, value obtained by the first one is used by the second */
@@ -34,15 +48,42 @@ void dependant_loads(void)
 {
     // Note, that variable b is unused, but still present, to instruct
     // the compiler to generate similar code as in independent loads function
+#ifdef __CHERI_PURE_CAPABILITY__
+    __asm__ volatile("clc ct1, 0 (%0)\n"
+                     "clw t2, 0 (ct1)\n" ::"C"(&a),
+                     "C"(&b)
+                     : "ct1", "t2");
+
+#else
     __asm__ volatile("lw t1, 0 (%0)\n"
                      "lw t2, 0 (t1)\n" ::"r"(a),
                      "r"(b)
                      : "t1", "t2");
+#endif
 }
 
 /** \brief Function executing several dependant load instructions with nops inbetween */
 void sparse_loads(void)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    __asm__ volatile("clc ct1, 0 (%0)\n"
+                     "nop\n"
+                     "nop\n"
+                     "clc ct1, 0 (ct1)\n"
+                     "nop\n"
+                     "nop\n"
+                     "clc ct1, 0 (ct1)\n"
+                     "nop\n"
+                     "nop\n"
+                     "clc ct1, 0 (ct1)\n"
+                     "nop\n"
+                     "nop\n"
+                     "clc ct1, 0 (ct1)\n"
+                     "nop\n"
+                     "nop\n" ::"C"(&a)
+                     : "ct1");
+
+#else
     __asm__ volatile("lw t1, 0 (%0)\n"
                      "nop\n"
                      "nop\n"
@@ -59,11 +100,31 @@ void sparse_loads(void)
                      "nop\n"
                      "nop\n" ::"r"(a)
                      : "t1");
+#endif
 }
 
 /** \brief Function executing several dependant load instructions and nops afterwards */
 void grouped_loads(void)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    __asm__ volatile("clc ct1, 0 (%0)\n"
+                     "clc ct1, 0 (ct1)\n"
+                     "clc ct1, 0 (ct1)\n"
+                     "clc ct1, 0 (ct1)\n"
+                     "clc ct1, 0 (ct1)\n"
+                     "nop\n"
+                     "nop\n"
+                     "nop\n"
+                     "nop\n"
+                     "nop\n"
+                     "nop\n"
+                     "nop\n"
+                     "nop\n"
+                     "nop\n"
+                     "nop\n" ::"C"(&a)
+                     : "t1");
+
+#else
     __asm__ volatile("lw t1, 0 (%0)\n"
                      "lw t1, 0 (t1)\n"
                      "lw t1, 0 (t1)\n"
@@ -80,6 +141,7 @@ void grouped_loads(void)
                      "nop\n"
                      "nop\n" ::"r"(a)
                      : "t1");
+#endif
 }
 
 /**

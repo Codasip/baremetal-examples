@@ -11,6 +11,7 @@
  * Codasip license agreement under which you obtained this file.
  */
 
+#include "baremetal/bm_cheri.h"
 #include "config.h"
 #include "memory.h"
 
@@ -26,9 +27,17 @@ typedef void (*memory_access_t)(volatile xlen_t *addr);
 // Get program data start and end addresses for overlap checks
 extern int _start;
 extern int _end;
-xlen_t     program_data_start = (xlen_t)(uintptr_t)(&_start);
-xlen_t     program_data_end   = (xlen_t)(uintptr_t)(&_end);
+extern int __heap_start;
+extern int __heap_end;
+extern int __stack_start;
+extern int __stack_size;
 
+xlen_t program_data_start = (xlen_t)(uintptr_t)(&_start);
+xlen_t program_data_end   = (xlen_t)(uintptr_t)(&_end);
+xlen_t heap_start         = (xlen_t)(uintptr_t)(&__heap_start);
+xlen_t heap_end           = (xlen_t)(uintptr_t)(&__heap_end);
+xlen_t stack_start        = (xlen_t)(uintptr_t)(&__stack_start);
+xlen_t stack_size         = (xlen_t)&__stack_size;
 /**
  * \brief Find a single safe memory block within a specified memory range.
  *
@@ -40,20 +49,48 @@ xlen_t     program_data_end   = (xlen_t)(uintptr_t)(&_end);
 static xlen_t find_safe_address_in_range(xlen_t range_start, xlen_t range_end)
 {
     xlen_t block_size = NUM_ITERATIONS * sizeof(xlen_t);
-    xlen_t addr       = range_start;
+    xlen_t stack_end  = stack_start + stack_size;
+    xlen_t addr_start = range_start;
+    xlen_t addr_end   = range_end;
 
-    if (addr >= program_data_start && addr < program_data_end)
+    if (addr_start >= program_data_start && addr_start < program_data_end)
     {
-        addr = program_data_end; // move past program/data
+        addr_start = program_data_end; // move past program/data
     }
 
-    // printf("Addr is -      0x%X\n", addr);
-    // printf("Check add is - 0x%X\n", addr + block_size);
-    // printf("End of SRAM -  0x%X\n", (xlen_t)SRAM_ADDR_END);
-
-    if (addr + block_size <= range_end)
+    if (addr_start >= heap_start && addr_start < heap_end)
     {
-        return addr; // safe block found
+        addr_start = heap_end; // move past heap
+    }
+
+    if (addr_start >= stack_start && addr_start < stack_end)
+    {
+        addr_start = stack_end; // move past stack
+    }
+
+    if (addr_end >= program_data_start && addr_end < program_data_end)
+    {
+        addr_end = program_data_start; // move before program/data
+    }
+
+    if (addr_end >= heap_start && addr_end < heap_end)
+    {
+        addr_end = heap_start; // move before heap
+    }
+
+    if (addr_end >= stack_start && addr_end < stack_end)
+    {
+        addr_end = stack_start; // move before stack
+    }
+
+    printf("Addr is -      0x" BM_FMT_XLEN "\n", addr_start);
+    printf("Check add is - 0x" BM_FMT_XLEN "\n", addr_start + block_size);
+    printf("Addr end is  - 0x" BM_FMT_XLEN "\n", addr_end);
+    printf("End of SRAM -  0x" BM_FMT_XLEN "\n", (xlen_t)SRAM_ADDR_END);
+
+    if (addr_start + block_size <= addr_end)
+    {
+        return addr_start; // safe block found
     }
     else
     {
@@ -80,11 +117,14 @@ static xlen_t get_cycles(void)
  */
 static void run_measurement(const char *name, memory_access_t mem_access, xlen_t address)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    xlen_t block_size = NUM_ITERATIONS * sizeof(xlen_t);
+#endif
     xlen_t before, after, elapsed;
     double per_iteration;
 
     before = get_cycles();
-    mem_access((volatile void *)address);
+    mem_access((volatile xlen_t *)addr_to_data_ptr((uintptr_t)address, block_size));
     after = get_cycles();
 
     elapsed       = after - before;

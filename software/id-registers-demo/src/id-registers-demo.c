@@ -39,6 +39,7 @@ int main(void)
            board == BM_ID_BOARD_GENESYS2 ? "Genesys2"
            : board == BM_ID_BOARD_VU19P  ? "VU19P"
            : board == BM_ID_BOARD_VCU118 ? "VCU118"
+           : board == BM_ID_BOARD_KR260  ? "KR260"
                                          : "Unknown board");
 
     bm_id_core_type_t core_type = bm_id_reg_core_type_get_val(id_reg);

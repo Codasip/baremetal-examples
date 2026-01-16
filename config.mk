@@ -31,13 +31,10 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #include $(THIS_DIR)/lib/targets/configs/config-v739-spinel.mk
 
 #include $(THIS_DIR)/lib/targets/configs/config-a730-default.mk
+#include $(THIS_DIR)/lib/targets/configs/config-a730-flint.mk
 
 #include $(THIS_DIR)/lib/targets/configs/config-x730-default.mk
 #include $(THIS_DIR)/lib/targets/configs/config-x730-lux.mk
-
-# Hobbs/Hobgoblin V1/2 Platforms, un-comment and set the following for Hobbs/Hobgoblin (memory map) version:
-# or leave HOB_PLATFORM_VERSION blank for v1:
-#HOB_PLATFORM_VERSION ?= 2
 
 # If building from top-level, uncomment one of the following lines to select demo to build
 #DEMO_APP=aead-demo

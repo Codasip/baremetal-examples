@@ -9,12 +9,23 @@
 #include <baremetal/csr_register_map.h>
 #include <target_csr.h>
 
-#define BM_CSR_READ(csr, val)                                                \
-    do                                                                       \
-    {                                                                        \
-        xlen_t __val;                                                        \
-        __asm__ volatile("csrr %0, %1" : "=r"(__val) : "i"(csr) : "memory"); \
-        val = __val;                                                         \
+#pragma once
+#ifdef __CHERI_PURE_CAPABILITY__
+    #define BM_CSR_READ_CAP(csr, value) __asm__ volatile("csrrc %0, " #csr ", zero" : "=C"(value))
+
+    /* Currently the Cheri compiler/assembler compalins about a caX register when using a "C",
+     * so we have a (temporary) solution here with two version of BM_CSR_WRITE_CAP: */
+    #define BM_CSR_WRITE_CAP(csr, value) __asm__ volatile("csrw " #csr ", %0" ::"C"(value))
+    #define BM_CSR_WRITE_CAP2(csr, value)                        \
+        __asm__ volatile("cmv ca0, %0\n"                         \
+                         "csrrw	x0, " #csr ", a0\n" ::"C"(value) \
+                         : "ca0");
+#endif
+
+#define BM_CSR_READ(csr, val)                                              \
+    do                                                                     \
+    {                                                                      \
+        __asm__ volatile("csrr %0, %1" : "=r"(val) : "i"(csr) : "memory"); \
     } while (0)
 
 #define BM_CSR_WRITE(csr, val)                                              \

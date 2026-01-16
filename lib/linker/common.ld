@@ -46,7 +46,7 @@ SECTIONS
     PROVIDE (___DTOR_END__ = .);
   } >ram
 
-  /* Clang creates this for the Zcmt extension. */
+  /* RISC-V Zcmt extension: table with jump target addresses */
   .tbljal : ALIGN(64) {
     *(.tbljal .tbljal.*)
   } >ram
@@ -83,6 +83,7 @@ SECTIONS
     KEEP(*(.gcc_except_table .gcc_except_table.*))
   } >ram
 
+  /* Shadow Call Stack */
   .scs (NOLOAD) : ALIGN(16) {
     . += __SCS_SIZE;
   } >ram
@@ -101,13 +102,17 @@ SECTIONS
 
   .heap (NOLOAD) : ALIGN(8) {
     _heap = .;
+    __heap_start = .;
     . += __HEAP_SIZE;
     _heap_end = .;
+    __heap_end = .;
   } >ram
 
   .stack (NOLOAD) : ALIGN(16) {
+    __stack_start = .;
     /* secondary hart stacks for MP configurations */
     . += DEFINED(_NUM_HARTS) ? (__STACK_SIZE * ( _NUM_HARTS - 1)) : 0;
+    __stack_size = ABSOLUTE(__STACK_SIZE);
     /* primary hart stack */
     _stack_end = .;
     . += __STACK_SIZE;

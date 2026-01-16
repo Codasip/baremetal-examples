@@ -1,6 +1,7 @@
 /* Copyright 2023-2025 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <baremetal/bm_cheri.h>
 #include <baremetal/common.h>
 #include <baremetal/csr.h>
 #include <baremetal/interrupt.h>
@@ -47,6 +48,23 @@
 // =====================================
 
 // clang-format off
+#ifdef __CHERI_PURE_CAPABILITY__
+#define MEM_READ(inst, addr, val)        \
+    __asm__ volatile(".option push\n"    \
+                     ".option norvc\n"   \
+                     inst " %0, 0(%1)\n" \
+                     ".option pop\n"     \
+                     : "=r"(val)         \
+                     : "C"(addr));
+
+#define MEM_WRITE(inst, addr, val)       \
+    __asm__ volatile(".option push\n"    \
+                     ".option norvc\n"   \
+                     inst " %0, 0(%1)\n" \
+                     ".option pop\n"     \
+                     :: "r"(val), "C"(addr));
+
+#else
 #define MEM_READ(inst, addr, val)        \
     __asm__ volatile(".option push\n"    \
                      ".option norvc\n"   \
@@ -61,6 +79,7 @@
                      inst " %0, 0(%1)\n" \
                      ".option pop\n"     \
                      :: "r"(val), "r"(addr));
+#endif
 // clang-format on
 
 // Typedef for memory size generator and mem access functions
@@ -70,8 +89,16 @@ typedef void (*mem_access_t)(xlen_t offset, unsigned size, xlen_t cur_val);
 // Get program data start and end addresses for overlap checks
 extern int _start;
 extern int _end;
+extern int __heap_start;
+extern int __heap_end;
+extern int __stack_start;
+extern int __stack_size;
 xlen_t     program_data_start = (xlen_t)(uintptr_t)(&_start);
 xlen_t     program_data_end   = (xlen_t)(uintptr_t)(&_end);
+xlen_t     heap_start         = (xlen_t)(uintptr_t)(&__heap_start);
+xlen_t     heap_end           = (xlen_t)(uintptr_t)(&__heap_end);
+xlen_t     stack_start        = (xlen_t)(uintptr_t)(&__stack_start);
+xlen_t     stack_size         = (xlen_t)&__stack_size;
 
 // Error count mechanism global variables
 static unsigned error_count = 0;
@@ -88,8 +115,10 @@ void log_error(void)
     }
 }
 
-void mem_error_handler(void)
+void mem_error_handler(bm_register_file_t *stacked_regs)
 {
+    (void)stacked_regs;
+
     xlen_t mcause = 0;
     xlen_t mtval  = 0;
 
@@ -101,13 +130,27 @@ void mem_error_handler(void)
     log_error();
 
     // Move past offending instrcution to continue
+#ifdef __CHERI_PURE_CAPABILITY__
+    const uint8_t *csr_val = 0;
+
+    BM_CSR_READ_CAP(mepcc, csr_val);
+    BM_CSR_WRITE_CAP(mepcc, csr_val + INSTR_SIZE);
+
+#else
     xlen_t csr_val = 0;
     BM_CSR_READ(BM_CSR_MEPC, csr_val);
     BM_CSR_WRITE(BM_CSR_MEPC, csr_val + INSTR_SIZE);
+#endif
 }
 
-void do_write(xlen_t address, unsigned size, xlen_t value)
+void do_write(xlen_t address_in, unsigned size, xlen_t value)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    const void *address = addr_to_data_ptr(address_in, 8);
+#else
+    xlen_t address = address_in;
+#endif
+
     switch (size)
     {
         case 8:
@@ -130,8 +173,14 @@ void do_write(xlen_t address, unsigned size, xlen_t value)
     }
 }
 
-xlen_t do_read(xlen_t address, unsigned size)
+xlen_t do_read(xlen_t address_in, unsigned size)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    const void *address = addr_to_data_ptr(address_in, 8);
+#else
+    xlen_t address = address_in;
+#endif
+
     xlen_t value = 0;
 
     switch (size)
@@ -302,25 +351,63 @@ void test(xlen_t start, xlen_t end, bool fast_mode_enabled)
 
 /**
  * \brief Safely test a memory range, optionally skipping program data to avoid corruption. Use this function if tested memory range may contain program data.
- * 
+ *
  * \param start_addr Start address of the memory range
  * \param end_addr End address of the memory range
  * \param fast_mode_enabled Enable fast mode
- * \param safe_test_enabled Enable safe mode to skips program data 
+ * \param safe_test_enabled Enable safe mode to skips program data
  */
 void safe_test(xlen_t start, xlen_t end, bool fast_mode_enabled, bool safe_mode_enabled)
 {
-    // Check if tested range overlaps with program data
-    bool overlaps_program = program_data_start < end && start < program_data_end;
+    xlen_t stack_end  = stack_start + stack_size;
+    xlen_t addr_start = start;
+    xlen_t addr_end   = end;
+    bool   overlaps   = false;
+
+    if (addr_start >= program_data_start && addr_start < program_data_end)
+    {
+        overlaps   = true;
+        addr_start = program_data_end; // move past program/data
+    }
+
+    if (addr_start >= heap_start && addr_start < heap_end)
+    {
+        overlaps   = true;
+        addr_start = heap_end; // move past heap
+    }
+
+    if (addr_start >= stack_start && addr_start < stack_end)
+    {
+        overlaps   = true;
+        addr_start = stack_end; // move past stack
+    }
+
+    if (addr_end >= program_data_start && addr_end < program_data_end)
+    {
+        overlaps = true;
+        addr_end = program_data_start; // move before program/data
+    }
+
+    if (addr_end >= heap_start && addr_end < heap_end)
+    {
+        overlaps = true;
+        addr_end = heap_start; // move before heap
+    }
+
+    if (addr_end >= stack_start && addr_end < stack_end)
+    {
+        overlaps = true;
+        addr_end = stack_start; // move before stack
+    }
 
     if (!safe_mode_enabled)
     {
         // Safe mode is disabled: warn if overlap exists
-        if (overlaps_program)
+        if (overlaps)
         {
             printf("WARNING: SAFE TEST DISABLED!\n");
             printf("Memory range (" BM_FMT_XLEN " - " BM_FMT_XLEN
-                   ") overlaps program data (" BM_FMT_XLEN " - " BM_FMT_XLEN ").\n",
+                   ") overlaps program/heap/stack data (" BM_FMT_XLEN " - " BM_FMT_XLEN ").\n",
                    start,
                    end,
                    program_data_start,
@@ -332,22 +419,15 @@ void safe_test(xlen_t start, xlen_t end, bool fast_mode_enabled, bool safe_mode_
         return;
     }
 
-    // Safe mode is enabled: skip program data
-    if (overlaps_program)
+    // Safe mode is enabled: skip program/heap/stack data
+    if (overlaps)
     {
-        printf("SAFE TEST ENABLED: skipping program data range (" BM_FMT_XLEN " - " BM_FMT_XLEN
-               ").\n",
+        printf("SAFE TEST ENABLED: skipping program/heap/stack data range (" BM_FMT_XLEN
+               " - " BM_FMT_XLEN ").\n",
                program_data_start,
-               program_data_end);
+               stack_end);
 
-        if (start < program_data_start)
-        {
-            test(start, program_data_start, fast_mode_enabled);
-        }
-        if (program_data_end < end)
-        {
-            test(program_data_end, end, fast_mode_enabled);
-        }
+        test(addr_start, addr_end, fast_mode_enabled);
     }
     else
     {

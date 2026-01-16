@@ -28,6 +28,6 @@
 #define DDR_ADDR_END    0xC0000000
 
 #define SRAM_ADDR_START 0x20000000
-#define SRAM_ADDR_END   0x20080000
+#define SRAM_ADDR_END   0x20100000
 
 #endif /* CONFIG_H_ */

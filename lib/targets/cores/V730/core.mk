@@ -16,13 +16,17 @@ CONFIG_HAS_CHERI    := Y
 CONFIG_HAS_EXT_I    := Y
 CONFIG_HAS_EXT_M    := Y
 CONFIG_HAS_EXT_A    := Y
+CONFIG_HAS_FPU      := Y
+CONFIG_HAS_FPU_DP   := N
 CONFIG_HAS_EXT_C    := Y
 
 CONFIG_HAS_EXT_S    := Y
 CONFIG_HAS_EXT_U    := Y
 
+CONFIG_EXT_Z        += zcherihybrid
 CONFIG_EXT_Z        += zicsr
 CONFIG_EXT_Z        += zifencei
+# You may need to comment out the following CONFIG_EXT_Z to allow code to run on Cheri QEMU:
 CONFIG_EXT_Z        += zba
 CONFIG_EXT_Z        += zbb
 CONFIG_EXT_Z        += zbs
@@ -35,8 +39,8 @@ endif
 ifeq ($(CC_TYPE), codasip_clang)
 # Only define ARCH/ABI for non-Codasip compilers, a Codasip SDK defaults to the
 # correct setting for the associated core.
-CONFIG_CC_USE_DEFAULT_ARCH := Y
-CONFIG_CC_USE_DEFAULT_ABI  := Y
+CONFIG_CC_USE_DEFAULT_ARCH ?= Y
+CONFIG_CC_USE_DEFAULT_ABI  ?= Y
 endif
 
 # ----[ DEFINES ]----

@@ -2,7 +2,21 @@
 
 TOP_DIR := $(subst Makefile,.,$(lastword $(MAKEFILE_LIST)))
 
-CONFIG_FILE ?= config.mk
+ifdef CC
+  ifndef CC_NAME
+    CC_NAME := $(CC)
+  endif
+  ifndef SDK_PREFIX
+    SDK_PREFIX := $(shell realpath $(dir $(shell command -v $(firstword $(CC_NAME)))))/
+  endif
+endif
+
+ifdef CONFIG_TARGET
+CONFIG_FILE ?=  $(TOP_DIR)/lib/targets/configs/config-$(CONFIG_TARGET).mk
+else
+CONFIG_FILE ?=  $(TOP_DIR)/config.mk
+endif
+
 ifeq ("$(wildcard $(CONFIG_FILE))","")
     $(error "missing CONFIG_FILE: '$(CONFIG_FILE)'")
 endif

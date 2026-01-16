@@ -65,7 +65,7 @@ static bm_clic_t *clic;
 
 /*-----------------------------------------------------------*/
 
-extern void bm_ext_irq_handler(void);
+extern void bm_ext_irq_handler(bm_register_file_t *stacked_regs);
 
 /* Functions used just for breakpointing, in the debugger add breakpoint on all
  * the breakpoint_me*() functions */

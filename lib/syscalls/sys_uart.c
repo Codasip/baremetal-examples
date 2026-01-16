@@ -1,6 +1,7 @@
 /* Copyright 2023 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include "baremetal/bm_cheri.h"
 #include "baremetal/common.h"
 #include "baremetal/platform.h"
 #include "baremetal/uart.h"

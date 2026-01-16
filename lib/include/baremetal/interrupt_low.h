@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef BAREMETAL_INTERRUPT_LOW_H
@@ -7,6 +7,13 @@
 #include "baremetal/common.h"
 #include "baremetal/csr.h"
 #include "baremetal/priv.h"
+
+#if defined(TARGET_HAS_CLIC) || defined(__CHERI_PURE_CAPABILITY__)
+    #define TRAP_HANDLER_ALIGNMENT 64
+
+#else
+    #define TRAP_HANDLER_ALIGNMENT 16
+#endif
 
 /** \brief Interrupt sources. */
 typedef enum {
@@ -37,6 +44,12 @@ typedef enum {
     BM_EXCEPTION_IPF     = 12, // Instruction page fault
     BM_EXCEPTION_LPF     = 13, // Load page fault
     BM_EXCEPTION_SPF     = 15, // Store/AMO page fault
+
+#ifdef __CHERI_PURE_CAPABILITY__
+    BM_EXCEPTION_CHERI = 28, // Cheri exception
+#endif
+
+    BM_EXCEPTION_NUMBER // The Number of exceptions (used to size bm_exc_handler_table[]
 } bm_exception_source_t;
 
 /** \brief Modes of trap handling. */

@@ -1,6 +1,9 @@
 /* Copyright 2023-2024 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include "baremetal/bm_cheri.h"
+#include "baremetal/common.h"
+
 #include <baremetal/interrupt.h>
 #include <baremetal/platform.h>
 #include <baremetal/time.h>
@@ -30,14 +33,26 @@ static inline void write_line(const char *str)
  * \brief Interrupt handler for UART
  */
 #if USE_IRQ
-static void uart_interrupt_handler(void)
+static void uart_interrupt_handler(bm_register_file_t *stacked_regs)
 {
+    (void)stacked_regs; // unused
+
     bm_uart_handle_irq(uart);
 }
 #endif
 
 int main(void)
 {
+    puts("Welcome to the UART demo!\n");
+    puts("Connect to serial terminal with 115200 baud rate and 8-N-1 settings, to interract with "
+         "the program.");
+
+    /* NOTE: Currently, when using Codasip Bakewell SDK the Bare Metal build uses the SDK's Lib
+     * Gloss and startup files (instead of the Bare Metal UART and crt0.S).
+     * This demo also uses bm_uart driver for the same UART. So for this demo to work correctly
+     * do no use any stdio function calls after bm_uart_init() (instead use the bm_uart_*() calls only).
+     */
+
     uart = (bm_uart_t *)target_peripheral_get(BM_PERIPHERAL_UART_CONSOLE);
 
     bm_uart_config_t config = {.baud_rate   = 115200,
@@ -52,10 +67,6 @@ int main(void)
     bm_interrupt_enable_source(BM_PRIV_MODE_MACHINE, BM_INTERRUPT_MEIP);
     bm_interrupt_init(BM_PRIV_MODE_MACHINE);
 #endif
-
-    puts("Welcome to the UART demo!\n");
-    puts("Connect to serial terminal with 115200 baud rate and 8-N-1 settings, to interract with "
-         "the program.");
 
     write_line("\r\nPress any key.\r\n");
 

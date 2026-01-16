@@ -3,6 +3,7 @@
 
 #include "baremetal/priv.h"
 
+#include "baremetal/bm_cheri.h"
 #include "baremetal/common.h"
 #include "baremetal/csr.h"
 #include "baremetal/interrupt_low.h"
@@ -11,10 +12,6 @@
 
 // Current privilege level
 volatile bm_priv_mode_t bm_current_mode = BM_PRIV_MODE_MACHINE;
-
-// Registers from execution in previous privilege mode saved upon trapping
-// to highed privilege mode on interrupt/exception
-volatile bm_register_file_t *bm_priv_regs[4][TARGET_NUM_HARTS] = {{0}};
 
 bm_priv_mode_t bm_get_priv_mode(void)
 {
@@ -98,6 +95,9 @@ xlen_t bm_priv_csr_read(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
 {
     bm_csr_id_t csr = bm_priv_get_csr_id(priv_mode, csr_type);
     xlen_t      val = 0;
+#ifdef __CHERI_PURE_CAPABILITY__
+    void *ptr;
+#endif
 
     switch (csr)
     {
@@ -105,7 +105,13 @@ xlen_t bm_priv_csr_read(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
             BM_CSR_READ(BM_CSR_MCAUSE, val);
             break;
         case BM_CSR_MEPC:
+#ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_READ_CAP(mepcc, ptr);
+            val = (xlen_t)ptr;
+
+#else
             BM_CSR_READ(BM_CSR_MEPC, val);
+#endif
             break;
         case BM_CSR_MIE:
             BM_CSR_READ(BM_CSR_MIE, val);
@@ -120,14 +126,26 @@ xlen_t bm_priv_csr_read(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
             BM_CSR_READ(BM_CSR_MTVAL, val);
             break;
         case BM_CSR_MTVEC:
+#ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_READ_CAP(mtvecc, ptr);
+            val = (xlen_t)ptr;
+
+#else
             BM_CSR_READ(BM_CSR_MTVEC, val);
+#endif
             break;
 #ifdef TARGET_EXT_S
         case BM_CSR_SCAUSE:
             BM_CSR_READ(BM_CSR_SCAUSE, val);
             break;
         case BM_CSR_SEPC:
+    #ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_READ_CAP(sepcc, ptr);
+            val = (xlen_t)ptr;
+
+    #else
             BM_CSR_READ(BM_CSR_SEPC, val);
+    #endif
             break;
         case BM_CSR_SIE:
             BM_CSR_READ(BM_CSR_SIE, val);
@@ -142,7 +160,13 @@ xlen_t bm_priv_csr_read(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
             BM_CSR_READ(BM_CSR_STVAL, val);
             break;
         case BM_CSR_STVEC:
+    #ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_READ_CAP(stvecc, ptr);
+            val = (xlen_t)ptr;
+
+    #else
             BM_CSR_READ(BM_CSR_STVEC, val);
+    #endif
             break;
 #endif // TARGET_EXT_S
 #ifdef TARGET_EXT_N
@@ -150,7 +174,13 @@ xlen_t bm_priv_csr_read(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type)
             BM_CSR_READ(BM_CSR_UCAUSE, val);
             break;
         case BM_CSR_UEPC:
+    #ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_READ_CAP(uepcc, ptr);
+            val = (xlen_t)ptr;
+
+    #else
             BM_CSR_READ(BM_CSR_UEPC, val);
+    #endif
             break;
         case BM_CSR_UIE:
             BM_CSR_READ(BM_CSR_UIE, val);
@@ -185,7 +215,12 @@ void bm_priv_csr_write(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type, xlen_t 
             BM_CSR_WRITE(BM_CSR_MCAUSE, val);
             break;
         case BM_CSR_MEPC:
+#ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_WRITE_CAP(mepcc, addr_to_code_ptr(val));
+
+#else
             BM_CSR_WRITE(BM_CSR_MEPC, val);
+#endif
             break;
         case BM_CSR_MIE:
             BM_CSR_WRITE(BM_CSR_MIE, val);
@@ -200,14 +235,24 @@ void bm_priv_csr_write(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type, xlen_t 
             BM_CSR_WRITE(BM_CSR_MTVAL, val);
             break;
         case BM_CSR_MTVEC:
+#ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_WRITE_CAP(mtvecc, addr_to_code_ptr(val));
+
+#else
             BM_CSR_WRITE(BM_CSR_MTVEC, val);
+#endif
             break;
 #ifdef TARGET_EXT_S
         case BM_CSR_SCAUSE:
             BM_CSR_WRITE(BM_CSR_SCAUSE, val);
             break;
         case BM_CSR_SEPC:
+    #ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_WRITE_CAP(sepcc, addr_to_code_ptr(val));
+
+    #else
             BM_CSR_WRITE(BM_CSR_SEPC, val);
+    #endif
             break;
         case BM_CSR_SIE:
             BM_CSR_WRITE(BM_CSR_SIE, val);
@@ -222,7 +267,12 @@ void bm_priv_csr_write(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type, xlen_t 
             BM_CSR_WRITE(BM_CSR_STVAL, val);
             break;
         case BM_CSR_STVEC:
+    #ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_WRITE_CAP(stvecc, addr_to_code_ptr(val));
+
+    #else
             BM_CSR_WRITE(BM_CSR_STVEC, val);
+    #endif
             break;
 #endif // TARGET_EXT_S
 #ifdef TARGET_EXT_N
@@ -230,7 +280,12 @@ void bm_priv_csr_write(bm_priv_mode_t priv_mode, bm_csr_type_t csr_type, xlen_t 
             BM_CSR_WRITE(BM_CSR_UCAUSE, val);
             break;
         case BM_CSR_UEPC:
+    #ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_WRITE_CAP(uepcc, addr_to_code_ptr(val));
+
+    #else
             BM_CSR_WRITE(BM_CSR_UEPC, val);
+    #endif
             break;
         case BM_CSR_UIE:
             BM_CSR_WRITE(BM_CSR_UIE, val);
@@ -424,7 +479,7 @@ static void bm_priv_enter_mode_error(void)
 #define BM_MSTATUS_SPP_OFFSET 8
 #define BM_MSTATUS_SPP_MASK   0x1
 
-void __attribute__((noreturn)) bm_priv_enter_mode(bm_priv_mode_t mode, xlen_t entry, xlen_t stack)
+void __attribute__((noreturn)) bm_priv_enter_mode(bm_priv_mode_t mode, entry_fn_t entry, uint8_t *stack)
 {
     if (mode >= bm_current_mode)
     {
@@ -440,23 +495,49 @@ void __attribute__((noreturn)) bm_priv_enter_mode(bm_priv_mode_t mode, xlen_t en
         case BM_PRIV_MODE_MACHINE:
             BM_CSR_CLEAR(BM_CSR_MSTATUS, BM_MSTATUS_MPP_MASK << BM_MSTATUS_MPP_OFFSET);
             BM_CSR_SET(BM_CSR_MSTATUS, mode << BM_MSTATUS_MPP_OFFSET);
+
+#ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_WRITE_CAP(mepcc, entry);
+
+            __asm__ volatile("mv cra, %0\n"
+                             "mv csp, %1\n"
+                             /* Enable Cheri in Supervisor and User modes */
+                             "li t0, 1 << 28\n"   /* Bit 28 is the Y (Cheri) Enable bit */
+                             "csrs menvcfg, t0\n" /* menvcfg.Y = Enabled */
+                             "csrs senvcfg, t0\n" /* senvcfg.Y = Enabled */
+                             "mret" ::"C"(bm_priv_enter_mode_error),
+                             "C"(stack));
+
+#else
             BM_CSR_WRITE(BM_CSR_MEPC, (xlen_t)entry);
 
             __asm__ volatile("la ra, %0\n"
                              "mv sp, %1\n"
                              "mret" ::"i"(bm_priv_enter_mode_error),
                              "r"(stack));
+#endif
             break;
 #ifdef TARGET_EXT_S
         case BM_PRIV_MODE_SUPERVISOR:
             BM_CSR_CLEAR(BM_CSR_SSTATUS, BM_MSTATUS_SPP_MASK << BM_MSTATUS_SPP_OFFSET);
             BM_CSR_SET(BM_CSR_SSTATUS, mode << BM_MSTATUS_SPP_OFFSET);
+
+    #ifdef __CHERI_PURE_CAPABILITY__
+            BM_CSR_WRITE_CAP(sepcc, entry);
+
+            __asm__ volatile("mv cra, %0\n"
+                             "mv csp, %1\n"
+                             "sret" ::"C"(bm_priv_enter_mode_error),
+                             "C"(stack));
+
+    #else
             BM_CSR_WRITE(BM_CSR_SEPC, (xlen_t)entry);
 
             __asm__ volatile("la ra, %0\n"
                              "mv sp, %1\n"
                              "sret" ::"i"(bm_priv_enter_mode_error),
                              "r"(stack));
+    #endif
             break;
 #endif
         default:

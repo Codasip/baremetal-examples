@@ -11,6 +11,33 @@
 extern "C" {
 #endif
 
+// Maximum numbers of sources, targets (defined by specification)
+#define PLIC_MAX_SOURCES        1023
+#define PLIC_MAX_TARGETS        15872
+#define PLIC_MAX_PACKED_SOURCES ((PLIC_MAX_SOURCES + 31) / 32)
+
+struct bm_plic_regs {
+    // Interrupt source 0 does not exist
+    uint8_t                 _reserved1[0x4];
+    volatile uint32_t       PRIO[PLIC_MAX_SOURCES];
+    const volatile uint32_t PENDING[PLIC_MAX_PACKED_SOURCES];
+    uint8_t                 _reserved2[0xF80];
+    // ENABLE registers start at (1 + 1023 + 32 + 992) * 4 = 0x2000 offset
+    volatile uint32_t ENABLE[PLIC_MAX_TARGETS][PLIC_MAX_PACKED_SOURCES];
+    uint8_t           _reserved3[0xE000];
+    // Context registers start at 0x2000 + (15872 * 32 + 14336) * 4 = 0x200000 offset
+    /** \brief Structure representing PLIC context configuration registers */
+    struct bm_plic_context {
+        volatile uint32_t THRESHOLD;
+        union {
+            const volatile uint32_t CLAIM;
+            volatile uint32_t       COMPLETE;
+        };
+        // Each THRESHOLD register is aligned to (2 + 1022) * 4 = 0x1000
+        uint8_t _reserved1[0xFF8];
+    } CONTEXT[PLIC_MAX_TARGETS];
+};
+
 /** \brief Structure describing PLIC peripheral registers */
 typedef struct bm_plic_regs bm_plic_regs_t;
 

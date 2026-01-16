@@ -11,6 +11,26 @@
 extern "C" {
 #endif
 
+struct bm_aead_regs {
+    const volatile uint32_t FEATURES; ///< (@ 0x0000) Features register
+    uint8_t                 _reserved1[0xfc];
+    const volatile uint32_t STATUS;      ///< (@ 0x0100) Status register
+    const volatile uint32_t FIFO_STATUS; ///< (@ 0x0104) FIFO status register
+    uint8_t                 _reserved2[0xf8];
+    volatile uint32_t       CONFIG;  ///< (@ 0x0200) Configuration register
+    volatile uint32_t       COMMAND; ///< (@ 0x0204) Command register
+    uint8_t                 _reserved3[0x2f8];
+    volatile uint32_t       PAYLOAD_SIZE; ///< (@ 0x0500) Payload size register
+    uint8_t                 _reserved4[0x0fc];
+    volatile uint32_t       AD_SIZE; ///< (@ 0x0600) Additional data size register
+    uint8_t                 _reserved5[0x0fc];
+    volatile uint32_t       KEY[0x40];      ///< (@ 0x0700) Key registers
+    volatile uint32_t       NONCE[0x40];    ///< (@ 0x0800) Nonce registers
+    volatile uint32_t       BLOCK_IN[0x40]; ///< (@ 0x0900) Block in registers
+    const volatile uint32_t DATA_OUT[0x40]; ///< (@ 0x0a00) Data out registers
+    const volatile uint32_t TAG[0x40];      ///< (@ 0x0b00) Tag registers
+};
+
 /** \brief Structure describing AEAD peripheral registers */
 typedef struct bm_aead_regs bm_aead_regs_t;
 

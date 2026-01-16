@@ -1,6 +1,7 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <baremetal/atomic.h>
 #include <baremetal/barrier.h>
 #include <baremetal/clint.h>
 #include <baremetal/common.h>
@@ -25,8 +26,10 @@ static volatile uint32_t done_ctr = 0;
 /**
  * \brief Function for handling MSIP (software) interrupt
  */
-void msip_handler(void)
+void msip_handler(bm_register_file_t *stacked_regs)
 {
+    (void)stacked_regs; // unused
+
     unsigned hart_id = bm_get_hartid();
 
     // Clear pending interrupt
@@ -46,7 +49,9 @@ void msip_handler(void)
     #error "Systems with multiple harts and no atomic instructions are not supported"
 #else
     // Atomically increment the number of harts that have finished
-    __asm__ volatile("amoadd.w x0, %0, (%1)\n" : : "r"(1), "r"(&done_ctr));
+    uint32_t rd; /* Result not used */
+
+    bm_amoadd_w(rd, 1, &done_ctr);
 #endif
 }
 

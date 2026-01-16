@@ -16,8 +16,10 @@ static unsigned    clint_tics_in_second;
 /**
  * \brief Function for handling MTIP (timer) interrupt
  */
-void mtip_handler(void)
+void mtip_handler(bm_register_file_t *stacked_regs)
 {
+    (void)stacked_regs; // unused
+
     // Configure CLINT to issue an interrupt after 1000 milliseconds
     bm_clint_rearm_timer(clint, bm_get_hartid(), clint_tics_in_second);
 

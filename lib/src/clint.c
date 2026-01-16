@@ -8,17 +8,6 @@
 
 #include <stdint.h>
 
-// Maximum numbers of MSIP and MTIMECMP registers (defined by specification)
-#define CLINT_MAX_MSIPS     4095
-#define CLINT_MAX_MTIMECMPS 4095
-
-struct bm_clint_regs {
-    volatile uint32_t MSIP[CLINT_MAX_MSIPS]; /**< (@ 0x0000) MSIP registers */
-    uint8_t           _reserved1[0x4];
-    volatile uint64_t MTIMECMP[CLINT_MAX_MTIMECMPS]; /**< (@ 0x4000) MTIMECMP registers */
-    volatile uint64_t MTIME;                         /**< (@ 0xBFF8) MTIME register */
-};
-
 unsigned bm_clint_ticks_to_ms(const bm_clint_t *clint, uint64_t ticks)
 {
     return ticks / (clint->freq / 1000);

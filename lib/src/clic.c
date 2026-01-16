@@ -33,18 +33,6 @@
 #define CLICINTATTR_SHV_OFFSET  0
 #define CLICINTATTR_SHV_MASK    0x1
 
-struct bm_clic_regs {
-    volatile uint32_t CLICCFG;
-    uint8_t           _reserved1[0xffc];
-    /** \brief Structure representing CLIC input configuration registers */
-    struct bm_clic_input {
-        volatile uint8_t CLICINTIP;
-        volatile uint8_t CLICINTIE;
-        volatile uint8_t CLICINTATTR;
-        volatile uint8_t CLICINTCTL;
-    } INPUTS[TARGET_CLIC_NUM_INPUTS];
-};
-
 unsigned bm_clic_get_ext_irq_id(unsigned ext_irq_id)
 {
     return ext_irq_id + CLIC_NUM_INTERNAL_INPUTS;
@@ -122,4 +110,9 @@ void bm_clic_set_vectored(bm_clic_t *clic, unsigned clic_irq_id, bool shv)
 bool bm_clic_get_pending(bm_clic_t *clic, unsigned clic_irq_id)
 {
     return clic->regs->INPUTS[clic_irq_id].CLICINTIP;
+}
+
+void bm_clic_clear_pending(bm_clic_t *clic, unsigned clic_irq_id)
+{
+    clic->regs->INPUTS[clic_irq_id].CLICINTIP = 0;
 }

@@ -32,6 +32,7 @@
 #include <task.h>
 
 /* Codasip BareMetal includes */
+#include <baremetal/bm_cheri.h>
 #include <baremetal/gpio.h>
 #include <baremetal/interrupt.h>
 #include <baremetal/mp.h>
@@ -39,8 +40,9 @@
 #include <baremetal/uart.h>
 #include <tiny_printf/printf.h>
 
-/* Run the simple demos */
-#define DEMO_BLINKY 1
+#ifdef __CHERI_PURE_CAPABILITY__
+    #include <cheriintrin.h>
+#endif
 
 /* UART Selection */
 #define UART_LOCAL_USE 0 /* 1 = UART setup in this file; 0 = Use SYS UART (via printf) */
@@ -61,9 +63,10 @@
 extern void freertos_risc_v_trap_handler(void);
 extern void freertos_vector_table(void);
 extern int  main_blinky(void);
+extern int  main_buggy(void);
 
-extern void bm_ext_irq_handler(void);
-extern void bm_managed_handler_inner(bm_priv_mode_t new_mode);
+extern void bm_ext_irq_handler(bm_register_file_t *stacked_regs);
+extern void bm_managed_handler_inner(bm_priv_mode_t new_mode, bm_register_file_t *stacked_regs);
 
 /*-----------------------------------------------------------*/
 
@@ -80,7 +83,29 @@ void vApplicationTickHook(void);
 
 extern void freertos_risc_v_mtimer_interrupt_handler(void);
 
+    #ifdef __CHERI_PURE_CAPABILITY__
+/* For Cheri the vector table entries are not capabilities, they are just XLEN integer addresses.
+ * The capability is created by the Cheri CLIC when an interrupt is taken.
+ * From the documentation:
+ *   When vectoring interrupts through the Trap Vector Table, the entry selected will be at location
+ *   TBASE + (XLEN/8)*exccode, where TBASE is the address in Xtvtc and exccode is the interrupt id
+ *   that will be reported in Xcause.
+ *   Once the entry has been fetched, the ISR’s entry point capability is installed into PCC.
+ *   This is formed by taking the address tvtentry.ENTRYPOINT and applying scaddr (Capability Set
+ *   Address) instruction semantics to the capability held in the Xtvtentryic CSR selected
+ *   by tvtentry.SELECTC.
+ *
+ * You can further bound all Interrupt Service Routine (ISR) entry points present in
+ * the Trap Vector Table by writing a capability to CSR Xtvtentryic, e.g. mtvtentry0c for machine
+ * mode. But you will need to write an infinate cap to Xtvtentryic if you want to
+ * run your ISR in Cheri cap mode (as it defaults to the integer infinate cap).
+ */
+static xlen_t mtvt_table[TARGET_CLIC_NUM_INPUTS] __attribute__((aligned(64))) = {0};
+
+    #else
 static void (*mtvt_table[TARGET_CLIC_NUM_INPUTS])(void) __attribute__((aligned(64))) = {0};
+    #endif
+
 static bm_clic_t *clic;
 #endif
 
@@ -161,25 +186,24 @@ void vSendString(const char *s)
     /* Use write_line() as baremetal-examples's printf(), which calls _write(), self initialises
      * the UART (syscalls/sys_uart.c) */
     write_line(s);
-    write_line("\r\n");
-
 #else
     /* BareMetal SYS UART _write() (used by printf()) self initialises, so you can just use printf
      * after setting up bm_interrupt_tvec_setup() */
-    printf("%s\r\n", s);
+    printf("%s", s);
 #endif
 
     xSemaphoreGive(xSemaphoreSendString);
 }
 
-/*-----------------------------------------------------------*/
+#if defined(DEMO_BLINKY)
+    /*-----------------------------------------------------------*/
 
-/* Priority used by the task */
-#define mainFLASH_LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
+    /* Priority used by the task */
+    #define mainFLASH_LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
-/* The rate at which to flash the LEDs.  The 250ms value is converted
+    /* The rate at which to flash the LEDs.  The 250ms value is converted
  * to ticks using the pdMS_TO_TICKS() macro. */
-#define mainFLASH_LEDS_FREQUENCY_MS pdMS_TO_TICKS(250)
+    #define mainFLASH_LEDS_FREQUENCY_MS pdMS_TO_TICKS(250)
 
 static void prvFlashLEDsTask(void *pvParameters)
 {
@@ -188,23 +212,14 @@ static void prvFlashLEDsTask(void *pvParameters)
 
     TickType_t xNextWakeTime;
     int        f = 1;
-
-    vSendString("======================================================");
-    vSendString("FreeRTOS Version " tskKERNEL_VERSION_NUMBER);
-    vSendString("BareMetal Examples Version " BUILD_VERSION "\n");
-
-    vSendString("FreeRTOS multi-task example running");
-    vSendString("3 tasks outputting text with 1 also flashing LEDs.");
-    vSendString("======================================================\n");
-
     /* Initialise xNextWakeTime - this only needs to be done once. */
     xNextWakeTime = xTaskGetTickCount();
 
-    vSendString("This (Fx) task is the BareMetal GPIO demo in a FreeRTOS task");
-    vSendString("with an additional counting number output.");
-    vSendString("Feel free to flip switches 1-3, and observe blinking LEDs.\n");
+    vSendString("This (Fx) task is the BareMetal GPIO demo in a FreeRTOS task\n");
+    vSendString("with an additional counting number output.\n");
+    vSendString("Feel free to flip switches 1-3, and observe blinking LEDs.\n\n");
 
-    vSendString("The other (Tx/Rx) tasks are the standard FreeRTOS Demo app (main_blinky.c)\n");
+    vSendString("The other (Tx/Rx) tasks are the standard FreeRTOS Demo app (main_blinky.c)\n\n");
 
     bm_gpio_t *gpio = (bm_gpio_t *)target_peripheral_get(BM_PERIPHERAL_GPIO_LEDS_SWITCHES);
 
@@ -214,7 +229,7 @@ static void prvFlashLEDsTask(void *pvParameters)
     {
         char buf[40];
 
-        sprintf(buf, "%d: %s: %d", xGetCoreID(), pcTaskGetName(xTaskGetCurrentTaskHandle()), f);
+        sprintf(buf, "%d: %s: %d\n", xGetCoreID(), pcTaskGetName(xTaskGetCurrentTaskHandle()), f);
         vSendString(buf);
 
         f++;
@@ -253,10 +268,15 @@ static void prvFlashLEDsTask(void *pvParameters)
 }
 
 /*-----------------------------------------------------------*/
+#endif
 
 int main(void)
 {
     int ret;
+
+#ifdef __CHERI_PURE_CAPABILITY__
+    vPortInitialiseCheri(cheri_ddc_get());
+#endif
 
     /* Do not call: bm_interrupt_init() as we are using FreeRTOS interrupt handling first */
     // bm_interrupt_init(BM_PRIV_MODE_MACHINE);
@@ -287,13 +307,30 @@ int main(void)
     bm_clic_init(clic);
 
     /* mtvt_table[0] = your_clint_sw_interrupt_handler; */
+    #ifdef __CHERI_PURE_CAPABILITY__
+    mtvt_table[1] = (xlen_t)freertos_risc_v_mtimer_interrupt_handler; /* CLINT mtimer (IRQ 1) vector entry */
+
+    #else
     mtvt_table[1] = freertos_risc_v_mtimer_interrupt_handler; /* CLINT mtimer (IRQ 1) vector entry */
+    #endif
 
     /* Setup any remaining interrupt vectors here, e.g.:
      * mtvt_table[2 upwards] = your_isr_handler_X; */
 
-    xlen_t val = (xlen_t)mtvt_table;
+    #ifdef __CHERI_PURE_CAPABILITY__
+    BM_CSR_WRITE_CAP2(0x307, addr_to_code_ptr((uintptr_t)mtvt_table));
+
+    __asm__ volatile( // "csrrc	ca0, ddc, zero\n" // Read  infinite cap from ddc (here for reference)
+        "auipc  ca0, 0x0\n"       // Read  infinite cap from PC
+        "csrrw   x0, 0x7f8, a0\n" // Write infinite cap to mtvtentry0c
+        "csrrw   x0, 0x7f9, x0\n" // Write null     cap to mtvtentry1c
+        ::
+            : "ca0");
+
+    #else
+    xlen_t val    = (xlen_t)mtvt_table;
     BM_CSR_WRITE(BM_CSR_MTVT, val);
+    #endif
 
     bm_exec_fence_i();
 
@@ -309,14 +346,12 @@ int main(void)
     /* trap handler initialization */
     #if (mainVECTOR_MODE_DIRECT == 1)
     {
-        // __asm__ volatile ( "csrw mtvec, %0" : : "r" ( freertos_risc_v_trap_handler ) );
         bm_interrupt_tvec_setup(BM_PRIV_MODE_MACHINE,
                                 (xlen_t)freertos_risc_v_trap_handler,
                                 BM_INTERRUPT_MODE_DIRECT);
     }
     #else
     {
-        // __asm__ volatile ( "csrw mtvec, %0" : : "r" ( ( uintptr_t ) freertos_vector_table | 0x1 ) );
         bm_interrupt_tvec_setup(BM_PRIV_MODE_MACHINE,
                                 (xlen_t)freertos_vector_table,
                                 BM_INTERRUPT_MODE_VECTOR);
@@ -332,16 +367,35 @@ int main(void)
 
     /* Create a mutex type semaphore. */
     xSemaphoreSendString = xSemaphoreCreateMutex();
-
+    vSendString("======================================================\n");
+    vSendString("FreeRTOS Version " tskKERNEL_VERSION_NUMBER "\n");
+    vSendString("BareMetal Examples Version " BUILD_VERSION "\n\n");
+#if defined(DEMO_BLINKY)
+    vSendString("FreeRTOS multi-task example running\n");
+    vSendString("3 tasks outputting text with 1 also flashing LEDs.\n");
+    vSendString("======================================================\n\n");
     xTaskCreate(prvFlashLEDsTask,
                 "Fx",
                 configMINIMAL_STACK_SIZE * 2U,
                 NULL,
                 mainFLASH_LEDS_TASK_PRIORITY,
                 NULL);
-
-#if defined(DEMO_BLINKY)
     ret = main_blinky();
+#elif defined(DEMO_BUGGY)
+    vSendString("FreeRTOS buggy buffers overflow example running 3\n");
+    vSendString("tasks overflowing buffers, to demonstrate the ability\n");
+    vSendString("to catch faults and recover safely when using CHERI.\n\n");
+    #ifdef __CHERI_PURE_CAPABILITY__
+    vSendString("Running in CHERI Pure-Capability mode.\n\n");
+    vSendString("Detection of buffer overflows is possible, and\n");
+    vSendString("sensitive data is protected!\n");
+    #else
+    vSendString("Running in non-CHERI mode.\n\n");
+    vSendString("Detection of buffer overflows is not possible, and\n");
+    vSendString("sensitive data may be corrupted!\n");
+    #endif
+    vSendString("======================================================\n\n");
+    ret = main_buggy();
 #else
     #error "Please add or select demo."
 #endif
@@ -419,16 +473,17 @@ void freertos_risc_v_application_interrupt_handler(uint32_t ulMcause)
 {
     (void)ulMcause;
 
-    /* Call the BareMetal configured internal Interrupt Handler 
+    /* Call the BareMetal configured internal Interrupt Handler
      * via the bm_interrupt_handler_table[offset]().
-     * 
+     *
      * The "Internal" Interrupt BM_INTERRUPT_MEIP was set [via bm_interrupt_set_handler() in main()]
      * to call the external Interrupt Handler via bm_ext_irq_handler(). */
-    bm_managed_handler_inner(BM_PRIV_MODE_MACHINE);
+    bm_register_file_t stacked_regs_dummy = {0};
+    bm_managed_handler_inner(BM_PRIV_MODE_MACHINE, &stacked_regs_dummy);
 }
 /*-----------------------------------------------------------*/
 
-void freertos_risc_v_application_exception_handler(uint32_t ulMcause)
+void __attribute__((weak)) freertos_risc_v_application_exception_handler(uint32_t ulMcause)
 {
     (void)ulMcause;
 
@@ -451,8 +506,9 @@ void freertos_risc_v_application_exception_handler(uint32_t ulMcause)
     configASSERT(ulMcause == 0);
 
 #else  /* !EXCEPTION_HANDLER_LOCAL_USE */
-    /* Call the BareMetal configured Exception Handler 
+    /* Call the BareMetal configured Exception Handler
      * via bm_exc_handler_table[offset]() or error. */
-    bm_managed_handler_inner(BM_PRIV_MODE_MACHINE);
+    bm_register_file_t stacked_regs_dummy = {0};
+    bm_managed_handler_inner(BM_PRIV_MODE_MACHINE, &stacked_regs_dummy);
 #endif /* !EXCEPTION_HANDLER_LOCAL_USE */
 }

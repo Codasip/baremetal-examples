@@ -21,8 +21,8 @@ CONFIG_EXT_Z        += zifencei
 ifeq ($(CC_TYPE), codasip_clang)
 # Only define ARCH/ABI for non-Codasip compilers, a Codasip SDK defaults to the
 # correct setting for the associated core.
-CONFIG_CC_USE_DEFAULT_ARCH := Y
-CONFIG_CC_USE_DEFAULT_ABI  := Y
+CONFIG_CC_USE_DEFAULT_ARCH ?= Y
+CONFIG_CC_USE_DEFAULT_ABI  ?= Y
 endif
 
 # ----[ SIMULATOR CONFIGURATION ]----

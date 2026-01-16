@@ -41,28 +41,6 @@
 
 #define TX_FIFO_SIZE 16 // The 16550 has a 16 byte transmit FIFO
 
-struct bm_uart_regs {
-    uint8_t _reserved1[0x1000]; ///< Codasip UART uses an offset 0x1000
-    union {
-        const volatile uint32_t RBR; ///< (@ 0x0000) Receiver Buffer Register
-        volatile uint32_t       THR; ///< (@ 0x0000) Transmiter Holding Register
-        volatile uint32_t       DLL; ///< (@ 0x0000) Divisor Latch Register (LSB)
-    };
-    union {
-        volatile uint32_t IER; ///< (@ 0x0004) Interrupt Enable Register
-        volatile uint32_t DLM; ///< (@ 0x0004) Divisor Latch Register (MSB)
-    };
-    union {
-        const volatile uint32_t IIR; ///< (@ 0x0008) Interrupt Identification Register
-        volatile uint32_t       FCR; ///< (@ 0x0008) Fifo Control Register
-    };
-    volatile uint32_t LCR; ///< (@ 0x000C) Line Control Register
-    volatile uint32_t MCR; ///< (@ 0x0010) Modem Control Register
-    volatile uint32_t LSR; ///< (@ 0x0014) Line Status Register
-    volatile uint32_t MSR; ///< (@ 0x0018) Modem Status Register
-    volatile uint32_t SCR; ///< (@ 0x001C) Scratch Register
-};
-
 /**
  * \brief Function for initialization of fifo structure
  *

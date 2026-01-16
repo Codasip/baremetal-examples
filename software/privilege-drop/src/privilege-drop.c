@@ -30,8 +30,8 @@ void __attribute__((noinline)) entry_supervisor(void)
     puts("Hello world from supervisor mode!");
 
     // Enter user mode
-    xlen_t stack = (xlen_t)(u_stack + sizeof(u_stack));
-    bm_priv_enter_mode(BM_PRIV_MODE_USER, (xlen_t)entry_user, stack);
+    uint8_t *stack = u_stack + sizeof(u_stack);
+    bm_priv_enter_mode(BM_PRIV_MODE_USER, entry_user, stack);
 }
 #endif
 
@@ -48,11 +48,12 @@ int main(void)
 
 #ifdef TARGET_EXT_S
     // Enter supervisor mode
-    xlen_t stack = (xlen_t)(s_stack + sizeof(s_stack));
-    bm_priv_enter_mode(BM_PRIV_MODE_SUPERVISOR, (xlen_t)entry_supervisor, stack);
+    uint8_t *stack = s_stack + sizeof(s_stack);
+    bm_priv_enter_mode(BM_PRIV_MODE_SUPERVISOR, entry_supervisor, stack);
+
 #else
     // Enter user mode
-    xlen_t stack = (xlen_t)(u_stack + sizeof(u_stack));
-    bm_priv_enter_mode(BM_PRIV_MODE_USER, (xlen_t)entry_user, stack);
+    uint8_t *stack = u_stack + sizeof(u_stack);
+    bm_priv_enter_mode(BM_PRIV_MODE_USER, entry_user, stack);
 #endif
 }

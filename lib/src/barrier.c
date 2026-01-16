@@ -1,8 +1,9 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/barrier.h"
 
+#include "baremetal/atomic.h"
 #include "baremetal/common.h"
 #include "baremetal/mem_barrier.h"
 #include "baremetal/mp.h"
@@ -47,10 +48,7 @@ void bm_barrier_wait(bm_barrier_t *barrier)
     barrier->counter[hartid]++;
 
     // Atomically increment the number of harts waiting in this barrier
-    __asm__ volatile("amoadd.w %0, %1, (%2)\n"
-                     : "=r"(old)
-                     : "r"(1), "r"(&barrier->waiting)
-                     : "memory");
+    bm_amoadd_w(old, 1, &barrier->waiting);
 
     if (old == TARGET_NUM_HARTS - 1)
     {

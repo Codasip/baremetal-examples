@@ -4,6 +4,7 @@
 #include "baremetal/platform.h"
 
 #include "baremetal/aead.h"
+#include "baremetal/bm_cheri.h"
 #include "baremetal/clic.h"
 #include "baremetal/clint.h"
 #include "baremetal/common.h"
@@ -52,26 +53,40 @@ void *target_peripheral_get(int id)
 #ifdef TARGET_HAS_PLIC
     #ifndef TARGET_SIMULATOR
         case BM_PERIPHERAL_PLIC:
+            plic.regs = (bm_plic_regs_t *)addr_to_io_ptr((uintptr_t)PLIC_ADDR, sizeof(bm_plic_regs_t));
             return (void *)&plic;
     #endif
 #elif defined(TARGET_HAS_CLIC)
         case BM_PERIPHERAL_CLIC:
+            clic.regs = (bm_clic_regs_t *)addr_to_io_ptr((uintptr_t)CLIC_ADDR, sizeof(bm_clic_regs_t));
             return (void *)&clic;
 #endif
 #ifndef TARGET_SIMULATOR
         case BM_PERIPHERAL_CLINT:
+            aclint.regs = (bm_clint_regs_t *)addr_to_io_ptr((uintptr_t)ACLINT_ADDR,
+                                                            sizeof(bm_clint_regs_t));
             return (void *)&aclint;
         case BM_PERIPHERAL_UART_CONSOLE:
+            uart.regs = (bm_uart_regs_t *)addr_to_io_ptr((uintptr_t)UART_ADDR, sizeof(bm_uart_regs_t));
             return (void *)&uart;
         case BM_PERIPHERAL_SPI_FLASH:
+            spi_flash.regs = (bm_spi_regs_t *)addr_to_io_ptr((uintptr_t)SPI_FLASH_ADDR,
+                                                             sizeof(bm_spi_regs_t));
             return (void *)&spi_flash;
         case BM_PERIPHERAL_SPI_SD:
+            spi_sd.regs = (bm_spi_regs_t *)addr_to_io_ptr((uintptr_t)SPI_SD_ADDR,
+                                                          sizeof(bm_spi_regs_t));
             return (void *)&spi_sd;
         case BM_PERIPHERAL_GPIO_LEDS_SWITCHES:
+            gpio_io.regs = (bm_gpio_regs_t *)addr_to_io_ptr((uintptr_t)GPIO_IO_ADDR,
+                                                            sizeof(bm_gpio_regs_t));
             return (void *)&gpio_io;
         case BM_PERIPHERAL_GPIO_SD:
+            gpio_sd.regs = (bm_gpio_regs_t *)addr_to_io_ptr((uintptr_t)GPIO_SD_ADDR,
+                                                            sizeof(bm_gpio_regs_t));
             return (void *)&gpio_sd;
         case BM_PERIPHERAL_ID_REG:
+            id_reg.regs = (bm_id_regs_t *)addr_to_io_ptr((uintptr_t)PLAT_ID_ADDR, sizeof(bm_id_regs_t));
             return (void *)&id_reg;
     #ifdef CONFIG_SECURITY
         case BM_PERIPHERAL_AEAD:

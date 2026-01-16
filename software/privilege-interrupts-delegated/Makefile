@@ -2,7 +2,7 @@
 DEMO_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 BM_SDK_DIR ?= $(DEMO_DIR)/../..
 
-REQUIRES += clint
+REQUIRES += clint plic
 REQUIRES += user_mode
 REQUIRES += supervisor_mode
 

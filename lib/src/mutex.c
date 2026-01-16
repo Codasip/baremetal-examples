@@ -1,8 +1,9 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/mutex.h"
 
+#include "baremetal/atomic.h"
 #include "baremetal/common.h"
 #include "baremetal/mem_barrier.h"
 
@@ -31,7 +32,9 @@ void bm_mutex_init(bm_mutex_t *mutex)
 int bm_mutex_trylock(bm_mutex_t *mutex)
 {
     bm_mutex_t swp = 1;
-    __asm__ volatile("amoswap.w %0, %1, (%2)\n" : "=r"(swp) : "r"(swp), "r"(mutex));
+
+    bm_amoswap_w(swp, swp, mutex);
+
     return (int)swp;
 }
 
@@ -43,6 +46,8 @@ void bm_mutex_lock(bm_mutex_t *mutex)
 
 void bm_mutex_unlock(bm_mutex_t *mutex)
 {
-    __asm__ volatile("amoswap.w x0, x0, (%0)\n" ::"r"(mutex));
+    uint32_t rd; /* Result not used */
+
+    bm_amoswap_w(rd, 0, mutex);
 }
 #endif

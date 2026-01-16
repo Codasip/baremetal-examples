@@ -8,7 +8,7 @@ CONFIG_CLIC_INTCTLBITS      = 3
 
 # ----[ PLATFORM CONFIGURATION ]----
 
-CONFIG_PLATFORM             ?= Hobbs$(HOB_PLATFORM_VERSION_STR)
+CONFIG_PLATFORM             ?= Hobbs_v2
 CONFIG_CORE_FREQ            ?= 50
 CONFIG_PLIC                 = N
 CONFIG_SECURITY             = N

@@ -11,8 +11,10 @@
 
 bm_gpio_t *gpio;
 
-void interrupt_handler(void)
+void interrupt_handler(bm_register_file_t *stacked_regs)
 {
+    (void)stacked_regs; // unused
+
     puts("GPIO interrupt generated!");
 
     bm_gpio_set(gpio, TARGET_GPIO_PORT_LED0);

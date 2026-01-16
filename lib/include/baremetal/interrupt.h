@@ -1,13 +1,84 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef BAREMETAL_INTERRUPT_H
 #define BAREMETAL_INTERRUPT_H
 
+#include "baremetal/common.h"
 #include "baremetal/csr.h"
 #include "baremetal/interrupt_low.h"
 
-typedef void (*bm_intr_handler_t)(void);
+/* RISC-V rv32i Calling Convention, see https://riscv.org/wp-content/uploads/2024/12/riscv-calling.pdf
+ *
+ * Register ABI Name Description                        Saver   Save only if task swap
+ * -------- -------- -----------                        -----   ----------------------
+ * x0       zero     Hard-wired zero                    —
+ * x1       ra       Return address                     Caller
+ * x2       sp       Stack pointer                      Callee  Yes
+ * x3       gp       Global pointer                     —
+ * x4       tp       Thread pointer                     —
+ * x5–7     t0–2     Temporaries                        Caller
+ * x8       s0/fp    Saved register/frame pointer       Callee  Yes
+ * x9       s1       Saved register                     Callee  Yes
+ * x10–11   a0–1     Function arguments/return values   Caller
+ * x12–17   a2–7     Function arguments                 Caller
+ * x18–27   s2–11    Saved registers                    Callee  Yes
+ * x28–31   t3–6     Temporaries                        Caller
+ *
+ * Floating Point context save/restore
+ * f0–7     ft0–7    FP temporaries                     Caller
+ * f8–9     fs0–1    FP saved registers                 Callee  Yes
+ * f10–11   fa0–1    FP arguments/return values         Caller
+ * f12–17   fa2–7    FP arguments                       Caller
+ * f18–27   fs2–11   FP saved registers                 Callee  Yes
+ * f28–31   ft8–11   FP temporaries                     Caller
+ */
+
+typedef struct {
+    uintptr_t ra; // x1
+    uintptr_t t0; // x5
+    uintptr_t t1; // x6
+    uintptr_t t2; // x7
+    uintptr_t a0; // x10
+    uintptr_t a1; // x11
+    uintptr_t a2; // x12
+    uintptr_t a3; // x13
+    uintptr_t a4; // x14
+    uintptr_t a5; // x15
+#ifndef __riscv_32e
+    uintptr_t a6; // x16
+    uintptr_t a7; // x17
+    uintptr_t t3; // x28
+    uintptr_t t4; // x29
+    uintptr_t t5; // x30
+    uintptr_t t6; // x31
+#endif
+
+#if __riscv_flen
+    flen_t ft0;
+    flen_t ft1;
+    flen_t ft2;
+    flen_t ft3;
+    flen_t ft4;
+    flen_t ft5;
+    flen_t ft6;
+    flen_t ft7;
+    flen_t fa0;
+    flen_t fa1;
+    flen_t fa2;
+    flen_t fa3;
+    flen_t fa4;
+    flen_t fa5;
+    flen_t fa6;
+    flen_t fa7;
+    flen_t ft8;
+    flen_t ft9;
+    flen_t ft10;
+    flen_t ft11;
+#endif
+} bm_register_file_t;
+
+typedef void (*bm_intr_handler_t)(bm_register_file_t *stacked_regs);
 
 #ifdef __cplusplus
 extern "C" {

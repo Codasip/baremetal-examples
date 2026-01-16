@@ -35,7 +35,7 @@
 
 /* Codasip BareMetal includes */
 #include <baremetal/interrupt.h>
-extern void bm_managed_handler_inner(bm_priv_mode_t new_mode);
+extern void bm_managed_handler_inner(bm_priv_mode_t new_mode, bm_register_file_t *stacked_regs);
 
 /*-----------------------------------------------------------*/
 
@@ -118,12 +118,13 @@ void freertos_risc_v_application_interrupt_handler(uint32_t ulMcause)
 
     PortNotifyISRBegin();
 
-    /* Call the BareMetal configured internal Interrupt Handler 
+    /* Call the BareMetal configured internal Interrupt Handler
      * via the bm_interrupt_handler_table[offset]().
-     * 
+     *
      * The "Internal" Interrupt BM_INTERRUPT_MEIP was set [via bm_interrupt_set_handler() in main()]
      * to call the external Interrupt Handler via bm_ext_irq_handler(). */
-    bm_managed_handler_inner(BM_PRIV_MODE_MACHINE);
+    bm_register_file_t stacked_regs_dummy = {0};
+    bm_managed_handler_inner(BM_PRIV_MODE_MACHINE, &stacked_regs_dummy);
 
     PortNotifyISREnd();
 }
@@ -152,8 +153,9 @@ void freertos_risc_v_application_exception_handler(uint32_t ulMcause)
     configASSERT(ulMcause == 0);
 
 #else  /* !EXCEPTION_HANDLER_LOCAL_USE */
-    /* Call the BareMetal configured Exception Handler 
+    /* Call the BareMetal configured Exception Handler
      * via bm_exc_handler_table[offset]() or error. */
-    bm_managed_handler_inner(BM_PRIV_MODE_MACHINE);
+    bm_register_file_t stacked_regs_dummy = {0};
+    bm_managed_handler_inner(BM_PRIV_MODE_MACHINE, &stacked_regs_dummy);
 #endif /* !EXCEPTION_HANDLER_LOCAL_USE */
 }

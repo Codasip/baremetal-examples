@@ -10,14 +10,21 @@
 /**
  * \brief A custom interrupt handler
  */
-void __attribute__((interrupt, aligned(64))) my_handler(void)
+void __attribute__((interrupt, aligned(TRAP_HANDLER_ALIGNMENT))) my_handler(void)
 {
     puts("Entered interrupt handler.");
 
     // Move past offending instruction to continue
+#ifdef __CHERI_PURE_CAPABILITY__
+    const uint8_t *csr_val = 0;
+    BM_CSR_READ_CAP(mepcc, csr_val);
+    BM_CSR_WRITE_CAP(mepcc, csr_val + 0x04);
+
+#else
     xlen_t csr_val = 0;
     BM_CSR_READ(BM_CSR_MEPC, csr_val);
     BM_CSR_WRITE(BM_CSR_MEPC, csr_val + 0x04);
+#endif
 }
 
 int main(void)

@@ -26,13 +26,19 @@
 
 static bool rdtime_handler_called = false;
 
-void unsuported_instruction_handler(void)
+void unsuported_instruction_handler(bm_register_file_t *stacked_regs)
 {
-    xlen_t inst_addr   = 0;
-    xlen_t instruction = 0;
+    const uint8_t *inst_addr   = 0;
+    xlen_t         instruction = 0;
 
     // Get inst_addr and instruction values from CSR registers
+#ifdef __CHERI_PURE_CAPABILITY__
+    BM_CSR_READ_CAP(mepcc, inst_addr);
+
+#else
     BM_CSR_READ(BM_CSR_MEPC, inst_addr);
+#endif
+
     BM_CSR_READ(BM_CSR_MTVAL, instruction);
 
     unsigned inst_size = 4; // Has to be updated if compressed instruction is decoded
@@ -52,11 +58,91 @@ void unsuported_instruction_handler(void)
             reg_val = mtime >> 32;
         }
 
-        // Update register encoded in the instruction's binary
-        unsigned reg    = (instruction & INST_RDTIME_REG_MASK) >> INST_RDTIME_REG_OFFSET;
-        unsigned hartid = bm_get_hartid();
-        volatile bm_register_file_t *regs = bm_priv_regs[bm_get_priv_mode()][hartid];
-        ((xlen_t *)regs)[reg - 1] = reg_val; // x0 register is not saved in the register file
+        // If there is no register context, something is seriously broken.
+        if (!stacked_regs)
+        {
+            printf("No register available.");
+            exit(EXIT_FAILURE);
+        }
+
+        // Update register encoded in the instruction's binary, if possible
+        unsigned reg = (instruction & INST_RDTIME_REG_MASK) >> INST_RDTIME_REG_OFFSET;
+
+        switch (reg)
+        {
+            case 0:
+            default:
+                /* x0 and some other registers are not saved on the stack */
+                printf("Destination register %u not on the stack\n", reg);
+                exit(EXIT_FAILURE);
+                break;
+
+            case 1:
+                stacked_regs->ra = reg_val;
+                break;
+
+            case 5:
+                stacked_regs->t0 = reg_val;
+                break;
+
+            case 6:
+                stacked_regs->t1 = reg_val;
+                break;
+
+            case 7:
+                stacked_regs->t2 = reg_val;
+                break;
+
+            case 10:
+                stacked_regs->a0 = reg_val;
+                break;
+
+            case 11:
+                stacked_regs->a1 = reg_val;
+                break;
+
+            case 12:
+                stacked_regs->a2 = reg_val;
+                break;
+
+            case 13:
+                stacked_regs->a3 = reg_val;
+                break;
+
+            case 14:
+                stacked_regs->a4 = reg_val;
+                break;
+
+            case 15:
+                stacked_regs->a5 = reg_val;
+                break;
+
+#ifndef __riscv_32e
+            case 16:
+                stacked_regs->a6 = reg_val;
+                break;
+
+            case 17:
+                stacked_regs->a7 = reg_val;
+                break;
+
+            case 28:
+                stacked_regs->t3 = reg_val;
+                break;
+
+            case 29:
+                stacked_regs->t4 = reg_val;
+                break;
+
+            case 30:
+                stacked_regs->t5 = reg_val;
+                break;
+
+            case 31:
+                stacked_regs->t6 = reg_val;
+                break;
+#endif
+        }
     }
     else
     {
@@ -65,7 +151,12 @@ void unsuported_instruction_handler(void)
     }
 
     // Move past the offending instruction to continue
+#ifdef __CHERI_PURE_CAPABILITY__
+    BM_CSR_WRITE_CAP(mepcc, inst_addr + inst_size);
+
+#else
     BM_CSR_WRITE(BM_CSR_MEPC, inst_addr + inst_size);
+#endif
 }
 
 static inline xlen_t get_time(void)
@@ -128,6 +219,6 @@ int main(void)
 #endif
 
     // Enter user mode
-    xlen_t stack = (xlen_t)(u_stack + sizeof(u_stack));
-    bm_priv_enter_mode(BM_PRIV_MODE_USER, (xlen_t)entry_user, stack);
+    uint8_t *stack = u_stack + sizeof(u_stack);
+    bm_priv_enter_mode(BM_PRIV_MODE_USER, entry_user, stack);
 }

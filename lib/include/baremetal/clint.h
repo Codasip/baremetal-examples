@@ -10,6 +10,17 @@
 extern "C" {
 #endif
 
+// Maximum numbers of MSIP and MTIMECMP registers (defined by specification)
+#define CLINT_MAX_MSIPS     4095
+#define CLINT_MAX_MTIMECMPS 4095
+
+struct bm_clint_regs {
+    volatile uint32_t MSIP[CLINT_MAX_MSIPS]; /**< (@ 0x0000) MSIP registers */
+    uint8_t           _reserved1[0x4];
+    volatile uint64_t MTIMECMP[CLINT_MAX_MTIMECMPS]; /**< (@ 0x4000) MTIMECMP registers */
+    volatile uint64_t MTIME;                         /**< (@ 0xBFF8) MTIME register */
+};
+
 /** \brief Structure describing CLINT peripheral registers */
 typedef struct bm_clint_regs bm_clint_regs_t;
 

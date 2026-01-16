@@ -24,5 +24,3 @@
 #ifdef CONFIG_HAS_CHERI
     #define TARGET_HAS_CHERI
 #endif
-
-#define TARGET_LINUX_SUPPORT

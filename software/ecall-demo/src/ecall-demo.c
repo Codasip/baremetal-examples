@@ -14,28 +14,58 @@ xlen_t call_function(xlen_t arg0, xlen_t arg1, xlen_t arg2)
     return (arg0 + arg1 + arg2);
 }
 
-void user_ecall_handler(void)
+void user_ecall_handler(bm_register_file_t *stacked_regs)
 {
     puts("Handling syscall from user mode.");
 
-    volatile bm_register_file_t *regs = bm_priv_regs[bm_get_priv_mode()][0];
-    regs->a0                          = call_function(regs->a0, regs->a1, regs->a2);
+    if (stacked_regs)
+    {
+        stacked_regs->a0 = call_function(stacked_regs->a0, stacked_regs->a1, stacked_regs->a2);
+    }
+    else
+    {
+        puts("No register context for syscall from user mode, can't do anything.");
+    }
 
+    // Move past offending instruction to continue
+#ifdef __CHERI_PURE_CAPABILITY__
+    const uint8_t *csr_val = 0;
+
+    BM_CSR_READ_CAP(mepcc, csr_val);
+    BM_CSR_WRITE_CAP(mepcc, csr_val + 0x04);
+
+#else
     xlen_t csr_val = 0;
     BM_CSR_READ(BM_CSR_MEPC, csr_val);
     BM_CSR_WRITE(BM_CSR_MEPC, csr_val + 0x04);
+#endif
 }
 
-void machine_ecall_handler(void)
+void machine_ecall_handler(bm_register_file_t *stacked_regs)
 {
     puts("Handling syscall from machine mode.");
 
-    volatile bm_register_file_t *regs = bm_priv_regs[bm_get_priv_mode()][0];
-    regs->a0                          = call_function(regs->a0, regs->a1, regs->a2);
+    if (stacked_regs)
+    {
+        stacked_regs->a0 = call_function(stacked_regs->a0, stacked_regs->a1, stacked_regs->a2);
+    }
+    else
+    {
+        puts("No register context for syscall from machine mode, can't do anything.");
+    }
 
+    // Move past offending instruction to continue
+#ifdef __CHERI_PURE_CAPABILITY__
+    const uint8_t *csr_val = 0;
+
+    BM_CSR_READ_CAP(mepcc, csr_val);
+    BM_CSR_WRITE_CAP(mepcc, csr_val + 0x04);
+
+#else
     xlen_t csr_val = 0;
     BM_CSR_READ(BM_CSR_MEPC, csr_val);
     BM_CSR_WRITE(BM_CSR_MEPC, csr_val + 0x04);
+#endif
 }
 
 uint8_t u_stack[0x4000] __attribute__((aligned(16)));
@@ -77,6 +107,6 @@ int main(void)
            (args.arg0 + args.arg1 + args.arg2));
 
     // Enter user mode
-    xlen_t stack = (xlen_t)(u_stack + sizeof(u_stack));
-    bm_priv_enter_mode(BM_PRIV_MODE_USER, (xlen_t)entry_user, stack);
+    uint8_t *stack = u_stack + sizeof(u_stack);
+    bm_priv_enter_mode(BM_PRIV_MODE_USER, entry_user, stack);
 }

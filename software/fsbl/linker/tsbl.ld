@@ -7,7 +7,6 @@ ENTRY (_start)
 __TEXT_START_ADDR = DEFINED(_TEXT_START_ADDR) ? _TEXT_START_ADDR : ORIGIN(boot_ram);
 __HEAP_SIZE = DEFINED(_HEAP_SIZE) ? _HEAP_SIZE : 0x0;
 __STACK_SIZE = DEFINED(_STACK_SIZE) ? _STACK_SIZE : 0x4000;
-__MP_EXTRA_STACK_SIZE = __STACK_SIZE * (DEFINED(_NUM_HARTS) ? _NUM_HARTS - 1 : 0);
 __SCS_SIZE = DEFINED(_SCS_SIZE) ? _SCS_SIZE : 0x00000000;
 
 SECTIONS
@@ -44,6 +43,11 @@ SECTIONS
     KEEP (*(.dtors))
     PROVIDE (__DTOR_END__ = .);
     PROVIDE (___DTOR_END__ = .);
+  } >boot_ram
+
+  /* RISC-V Zcmt extension: table with jump target addresses */
+  .tbljal : ALIGN(64) {
+    *(.tbljal .tbljal.*)
   } >boot_ram
 
   .rodata : ALIGN(8) {
@@ -85,6 +89,7 @@ SECTIONS
     __bss_end = .;
   } >boot_ram
 
+  /* Shadow Call Stack */
   .scs (NOLOAD) : ALIGN(16) {
     . += __SCS_SIZE;
   } >boot_ram
@@ -96,7 +101,9 @@ SECTIONS
   } >boot_ram
 
   .stack (NOLOAD) : ALIGN(16) {
-    . += __MP_EXTRA_STACK_SIZE;
+    /* secondary hart stacks for MP configurations */
+    . += DEFINED(_NUM_HARTS) ? (__STACK_SIZE * (_NUM_HARTS - 1)) : 0;
+    /* primary hart stack */
     _stack_end = .;
     . += __STACK_SIZE;
     . = ALIGN(16);

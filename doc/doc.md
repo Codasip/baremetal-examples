@@ -83,7 +83,6 @@ The following preprocessor defines are currently passed during build:
 - `TARGET_HAS_PMP` - cores implementing PMPs
   - `TARGET_PMP_NUM_REGIONS` - number of PMP regions
 - `TARGET_HAS_TCM` - cores with Codasip Tightly Coupled Memories
-- `TARGET_LINUX_SUPPORT` - Linux capable cores
 - `TARGET_NUM_HARTS` - number of harts on the target core/cluster
 - `TARGET_PLATFORM_FREQ` - platform (peripheral) clock frequency
 - `TARGET_PLATFORM_NAME` - string with platform name

@@ -13,6 +13,20 @@
 extern "C" {
 #endif
 
+#ifdef TARGET_HAS_CLIC
+struct bm_clic_regs {
+    volatile uint32_t CLICCFG;
+    uint8_t           _reserved1[0xffc];
+    /** \brief Structure representing CLIC input configuration registers */
+    struct bm_clic_input {
+        volatile uint8_t CLICINTIP;
+        volatile uint8_t CLICINTIE;
+        volatile uint8_t CLICINTATTR;
+        volatile uint8_t CLICINTCTL;
+    } INPUTS[TARGET_CLIC_NUM_INPUTS];
+};
+#endif
+
 /** \brief Structure describing CLIC peripheral registers */
 typedef struct bm_clic_regs bm_clic_regs_t;
 
@@ -102,5 +116,15 @@ void bm_clic_set_vectored(bm_clic_t *clic, unsigned clic_irq_id, bool shv);
  * \return True if interrupt is pending for the given CLIC interrup ID, otherwise False
  */
 bool bm_clic_get_pending(bm_clic_t *clic, unsigned clic_irq_id);
+
+/**
+ * \brief Clear a pending interrupt for given CLIC interrupt ID
+ *
+ * \param clic CLIC device
+ * \param clic_irq_id CLIC interrupt ID to clear
+ *
+ * \return None
+ */
+void bm_clic_clear_pending(bm_clic_t *clic, unsigned clic_irq_id);
 
 #endif /* BAREMETAL_CLIC_H */

@@ -36,5 +36,3 @@
 #ifdef CONFIG_HAS_TCMS
     #define TARGET_HAS_TCM
 #endif
-
-#define TARGET_LINUX_SUPPORT

@@ -72,7 +72,7 @@ static void prvQueueSendTask(void *pvParameters)
         char buf[40];
 
         sprintf(buf,
-                "%d: %s: %s",
+                "%d: %s: %s\n",
                 xGetCoreID(),
                 pcTaskGetName(xTaskGetCurrentTaskHandle()),
                 (f) ? pcMessage1 : pcMessage2);
@@ -118,7 +118,7 @@ static void prvQueueReceiveTask(void *pvParameters)
             char buf[40];
 
             sprintf(buf,
-                    "%d: %s: %s",
+                    "%d: %s: %s\n",
                     xGetCoreID(),
                     pcTaskGetName(xTaskGetCurrentTaskHandle()),
                     (f) ? pcMessage1 : pcMessage2);

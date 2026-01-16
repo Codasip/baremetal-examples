@@ -11,6 +11,15 @@
 extern "C" {
 #endif
 
+struct bm_trng_regs {
+    volatile uint32_t RAW;
+    volatile uint32_t RAWN;
+    volatile uint32_t RND;
+    volatile uint32_t RNDN;
+    volatile uint32_t CONFIG;
+    volatile uint32_t STATUS;
+};
+
 /** \brief Structure describing TRNG peripheral registers */
 typedef struct bm_trng_regs bm_trng_regs_t;
 

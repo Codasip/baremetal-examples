@@ -4,6 +4,7 @@
 #ifndef BAREMETAL_TARGET_TCM_H
 #define BAREMETAL_TARGET_TCM_H
 
+#include "baremetal/bm_cheri.h"
 #include "baremetal/common.h"
 #include "baremetal/csr.h"
 #include "baremetal/mem_barrier.h"
@@ -119,8 +120,9 @@ static inline void bm_tcm_itcm_init(void)
     xlen_t itcm_start    = bm_tcm_itcm_get_base_address();
     void  *itcm_data     = &__itcm_data_start;
     void  *itcm_data_end = &__itcm_data_end;
+    xlen_t itcm_size     = (xlen_t)itcm_data_end - (xlen_t)itcm_data;
 
-    memcpy((void *)itcm_start, itcm_data, ((xlen_t)itcm_data_end - (xlen_t)itcm_data));
+    memcpy((void *)addr_to_data_ptr(itcm_start, itcm_size), itcm_data, itcm_size);
 
     bm_exec_fence();
     bm_exec_fence_i();
@@ -134,8 +136,9 @@ static inline void bm_tcm_dtcm_init(void)
     xlen_t dtcm_start    = bm_tcm_dtcm_get_base_address();
     void  *dtcm_data     = &__dtcm_data_start;
     void  *dtcm_data_end = &__dtcm_data_end;
+    xlen_t dtcm_size     = (xlen_t)dtcm_data_end - (xlen_t)dtcm_data;
 
-    memcpy((void *)dtcm_start, dtcm_data, ((xlen_t)dtcm_data_end - (xlen_t)dtcm_data));
+    memcpy((void *)addr_to_data_ptr(dtcm_start, dtcm_size), dtcm_data, dtcm_size);
 
     bm_exec_fence();
 }

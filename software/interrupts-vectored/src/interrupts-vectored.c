@@ -18,7 +18,7 @@ static unsigned    clint_tics_in_second;
 /**
  * \brief A custom handler for unexpected interrupts
  */
-void __attribute__((interrupt, aligned(16))) default_handler(void)
+void __attribute__((interrupt, aligned(TRAP_HANDLER_ALIGNMENT))) default_handler(void)
 {
     puts("Default handler called!");
 }
@@ -26,20 +26,27 @@ void __attribute__((interrupt, aligned(16))) default_handler(void)
 /**
  * \brief A custom interrupt handler for exceptions
  */
-void __attribute__((interrupt, aligned(16))) exception_handler(void)
+void __attribute__((interrupt, aligned(TRAP_HANDLER_ALIGNMENT))) exception_handler(void)
 {
     puts("Exception handler running!");
 
-    // Move past offending instrcution to continue
+    // Move past offending instruction to continue
+#ifdef __CHERI_PURE_CAPABILITY__
+    const uint8_t *csr_val = 0;
+    BM_CSR_READ_CAP(mepcc, csr_val);
+    BM_CSR_WRITE_CAP(mepcc, csr_val + 0x04);
+
+#else
     xlen_t csr_val = 0;
     BM_CSR_READ(BM_CSR_MEPC, csr_val);
     BM_CSR_WRITE(BM_CSR_MEPC, csr_val + 0x04);
+#endif
 }
 
 /**
  * \brief A custom interrupt handler for timer interrupts
  */
-void __attribute__((interrupt, aligned(16))) interrupt_handler(void)
+void __attribute__((interrupt, aligned(TRAP_HANDLER_ALIGNMENT))) interrupt_handler(void)
 {
     puts("Interrupt handler running!");
 
@@ -47,7 +54,8 @@ void __attribute__((interrupt, aligned(16))) interrupt_handler(void)
     bm_clint_rearm_timer(clint, bm_get_hartid(), clint_tics_in_second);
 }
 
-void __attribute__((naked, section(".text.mtvec_table"), aligned(16))) bm_irq_mtvec_table(void)
+void __attribute__((naked, section(".text.mtvec_table"), aligned(TRAP_HANDLER_ALIGNMENT)))
+bm_irq_mtvec_table(void)
 {
     __asm__ volatile(".option push;"
                      ".option norvc;"

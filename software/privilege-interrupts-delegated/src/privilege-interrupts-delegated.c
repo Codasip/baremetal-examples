@@ -24,8 +24,10 @@ static unsigned    clint_tics_in_second;
 /**
  * \brief Handler for the MTIP (timer) interrupt
  */
-void mtip_handler(void)
+void mtip_handler(bm_register_file_t *stacked_regs)
 {
+    (void)stacked_regs; // unused
+
     if (stop_flag)
     {
         // Stop generation of further interrupts
@@ -54,8 +56,10 @@ void mtip_handler(void)
 /**
  * \brief Handler for the SSIP (supervisor software) interrupt
  */
-void ssip_handler(void)
+void ssip_handler(bm_register_file_t *stacked_regs)
 {
+    (void)stacked_regs; // unused
+
     puts("SSIP handler in supervisor mode enterred.");
 
     // Disable the interrupt
@@ -89,8 +93,8 @@ void __attribute__((noinline)) entry_supervisor(void)
     puts("Hello world from supervisor mode!");
 
     // Enter user mode
-    xlen_t stack = (xlen_t)(u_stack + sizeof(u_stack));
-    bm_priv_enter_mode(BM_PRIV_MODE_USER, (xlen_t)entry_user, stack);
+    uint8_t *stack = u_stack + sizeof(u_stack);
+    bm_priv_enter_mode(BM_PRIV_MODE_USER, entry_user, stack);
 }
 
 int main(void)
@@ -126,6 +130,6 @@ int main(void)
 #endif
 
     // Enter supervisor mode
-    xlen_t stack = (xlen_t)(s_stack + sizeof(s_stack));
-    bm_priv_enter_mode(BM_PRIV_MODE_SUPERVISOR, (xlen_t)entry_supervisor, stack);
+    uint8_t *stack = s_stack + sizeof(s_stack);
+    bm_priv_enter_mode(BM_PRIV_MODE_SUPERVISOR, entry_supervisor, stack);
 }

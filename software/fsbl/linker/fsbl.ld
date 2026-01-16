@@ -45,6 +45,11 @@ SECTIONS
     PROVIDE (___DTOR_END__ = .);
   } >boot_rom
 
+  /* RISC-V Zcmt extension: table with jump target addresses */
+  .tbljal : ALIGN(64) {
+    *(.tbljal .tbljal.*)
+  } >boot_rom
+
   .rodata : ALIGN(8) {
     *(.srodata .srodata.*)
     *(.rodata .rodata.*)
@@ -84,6 +89,7 @@ SECTIONS
     __bss_end = .;
   } >boot_ram
 
+  /* Shadow Call Stack */
   .scs (NOLOAD) : ALIGN(16) {
     . += __SCS_SIZE;
   } >boot_ram

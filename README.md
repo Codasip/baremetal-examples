@@ -46,7 +46,7 @@ baremetal-examples
 
 1. Install `make`
 2. Install a RISC-V toolchain (assembler, compiler, linker)
-3. Provide its prefix in the `$SDK_PREFIX` variable, and make sure the tools are available in `$PATH`
+3. Provide its prefix in the `$SDK_PREFIX` variable, and optionally make the tools available in `$PATH` if necessary
 4. Make sure that file _config.mk_  is configured correctly:
    1. Remove or comment out the first line with error message
    2. Uncomment appropriate environment setting, see Environments section
@@ -76,16 +76,20 @@ ${SDK_PREFIX}objcopy --version
 For example, to setup a toolchain from command line:
 
 ```sh
-PATH=$PATH:/path/to/toolchain/folder/bin
-export SDK_PREFIX=riscv32-unknown-elf-
+export SDK_PREFIX=/path/to/toolchain/folder/bin/riscv32-unknown-elf-
 export CC_NAME=gcc
+```
+
+For the Codasip CHERI Toolchain (e.g. `codasip-embedded-sdk-1.1.0`) the setup is slightly different:
+```sh
+export SDK_PREFIX=/path/to/codasip-embedded-sdk-1.1.0/bin/
+export CC_NAME=clang
 ```
 
 Alternatively, it is also possible to configure a toolchain in _config.mk_, for example by adding the following at the start of the file:
 
 ```
-PATH := ${PATH}:/path/to/toolchain/folder/bin
-SDK_PREFIX = riscv32-unknown-elf-
+SDK_PREFIX = /path/to/toolchain/folder/bin/riscv32-unknown-elf-
 CC_NAME = gcc
 ```
 

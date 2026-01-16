@@ -1,4 +1,4 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/interrupt.h"
@@ -19,6 +19,7 @@
     #include "baremetal/clic.h"
 #endif
 
+#include <stddef.h>
 #include <stdint.h>
 
 static void bm_exception_print_details(xlen_t offset)
@@ -69,6 +70,11 @@ static void bm_exception_print_details(xlen_t offset)
         case BM_EXCEPTION_SPF:
             bm_warn("Store page fault.");
             break;
+#ifdef __CHERI_PURE_CAPABILITY__
+        case BM_EXCEPTION_CHERI:
+            bm_warn("Cheri exception.");
+            break;
+#endif
         default:
             bm_warn("Unknown exception " BM_FMT_XLEN, offset);
             break;
@@ -79,15 +85,22 @@ static void bm_exception_print_details(xlen_t offset)
     BM_CSR_READ(BM_CSR_MCAUSE, csr_val);
     bm_warn("  CSR mcause: " BM_FMT_XLEN, csr_val);
 
+#ifdef __CHERI_PURE_CAPABILITY__
+    uint8_t *mepcc_val;
+    BM_CSR_READ_CAP(mepcc, mepcc_val);
+    bm_warn("  CSR mepcc:  %#p", mepcc_val);
+
+#else
     BM_CSR_READ(BM_CSR_MEPC, csr_val);
     bm_warn("  CSR mepc:   " BM_FMT_XLEN, csr_val);
+#endif
 
     BM_CSR_READ(BM_CSR_MTVAL, csr_val);
     bm_warn("  CSR mtval:  " BM_FMT_XLEN, csr_val);
 }
 
 /** \brief Table with handlers for individual exception sources */
-static bm_intr_handler_t bm_exc_handler_table[16] = {0};
+static bm_intr_handler_t bm_exc_handler_table[BM_EXCEPTION_NUMBER] = {0};
 
 #ifdef TARGET_HAS_CLIC
 /** \brief Table with handlers for individual interrupt sources */
@@ -100,7 +113,7 @@ static bm_intr_handler_t bm_interrupt_handler_table[16] = {0};
 static bm_intr_handler_t bm_ext_irq_handler_table[32] = {0};
 
 /** \brief Internal handler for external interrupts */
-void bm_ext_irq_handler(void)
+void bm_ext_irq_handler(bm_register_file_t *stacked_regs)
 {
     int pending = bm_ext_irq_claim();
 
@@ -126,183 +139,155 @@ void bm_ext_irq_handler(void)
         bm_fatal("An external interrupt with unset handler was triggered.");
     }
 
-    handler();
+    handler(stacked_regs);
 
     bm_ext_irq_complete(pending);
 }
 #endif
 
 // clang-format off
+#ifdef __CHERI_PURE_CAPABILITY__
 #if RISCV_XLEN == 32
-    #define BM_WORD_SIZE  "4"
-    #define BM_WORD_SFT   "2"
-    #define BM_STORE      "sw"
-    #define BM_LOAD       "lw"
+    #define BM_STORE      "sc"
+    #define BM_LOAD       "lc"
     #define BM_STORE_F    "fsw"
     #define BM_LOAD_F     "flw"
-    #define BM_REG_SIZE    4
 
 #elif RISCV_XLEN == 64
-    #define BM_WORD_SIZE  "8"
-    #define BM_WORD_SFT   "3"
-    #define BM_STORE      "sd"
-    #define BM_LOAD       "ld"
+    #define BM_STORE      "sc"
+    #define BM_LOAD       "lc"
     #define BM_STORE_F    "fsd"
     #define BM_LOAD_F     "fld"
-    #define BM_REG_SIZE    8
 
 #else
     #error "unsupported RISCV_XLEN"
 #endif /* RISCV_XLEN == */
 
-#define TARGET_SAVE_EMB_REGS                      \
-    BM_STORE " x1, 0 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE " x2, 1 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE " x3, 2 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE " x4, 3 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE " x5, 4 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE " x6, 5 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE " x7, 6 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE " x8, 7 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE " x9, 8 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE " x10, 9 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x11, 10 * " BM_WORD_SIZE " (sp)\n" \
-    BM_STORE " x12, 11 * " BM_WORD_SIZE " (sp)\n" \
-    BM_STORE " x13, 12 * " BM_WORD_SIZE " (sp)\n" \
-    BM_STORE " x14, 13 * " BM_WORD_SIZE " (sp)\n" \
-    BM_STORE " x15, 14 * " BM_WORD_SIZE " (sp)\n"
+/* Load/store register from/to stack with correct bm_register_file_t offsets */
+#define LS_REG_OFFSET(instr, reg) __asm__ volatile(instr " c" #reg ", %0 (csp)\n"               \
+                                                   :: "i"(offsetof(bm_register_file_t, reg)))
 
-#define TARGET_LOAD_EMB_REGS                      \
-    BM_LOAD " x1, 0 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD " x2, 1 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD " x3, 2 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD " x4, 3 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD " x5, 4 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD " x6, 5 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD " x7, 6 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD " x8, 7 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD " x9, 8 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD " x10, 9 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x11, 10 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_LOAD " x12, 11 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_LOAD " x13, 12 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_LOAD " x14, 13 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_LOAD " x15, 14 * " BM_WORD_SIZE " (sp)\n"
+#define LS_REG_OFFSET_F(instr, reg) __asm__ volatile(instr " " #reg ", %0 (csp)\n"              \
+                                                     :: "i"(offsetof(bm_register_file_t, reg)))
 
-#define TARGET_SAVE_ALL_REGS                       \
-    TARGET_SAVE_EMB_REGS                           \
-    BM_STORE " x16, 15 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x17, 16 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x18, 17 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x19, 18 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x20, 19 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x21, 20 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x22, 21 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x23, 22 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x24, 23 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x25, 24 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x26, 25 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x27, 26 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x28, 27 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x29, 28 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x30, 29 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE " x31, 30 * " BM_WORD_SIZE " (sp)\n"
+#else
+#if RISCV_XLEN == 32
+    #define BM_STORE      "sw"
+    #define BM_LOAD       "lw"
+    #define BM_STORE_F    "fsw"
+    #define BM_LOAD_F     "flw"
 
-#define TARGET_LOAD_ALL_REGS                       \
-    TARGET_LOAD_EMB_REGS                           \
-    BM_LOAD " x16, 15 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x17, 16 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x18, 17 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x19, 18 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x20, 19 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x21, 20 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x22, 21 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x23, 22 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x24, 23 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x25, 24 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x26, 25 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x27, 26 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x28, 27 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x29, 28 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x30, 29 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD " x31, 30 * " BM_WORD_SIZE " (sp)\n"
+#elif RISCV_XLEN == 64
+    #define BM_STORE      "sd"
+    #define BM_LOAD       "ld"
+    #define BM_STORE_F    "fsd"
+    #define BM_LOAD_F     "fld"
 
-#define TARGET_SAVE_FLOAT_REGS                       \
-    BM_STORE_F " f0, 31 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE_F " f1, 32 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE_F " f2, 33 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE_F " f3, 34 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE_F " f4, 35 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE_F " f5, 36 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE_F " f6, 37 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE_F " f7, 38 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE_F " f8, 39 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE_F " f9, 40 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_STORE_F " f10, 41 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f11, 42 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f12, 43 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f13, 44 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f14, 45 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f15, 46 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f16, 47 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f17, 48 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f18, 49 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f19, 50 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f20, 51 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f21, 52 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f22, 53 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f23, 54 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f24, 55 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f25, 56 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f26, 57 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f27, 58 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f28, 59 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f29, 60 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f30, 61 * " BM_WORD_SIZE " (sp)\n"  \
-    BM_STORE_F " f31, 62 * " BM_WORD_SIZE " (sp)\n"
+#else
+    #error "unsupported RISCV_XLEN"
+#endif /* RISCV_XLEN == */
 
-#define TARGET_LOAD_FLOAT_REGS                       \
-    BM_LOAD_F " f0, 31 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD_F " f1, 32 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD_F " f2, 33 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD_F " f3, 34 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD_F " f4, 35 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD_F " f5, 36 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD_F " f6, 37 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD_F " f7, 38 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD_F " f8, 39 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD_F " f9, 40 * " BM_WORD_SIZE " (sp)\n"    \
-    BM_LOAD_F " f10, 41 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f11, 42 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f12, 43 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f13, 44 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f14, 45 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f15, 46 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f16, 47 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f17, 48 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f18, 49 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f19, 50 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f20, 51 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f21, 52 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f22, 53 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f23, 54 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f24, 55 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f25, 56 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f26, 57 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f27, 58 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f28, 59 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f29, 60 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f30, 61 * " BM_WORD_SIZE " (sp)\n"   \
-    BM_LOAD_F " f31, 62 * " BM_WORD_SIZE " (sp)\n"
+/* Load/store register from/to stack with correct bm_register_file_t offsets */
+#define LS_REG_OFFSET(instr, reg) __asm__ volatile(instr " " #reg ", %0 (sp)\n"                 \
+                                                   :: "i"(offsetof(bm_register_file_t, reg)))
+
+#define LS_REG_OFFSET_F LS_REG_OFFSET
+#endif
+
+/* The registers saved and restored should match the ones in the bm_register_file_t structure */
+#define TARGET_SAVE_EMB_REGS        \
+    LS_REG_OFFSET(BM_STORE, ra);    \
+    LS_REG_OFFSET(BM_STORE, t0);    \
+    LS_REG_OFFSET(BM_STORE, t1);    \
+    LS_REG_OFFSET(BM_STORE, t2);    \
+    LS_REG_OFFSET(BM_STORE, a0);    \
+    LS_REG_OFFSET(BM_STORE, a1);    \
+    LS_REG_OFFSET(BM_STORE, a2);    \
+    LS_REG_OFFSET(BM_STORE, a3);    \
+    LS_REG_OFFSET(BM_STORE, a4);    \
+    LS_REG_OFFSET(BM_STORE, a5);
+
+#define TARGET_LOAD_EMB_REGS        \
+    LS_REG_OFFSET(BM_LOAD, ra);     \
+    LS_REG_OFFSET(BM_LOAD, t0);     \
+    LS_REG_OFFSET(BM_LOAD, t1);     \
+    LS_REG_OFFSET(BM_LOAD, t2);     \
+    LS_REG_OFFSET(BM_LOAD, a0);     \
+    LS_REG_OFFSET(BM_LOAD, a1);     \
+    LS_REG_OFFSET(BM_LOAD, a2);     \
+    LS_REG_OFFSET(BM_LOAD, a3);     \
+    LS_REG_OFFSET(BM_LOAD, a4);     \
+    LS_REG_OFFSET(BM_LOAD, a5);
+
+#define TARGET_SAVE_ALL_REGS        \
+    TARGET_SAVE_EMB_REGS            \
+    LS_REG_OFFSET(BM_STORE, a6);    \
+    LS_REG_OFFSET(BM_STORE, a7);    \
+    LS_REG_OFFSET(BM_STORE, t3);    \
+    LS_REG_OFFSET(BM_STORE, t4);    \
+    LS_REG_OFFSET(BM_STORE, t5);    \
+    LS_REG_OFFSET(BM_STORE, t6);
+
+#define TARGET_LOAD_ALL_REGS        \
+    TARGET_LOAD_EMB_REGS            \
+    LS_REG_OFFSET(BM_LOAD, a6);     \
+    LS_REG_OFFSET(BM_LOAD, a7);     \
+    LS_REG_OFFSET(BM_LOAD, t3);     \
+    LS_REG_OFFSET(BM_LOAD, t4);     \
+    LS_REG_OFFSET(BM_LOAD, t5);     \
+    LS_REG_OFFSET(BM_LOAD, t6);
+
+#define TARGET_SAVE_FLOAT_REGS            \
+    LS_REG_OFFSET_F(BM_STORE_F, ft0);     \
+    LS_REG_OFFSET_F(BM_STORE_F, ft1);     \
+    LS_REG_OFFSET_F(BM_STORE_F, ft2);     \
+    LS_REG_OFFSET_F(BM_STORE_F, ft3);     \
+    LS_REG_OFFSET_F(BM_STORE_F, ft4);     \
+    LS_REG_OFFSET_F(BM_STORE_F, ft5);     \
+    LS_REG_OFFSET_F(BM_STORE_F, ft6);     \
+    LS_REG_OFFSET_F(BM_STORE_F, ft7);     \
+    LS_REG_OFFSET_F(BM_STORE_F, fa0);     \
+    LS_REG_OFFSET_F(BM_STORE_F, fa1);     \
+    LS_REG_OFFSET_F(BM_STORE_F, fa2);     \
+    LS_REG_OFFSET_F(BM_STORE_F, fa3);     \
+    LS_REG_OFFSET_F(BM_STORE_F, fa4);     \
+    LS_REG_OFFSET_F(BM_STORE_F, fa5);     \
+    LS_REG_OFFSET_F(BM_STORE_F, fa6);     \
+    LS_REG_OFFSET_F(BM_STORE_F, fa7);     \
+    LS_REG_OFFSET_F(BM_STORE_F, ft8);     \
+    LS_REG_OFFSET_F(BM_STORE_F, ft9);     \
+    LS_REG_OFFSET_F(BM_STORE_F, ft10);    \
+    LS_REG_OFFSET_F(BM_STORE_F, ft11);
+
+#define TARGET_LOAD_FLOAT_REGS            \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft0);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft1);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft2);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft3);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft4);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft5);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft6);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft7);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, fa0);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, fa1);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, fa2);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, fa3);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, fa4);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, fa5);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, fa6);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, fa7);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft8);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft9);      \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft10);     \
+    LS_REG_OFFSET_F(BM_LOAD_F, ft11);
 // clang-format on
 
 /**
- * \brief Helper macros to save/restore all other registers on/from addresses saved in x1 register
+ * \brief Helper macros to save/restore all other registers on the stack
  */
 #ifdef __riscv_32e
     #define TARGET_SAVE_REGS TARGET_SAVE_EMB_REGS
     #define TARGET_LOAD_REGS TARGET_LOAD_EMB_REGS
-    #define TARGET_NUM_REGS  15
 #elif defined(__riscv_flen)
     #define TARGET_SAVE_REGS \
         TARGET_SAVE_ALL_REGS \
@@ -310,14 +295,12 @@ void bm_ext_irq_handler(void)
     #define TARGET_LOAD_REGS \
         TARGET_LOAD_ALL_REGS \
         TARGET_LOAD_FLOAT_REGS
-    #define TARGET_NUM_REGS 63
 #else
     #define TARGET_SAVE_REGS TARGET_SAVE_ALL_REGS
     #define TARGET_LOAD_REGS TARGET_LOAD_ALL_REGS
-    #define TARGET_NUM_REGS  31
 #endif
 
-#define TARGET_STACK_SIZE (TARGET_NUM_REGS * BM_REG_SIZE)
+#define TARGET_STACK_SIZE (sizeof(bm_register_file_t))
 
 /**
  * \brief Internal interrupt/exception handler routine
@@ -331,7 +314,7 @@ void bm_ext_irq_handler(void)
  *
  * \param new_mode Privilege mode the routine runs in
  */
-void bm_managed_handler_inner(bm_priv_mode_t new_mode)
+void bm_managed_handler_inner(bm_priv_mode_t new_mode, bm_register_file_t *stacked_regs)
 {
     // Update internal variable holding privilege mode
     bm_priv_mode_t prev_mode = bm_current_mode;
@@ -344,10 +327,11 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode)
 #ifdef TARGET_HAS_CLIC
     xlen_t offset_mask = 0xfff;
 #else
-    xlen_t offset_mask                   = ~(xlen_t)0 >> 1;
+    xlen_t offset_mask = ~(xlen_t)0 >> 1;
 #endif
     xlen_t offset = cause & offset_mask;
-    if (offset >= 16)
+
+    if (offset >= BM_EXCEPTION_NUMBER)
     {
         bm_fatal("Encountered cause is out of handled range");
     }
@@ -366,7 +350,7 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode)
             bm_fatal("Interrupt " BM_FMT_XLEN " with unset handler was triggered.", offset);
         }
         // Call the configured handler
-        handler();
+        handler(stacked_regs);
     }
     else
     {
@@ -383,55 +367,78 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode)
             bm_fatal("Fatal, ending execution.");
         }
         // Call the configured handler
-        handler();
+        handler(stacked_regs);
     }
 
     // Write original privilege mode value to the internal variable
     bm_current_mode = prev_mode;
 }
 
+#if defined(TARGET_HAS_CLIC) || defined(__CHERI_PURE_CAPABILITY__)
+    #define TRAP_HANDLER_ALIGNMENT 64
+
+#else
+    #define TRAP_HANDLER_ALIGNMENT 16
+#endif
+
 // clang-format off
 /**
  * \brief Helper macro for creating default handler functions for different privilege modes
  * - Save all registers on the current stack.
- * - Get the Hart ID. For User and Supervisor modes the HartID was stored in u/sscratch CSRs by crt0.S.
- * - Save the stack pointer in the bm_priv_regs[priv_mode][hartid] for use by rdtime and ecall-demo demos.
- * - Call internal C function to handle the interrupt.
+ * - Call internal C function to handle the interrupt with a copy of the current stack pointer
+ *   which points to the saved registers in a bm_register_file_t structure on the stack.
  * - Restore all registers from the current stack.
  * - Exit the interrupt handler using mret, sret or uret instruction.
  */
-#define CREATE_DEFAULT_HANDLER(name, priv_mode, csr_hartid, ret)  \
-    void __attribute__((naked, aligned(64))) name(void)           \
-    {                                                             \
-        __asm__ volatile("addi sp, sp, -%3\n"                     \
-                         TARGET_SAVE_REGS                         \
-                         "csrr t1, " #csr_hartid "\n"             \
-                         "slli t1, t1, " BM_WORD_SFT "\n"         \
-                         "la t0, %0\n"                            \
-                         "add t0, t0, t1\n"                       \
-                         BM_STORE " sp, 0(t0)\n"                  \
-                         "la t0, %1\n"                            \
-                         "li a0, %2\n"                            \
-                         "jalr t0\n"                              \
-                         TARGET_LOAD_REGS                         \
-                         "addi sp, sp, %3\n"                      \
-                         #ret                                     \
-                         ::"i"(&bm_priv_regs[priv_mode][0]),      \
-                         "i"(bm_managed_handler_inner),           \
-                         "i"(priv_mode),                          \
-                         "i"(TARGET_STACK_SIZE));                 \
+#ifdef __CHERI_PURE_CAPABILITY__
+#define CREATE_DEFAULT_HANDLER(name, priv_mode, ret)                        \
+    void __attribute__((naked, aligned(TRAP_HANDLER_ALIGNMENT))) name(void) \
+    {                                                                       \
+        __asm__ volatile("caddi csp, csp, -%0\n"                            \
+                         :: "i"(TARGET_STACK_SIZE));                        \
+                         TARGET_SAVE_REGS                                   \
+        __asm__ volatile("cmv  ct0, %0\n"                                   \
+                         "cmv  ca1, csp\n"                                  \
+                         "li   a0,  %1\n"                                   \
+                         "jalr ct0\n"                                       \
+                         :: "C"(bm_managed_handler_inner),                  \
+                         "i"(priv_mode));                                   \
+                         TARGET_LOAD_REGS                                   \
+        __asm__ volatile("caddi csp, csp, %0\n"                             \
+                         #ret                                               \
+                         :: "i"(TARGET_STACK_SIZE));                        \
     }
+
+#else
+#define CREATE_DEFAULT_HANDLER(name, priv_mode, ret)                        \
+    void __attribute__((naked, aligned(TRAP_HANDLER_ALIGNMENT))) name(void) \
+    {                                                                       \
+        __asm__ volatile("addi sp, sp, -%0\n"                               \
+                         :: "i"(TARGET_STACK_SIZE));                        \
+                         TARGET_SAVE_REGS                                   \
+        __asm__ volatile("la   t0, %0\n"                                    \
+                         "li   a0, %1\n"                                    \
+                         "mv   a1, sp\n"                                    \
+                         "jalr t0\n"                                        \
+                         :: "i"(bm_managed_handler_inner),                  \
+                         "i"(priv_mode));                                   \
+                         TARGET_LOAD_REGS                                   \
+        __asm__ volatile("addi sp, sp, %0\n"                                \
+                         #ret                                               \
+                         :: "i"(TARGET_STACK_SIZE));                        \
+    }
+#endif
 // clang-format on
 
 /**
  * \brief Separate trap vector for each privilege mode
  */
-CREATE_DEFAULT_HANDLER(bm_managed_handler_m, BM_PRIV_MODE_MACHINE, mhartid, mret)
+CREATE_DEFAULT_HANDLER(bm_managed_handler_m, BM_PRIV_MODE_MACHINE, mret)
 #ifdef TARGET_EXT_S
-CREATE_DEFAULT_HANDLER(bm_managed_handler_s, BM_PRIV_MODE_SUPERVISOR, sscratch, sret)
+CREATE_DEFAULT_HANDLER(bm_managed_handler_s, BM_PRIV_MODE_SUPERVISOR, sret)
 #endif
 #ifdef TARGET_EXT_N
-CREATE_DEFAULT_HANDLER(bm_managed_handler_u, BM_PRIV_MODE_USER, uscratch, uret)
+CREATE_DEFAULT_HANDLER(bm_managed_handler_u, BM_PRIV_MODE_USER, uret)
 #endif
 
 // The following is an example on how to use the interrupt attributes.
@@ -441,20 +448,23 @@ CREATE_DEFAULT_HANDLER(bm_managed_handler_u, BM_PRIV_MODE_USER, uscratch, uret)
 //
 // void __attribute__((interrupt("machine"), aligned(64))) bm_managed_handler_m(void)
 // {
-//     bm_managed_handler_inner(BM_PRIV_MODE_MACHINE);
+//     bm_register_file_t stacked_regs_dummy = {0};
+//     bm_managed_handler_inner(BM_PRIV_MODE_MACHINE, &stacked_regs_dummy);
 // }
 //
 // #ifdef TARGET_EXT_S
 // void __attribute__((interrupt("supervisor"), aligned(64))) bm_managed_handler_s(void)
 // {
-//     bm_managed_handler_inner(BM_PRIV_MODE_SUPERVISOR);
+//     bm_register_file_t stacked_regs_dummy = {0};
+//     bm_managed_handler_inner(BM_PRIV_MODE_SUPERVISOR, &stacked_regs_dummy);
 // }
 // #endif
 //
 // #ifdef TARGET_EXT_N
 // void __attribute__((interrupt("user"), aligned(64))) bm_managed_handler_u(void)
 // {
-//     bm_managed_handler_inner(BM_PRIV_MODE_USER);
+//     bm_register_file_t stacked_regs_dummy = {0};
+//     bm_managed_handler_inner(BM_PRIV_MODE_USER, &stacked_regs_dummy);
 // }
 // #endif
 
@@ -463,7 +473,7 @@ void bm_interrupt_set_handler(bm_interrupt_source_t source, bm_intr_handler_t fu
 #ifdef TARGET_HAS_CLIC
     bm_interrupt_handler_table[bm_clic_get_irq_id(source)] = func;
 #else
-    bm_interrupt_handler_table[source]   = func;
+    bm_interrupt_handler_table[source] = func;
 #endif
 }
 
@@ -487,16 +497,16 @@ void bm_interrupt_install_handlers(bm_priv_mode_t priv_mode)
     switch (priv_mode)
     {
         case BM_PRIV_MODE_MACHINE:
-            handler = bm_managed_handler_m;
+            handler = (bm_intr_handler_t)bm_managed_handler_m;
             break;
 #ifdef TARGET_EXT_S
         case BM_PRIV_MODE_SUPERVISOR:
-            handler = bm_managed_handler_s;
+            handler = (bm_intr_handler_t)bm_managed_handler_s;
             break;
 #endif
 #ifdef TARGET_EXT_N
         case BM_PRIV_MODE_USER:
-            handler = bm_managed_handler_u;
+            handler = (bm_intr_handler_t)bm_managed_handler_u;
             break;
 #endif
         default:

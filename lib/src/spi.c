@@ -9,25 +9,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-/** \brief Xilinx Quad SPI IP registers */
-struct bm_spi_regs {
-    uint8_t           _reserved1[0x1C];
-    volatile uint32_t DGIER; ///< (0x001C) Device global interrupt enable register
-    volatile uint32_t IPISR; ///< (0x0020) IP interrupt status register
-    uint8_t           _reserved2[0x4];
-    volatile uint32_t IPIER; ///< (0x0028) IP interrupt enable register
-    uint8_t           _reserved3[0x14];
-    volatile uint32_t SRR; ///< (0x0040) Software reset register
-    uint8_t           _reserved4[0x1C];
-    volatile uint32_t SPICR;  ///< (0x0060) SPI control register
-    volatile uint32_t SPISR;  ///< (0x0064) SPI status register
-    volatile uint32_t SPIDTR; ///< (0x0068) SPI data transmit register
-    volatile uint32_t SPIDRR; ///< (0x006C) SPI data receive register
-    volatile uint32_t SPISSR; ///< (0x0070) SPI Slave select register
-    volatile uint32_t TFOCC;  ///< (0x0074) Transmit FIFO occupancy register
-    volatile uint32_t RFOCC;  ///< (0x0078) Receive FIFO occupancy register
-};
-
 #define CR_BIT_LOOP         (1 << 0)
 #define CR_BIT_SPE          (1 << 1)
 #define CR_BIT_MASTER       (1 << 2)

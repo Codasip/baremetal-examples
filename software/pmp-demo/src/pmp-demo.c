@@ -19,8 +19,10 @@ static volatile bool got_error;
 /**
  * \brief Handler for Load Access Failed exception
  */
-void load_access_failed_handler(void)
+void load_access_failed_handler(bm_register_file_t *stacked_regs)
 {
+    (void)stacked_regs;
+
     got_error = true;
 
     puts("Read access failed!");
@@ -34,8 +36,10 @@ void load_access_failed_handler(void)
 /**
  * \brief Handler for Store Access Failed exception
  */
-void store_access_failed_handler(void)
+void store_access_failed_handler(bm_register_file_t *stacked_regs)
 {
+    (void)stacked_regs;
+
     got_error = true;
 
     puts("Write access failed!");
@@ -135,6 +139,6 @@ int main(void)
     test_memory_access();
 
     // Enter user mode
-    xlen_t ustack = (xlen_t)(u_stack + sizeof(u_stack));
-    bm_priv_enter_mode(BM_PRIV_MODE_USER, (xlen_t)entry_user, ustack);
+    uint8_t *ustack = u_stack + sizeof(u_stack);
+    bm_priv_enter_mode(BM_PRIV_MODE_USER, entry_user, ustack);
 }

@@ -3,31 +3,6 @@
 
 #include "baremetal/id_reg.h"
 
-/** \brief Platform ID registers */
-struct bm_id_regs {
-    const volatile uint32_t ID_VERSION;   ///< (0x0000) Platform ID register version
-    const volatile uint32_t PLAT_VERSION; ///< (0x0004) Platform version
-    const volatile uint32_t CORE_TYPE;    ///< (0x0008) Core type
-    const volatile uint32_t CORE_F;       ///< (0x000C) Core frequency in MHz
-    const volatile uint32_t ETH_TYPE;     ///< (0x0010) Ethernet type
-    const volatile uint32_t FEATURES;     ///< (0x0014) Platform features
-    const volatile uint32_t SECURITY;     ///< (0x0018) Platform security features
-    uint8_t                 _reserved1[0x04];
-    const volatile uint32_t EPOCH;            ///< (0x0020) Epoch
-    const volatile uint32_t HARTS;            ///< (0x0024) Core Harts
-    const volatile uint32_t PLAT_INFO;        ///< (0x0028) Platform Information
-    uint8_t                 _reserved2[0xD4]; ///< (0x002c - 0x0100) reserved
-    const volatile uint32_t CORE_ARTIFACT0; ///< (0x0100) ARTIFACT byte array (artifact[3]:artifact[2]:artifact[1]:artifact[0])
-    const volatile uint32_t CORE_ARTIFACT1; ///< (0x0104) ARTIFACT byte array (artifact[7]:artifact[6]:artifact[5]:artifact[4])
-    const volatile uint32_t CORE_ARTIFACT2; ///< (0x0108) ARTIFACT byte array (artifact[11]:artifact[10]:artifact[9]:artifact[8])
-    const volatile uint32_t CORE_ARTIFACT3; ///< (0x010C) ARTIFACT byte array (artifact[15]:artifact[14]:artifact[13]:artifact[12])
-    const volatile uint32_t PLAT_SHA0; ///< (0x0110) SHA byte array (sha[3]:sha[2]:sha[1]:sha[0])
-    const volatile uint32_t PLAT_SHA1; ///< (0x0114) SHA byte array (sha[7]:sha[6]:sha[5]:sha[4])
-    const volatile uint32_t PLAT_SHA2; ///< (0x0118) SHA byte array (sha[11]:sha[10]:sha[9]:sha[8])
-    const volatile uint32_t PLAT_SHA3; ///< (0x011C) SHA byte array (sha[15]:sha[14]:sha[13]:sha[12])
-    const volatile uint32_t PLAT_SHA4; ///< (0x0120) SHA byte array (sha[19]:sha[18]:sha[17]:sha[16])
-};
-
 // ID VERSION register MACROs
 #define ID_VERSION_MINOR_VERSION_MASK         (0xFF)
 #define ID_VERSION_MAJOR_VERSION_MASK         (0xFF << 8)

@@ -1,6 +1,7 @@
 /* Copyright 2023-2024 Codasip s.r.o.         */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <baremetal/bm_cheri.h>
 #include <baremetal/gpio.h>
 #include <baremetal/interrupt_low.h>
 #include <baremetal/mp.h>
@@ -14,7 +15,7 @@
 static bm_gpio_t *gpio;
 static bm_plic_t *plic;
 
-void __attribute__((interrupt, aligned(16))) my_handler(void)
+void __attribute__((interrupt("machine"), aligned(TRAP_HANDLER_ALIGNMENT))) my_handler(void)
 {
     // Claim the interrupt
     int pending = bm_plic_claim(plic, bm_get_hartid());
@@ -61,7 +62,7 @@ int main(void)
     bm_gpio_init_irq(gpio);
 
     // Setup interrupt handler
-    bm_interrupt_tvec_setup(BM_PRIV_MODE_MACHINE, (xlen_t)&my_handler, BM_INTERRUPT_MODE_DIRECT);
+    bm_interrupt_tvec_setup(BM_PRIV_MODE_MACHINE, (xlen_t)my_handler, BM_INTERRUPT_MODE_DIRECT);
 
     // Enable external interrupts
     bm_interrupt_enable_source(BM_PRIV_MODE_MACHINE, BM_INTERRUPT_MEIP);

@@ -49,6 +49,10 @@ void __attribute__((noreturn, used)) bm_park_hart(void)
     }
 }
 
+/* The following alias is required when using the Codasip Bakewell SDK as the crtstart.S file
+ * parks all non-boot cores in a wfi loop in a weak function called __main() */
+void __attribute__((noreturn, used, alias("bm_park_hart"))) __main(void);
+
 int bm_hart_start(unsigned hart_id, bm_hart_func_ptr_t func, bm_hart_func_arg_t arg)
 {
     if (bm_hart_sync_data[hart_id].ready)

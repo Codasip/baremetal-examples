@@ -32,8 +32,19 @@ CPPFLAGS += -I $(LIB_DIR)/include                      \
 
 APP       = FreeRTOS-demo
 SOURCES   = $(DEMO_DIR)/src/FreeRTOS-demo.c            \
-            $(DEMO_DIR)/src/main_blinky.c              \
             $(DEMO_DIR)/src/FreeRTOS/vector.S
+
+FREERTOS_DEMO_APP ?= blinky
+
+ifeq ($(FREERTOS_DEMO_APP),blinky)
+    CPPFLAGS  += -DDEMO_BLINKY
+    SOURCES   += $(DEMO_DIR)/src/main_blinky.c
+else ifeq ($(FREERTOS_DEMO_APP),buggy)
+    CPPFLAGS  += -DDEMO_BUGGY
+    SOURCES   += $(DEMO_DIR)/src/main_buggy.c
+else
+    $(error Unsupported FREERTOS_DEMO_APP '$(FREERTOS_DEMO_APP)'. Supported: blinky, buggy)
+endif
 
 RTOS_SRCS = $(RTOS_SRC_DIR)/event_groups.c             \
             $(RTOS_SRC_DIR)/list.c                     \

@@ -20,8 +20,10 @@ static volatile unsigned mtip_counter;
 /**
  * Interrupt handler for the MTIP (timer) interrupt
  */
-void mtip_handler(void)
+void mtip_handler(bm_register_file_t *stacked_regs)
 {
+    (void)stacked_regs; // unused
+
     mtip_counter++;
 
     bm_clint_rearm_timer(clint, bm_get_hartid(), clint_tics_in_hundred_ms);
