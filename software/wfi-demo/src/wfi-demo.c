@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/clint.h>
@@ -56,7 +56,8 @@ void measure_intr(bool use_wfi)
     xlen_t mcycle_val   = bm_counter_read(BM_COUNTER_CYCLE);
     xlen_t minstret_val = bm_counter_read(BM_COUNTER_INSTRET);
 
-    printf("Test took " BM_FMT_XLEN " cycles, with " BM_FMT_XLEN " instructions executed.\n\n",
+    printf("Test took %" BM_FMT_XLEN_T " cycles, with %" BM_FMT_XLEN_T
+           " instructions executed.\n\n",
            mcycle_val,
            minstret_val);
 }

@@ -1,4 +1,4 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/mp.h"
@@ -32,6 +32,8 @@ void __attribute__((noreturn, used)) bm_park_hart(void)
     // All harts except the main one loop here when inactive
     while (true)
     {
+        bm_exec_fence();
+
         // Wait until the hart is assigned a job
         while (!bm_hart_sync_data[hart_id].ready)
             ;
@@ -50,7 +52,8 @@ void __attribute__((noreturn, used)) bm_park_hart(void)
 }
 
 /* The following alias is required when using the Codasip Bakewell SDK as the crtstart.S file
- * parks all non-boot cores in a wfi loop in a weak function called __main() */
+ * parks all non-boot cores in a wfi loop in a weak function called __main(). This redirects
+ * __main() to bm_park_hart() */
 void __attribute__((noreturn, used, alias("bm_park_hart"))) __main(void);
 
 int bm_hart_start(unsigned hart_id, bm_hart_func_ptr_t func, bm_hart_func_arg_t arg)

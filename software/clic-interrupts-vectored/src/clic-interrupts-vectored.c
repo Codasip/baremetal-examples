@@ -1,4 +1,4 @@
-/* Copyright 2024-2025 Codasip s.r.o.         */
+/* Copyright 2024-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/bm_cheri.h>
@@ -31,8 +31,8 @@ static bm_clic_t *clic;
  *
  * You can further bound all Interrupt Service Routine (ISR) entry points present in
  * the Trap Vector Table by writing a capability to CSR Xtvtentryic, e.g. mtvtentry0c for machine
- * mode. But you will need to write an infinate cap to Xtvtentryic if you want to
- * run your ISR in Cheri cap mode (as it defaults to the integer infinate cap).
+ * mode. But you will need to write an infinite cap to Xtvtentryic if you want to
+ * run your ISR in Cheri cap mode (as it defaults to the integer infinite cap).
  */
 
 static xlen_t mtvt_table[TARGET_CLIC_NUM_INPUTS] __attribute__((aligned(64))) = {0};
@@ -55,7 +55,7 @@ void __attribute__((interrupt("machine"), aligned(64))) gpio1_handler(void)
 
 int main(void)
 {
-    puts("Welcome to the CLIC vectored interrupts demo!\n");
+    puts("Welcome to the CLIC-vectored-interrupts demo!\n");
 
     gpio0 = (bm_gpio_t *)target_peripheral_get(BM_PERIPHERAL_GPIO_LEDS_SWITCHES);
     gpio1 = (bm_gpio_t *)target_peripheral_get(BM_PERIPHERAL_GPIO_SD);

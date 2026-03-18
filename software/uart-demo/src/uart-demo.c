@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/bm_cheri.h"
@@ -44,13 +44,13 @@ static void uart_interrupt_handler(bm_register_file_t *stacked_regs)
 int main(void)
 {
     puts("Welcome to the UART demo!\n");
-    puts("Connect to serial terminal with 115200 baud rate and 8-N-1 settings, to interract with "
+    puts("Connect to serial terminal with 115200 baud rate and 8-N-1 settings, to interact with "
          "the program.");
 
-    /* NOTE: Currently, when using Codasip Bakewell SDK the Bare Metal build uses the SDK's Lib
-     * Gloss and startup files (instead of the Bare Metal UART and crt0.S).
+    /* NOTE: Currently, when using Codasip Bakewell SDK, the BareMetal build uses the SDK's Lib
+     * Gloss and startup files (instead of the BareMetal UART and crt0.S).
      * This demo also uses bm_uart driver for the same UART. So for this demo to work correctly
-     * do no use any stdio function calls after bm_uart_init() (instead use the bm_uart_*() calls only).
+     * do not use any stdio function calls after bm_uart_init() (instead use the bm_uart_*() calls only).
      */
 
     uart = (bm_uart_t *)target_peripheral_get(BM_PERIPHERAL_UART_CONSOLE);
@@ -60,12 +60,25 @@ int main(void)
                                .parity      = BM_UART_PARITY_NONE,
                                .stop        = BM_UART_STOP_BITS_1,
                                .use_irq     = USE_IRQ};
-    bm_uart_init(uart, &config);
 
 #if USE_IRQ
-    bm_ext_irq_set_handler(uart->ext_irq_id, uart_interrupt_handler);
-    bm_interrupt_enable_source(BM_PRIV_MODE_MACHINE, BM_INTERRUPT_MEIP);
+
+    // Setup interrupts and enable M-Mode interrupts in general.
     bm_interrupt_init(BM_PRIV_MODE_MACHINE);
+
+    // install UART interrupt handler
+    bm_ext_irq_set_handler(uart->ext_irq_id, uart_interrupt_handler);
+
+#endif
+
+    // Initialize UART, will enable interrupts if 'config.use_irq' is set.
+    bm_uart_init(uart, &config);
+
+#if USE_IRQ && !defined(TARGET_HAS_CLIC)
+
+    // PIC/PLIC is connected to core's external interrupt, enable it.
+    bm_interrupt_enable_source(BM_PRIV_MODE_MACHINE, BM_INTERRUPT_MEIP);
+
 #endif
 
     write_line("\r\nPress any key.\r\n");

@@ -20,6 +20,19 @@
  */
 init_ram:
     .global init_ram
+#ifdef __CHERI_PURE_CAPABILITY__
+    llc ca0, __data_begin
+    llc ca1, __data_rom_start
+    llc ca2, __data_rom_end
+1:
+    lc ct1, 0(ca1)
+    sc ct1, 0(ca0)
+    caddi ca0, ca0, __SIZEOF_CHERI_CAPABILITY__
+    caddi ca1, ca1, __SIZEOF_CHERI_CAPABILITY__
+    blt a1, a2, 1b
+    ret
+
+#else
     la a0, __data_begin
     la a1, __data_rom_start
     la a2, __data_rom_end
@@ -30,4 +43,4 @@ init_ram:
     addi a1, a1, 4
     blt a1, a2, 1b
     ret
-
+#endif

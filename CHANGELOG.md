@@ -2,6 +2,21 @@
 
 This file contains all the major changes in different releases.
 
+## v1.1.9
+
+### Features
+- add RISC-V CHERI architecture (Y-Extension) support for FSBL and TSBL
+- add support for V739-Sphene
+- add support for V735-Amber
+
+### Miscellaneous
+- minor typo and align cleanups
+
+### Fix
+- don't reset CLIC config when enabling or disabling interrupts
+- fix and clarify CLIC interrupt API behavior
+- fix interrupt initialization in examples
+
 ## v1.1.8
 
 ### Features
@@ -16,7 +31,7 @@ This file contains all the major changes in different releases.
 - drop obsolete TARGET_LINUX_SUPPORT for V730
 - minor configuration and build system cleanups
 - set `CONFIG_PLATFORM` to Version 2 by default. (Hobgoblin/Hoobs v2 platform is now used by default; HOB_PLATFORM_VERSION configuration variable has been removed).
-- add PLIC to `REQUIRES` list for `privilege-interrupts` and `privilege-interrupts-delegated` demos 
+- add PLIC to `REQUIRES` list for `privilege-interrupts` and `privilege-interrupts-delegated` demos
 
 ### Fix
 - fix typo in variable name used for ABI selection (`CONFIG_CC_USE_DEFAULT_MABI` -> `CONFIG_CC_USE_DEFAULT_ABI`)

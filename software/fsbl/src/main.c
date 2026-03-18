@@ -1,4 +1,4 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "fatfs/ff.h"
@@ -7,6 +7,7 @@
 #include "parser.h"
 #include "sys_hw.h"
 
+#include <baremetal/bm_cheri.h>
 #include <baremetal/common.h>
 #include <baremetal/csr.h>
 #include <baremetal/gpio.h>
@@ -17,10 +18,19 @@
 #include <baremetal/platform.h>
 #include <baremetal/time.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tiny_printf/printf.h>
+
+#ifdef __CHERI_PURE_CAPABILITY__
+extern void *g_inf_cap;
+
+    #include <cheriintrin.h>
+
+    #define addr_to_ptr(base_addr) cheri_address_set(g_inf_cap, (unsigned long)(base_addr))
+#endif
 
 #define CONFIG_FILE_PATH "/config.txt"
 
@@ -33,15 +43,32 @@
 #endif
 
 /* Symbols defined in linker script */
-extern int _start;
-extern int _end;
-extern int __data_begin;
-int __attribute__((weak)) __data_rom_end = 0;
+extern const uint8_t __boot_rom_start;
+extern const uint8_t __boot_rom_size;
 
-static xlen_t start_addr = (uintptr_t)(&_start);
-static xlen_t end_addr   = (uintptr_t)(&_end);
-static xlen_t ram_start  = (uintptr_t)(&__data_begin);
-static xlen_t rom_end    = (uintptr_t)(&__data_rom_end);
+extern const uint8_t __boot_ram_start;
+extern const uint8_t __boot_ram_size;
+
+extern const uint8_t __ram_start;
+extern const uint8_t __ram_size;
+
+extern const uint8_t __ddr_start;
+extern const uint8_t __ddr_size;
+
+uintptr_t boot_rom_start = (uintptr_t)&__boot_rom_start;
+uintptr_t boot_rom_size  = (uintptr_t)&__boot_rom_size;
+uintptr_t boot_rom_end;
+
+uintptr_t boot_ram_start = (uintptr_t)&__boot_ram_start;
+uintptr_t boot_ram_size  = (uintptr_t)&__boot_ram_size;
+uintptr_t boot_ram_end;
+
+uintptr_t ram_start = (uintptr_t)&__ram_start;
+uintptr_t ram_size  = (uintptr_t)&__ram_size;
+uintptr_t ram_end;
+
+extern const uint8_t _start;
+static uintptr_t     code_start = (uintptr_t)&_start;
 
 static const unsigned gpio_switches[] = {TARGET_GPIO_PORT_SWITCH0,
                                          TARGET_GPIO_PORT_SWITCH1,
@@ -69,36 +96,44 @@ typedef struct {
 } opensbi_fw_dynamic_info_t;
 
 typedef struct {
-    xlen_t boot_addr;
+    uint8_t *boot_addr;
     // Flattened device tree address
-    xlen_t fdt_addr;
+    uint8_t *fdt_addr;
     // OpenSBI next address
-    xlen_t next_addr;
+    uint8_t *next_addr;
 } boot_config_t;
 
-typedef void (*payload_func_t)(xlen_t, xlen_t, xlen_t);
+typedef void (*payload_func_t)(xlen_t                     hart_id,
+                               uint8_t                   *ftd,
+                               opensbi_fw_dynamic_info_t *opensbi_fw_dynamic_info);
 
 void check_ready(void *arg)
 {
     (void)arg;
 }
 
+// Declaration of the assembly function to perform the jump
+void execute_jump(uint32_t                   hart_id,
+                  void                      *dtb,
+                  opensbi_fw_dynamic_info_t *fw_dynamic_info_ptr,
+                  payload_func_t             func_ptr);
+
 static void start_payload(void *arg)
 {
     boot_config_t *config         = (boot_config_t *)arg;
-    payload_func_t launch_payload = (payload_func_t)config->boot_addr;
-    xlen_t         ftd            = config->fdt_addr;
+    payload_func_t launch_payload = (payload_func_t)(uintptr_t)config->boot_addr;
+    uint8_t       *ftd            = config->fdt_addr;
     unsigned int   hart_num       = bm_get_hartid();
 
     // Set arguments for OpenSBI, which are passed in the same registers as function arguments.
     // See RISC-V calling conventions - https://riscv.org/wp-content/uploads/2015/01/riscv-calling.pdf
     // and OpenSBI docs - https://github.com/riscv-software-src/opensbi/blob/master/docs/firmware/fw.md
-    // Note, that the parameters differ for different OpenSBI Firmwares. If less parameters are required,
+    // Note that the parameters differ for different OpenSBI Firmwares. If less parameters are required,
     // the remaining registers will not influence further operation.
     opensbi_fw_dynamic_info_t opensbi_fw_dynamic_info = {
         .magic     = OPENSBI_FW_DYNAMIC_INFO_MAGIC_VALUE,
         .version   = OPENSBI_FW_DYNAMIC_INFO_VERSION_2,
-        .next_addr = config->next_addr,
+        .next_addr = (xlen_t)config->next_addr,
         .next_mode = OPENSBI_FW_DYNAMIC_INFO_NEXT_MODE_S,
         .options   = 0x0,
         .boot_hart = 0x0,
@@ -107,7 +142,7 @@ static void start_payload(void *arg)
     bm_exec_fence();
     bm_exec_fence_i();
 
-    launch_payload((xlen_t)hart_num, ftd, (xlen_t)&opensbi_fw_dynamic_info);
+    execute_jump(hart_num, ftd, &opensbi_fw_dynamic_info, launch_payload);
 }
 
 static void exit_with_error(void)
@@ -118,7 +153,7 @@ static void exit_with_error(void)
 
 /*
  * Technically, this trap handler function could also be made static, because
- * it's referenced only here when settig up the vector. However, having a
+ * it's referenced only here when setting up the vector. However, having a
  * public symbol is more convenient for debugging purposes.
  */
 void __attribute__((aligned(64))) trap_handler(void)
@@ -133,8 +168,15 @@ void __attribute__((aligned(64))) trap_handler(void)
     BM_CSR_READ(BM_CSR_MSTATUS, csr_val);
     printf(" - CSR mstatus:       " BM_FMT_XLEN "\n", csr_val);
 
+#ifdef __CHERI_PURE_CAPABILITY__
+    void *csr_val_c;
+    BM_CSR_READ_CAP(mepcc, csr_val_c);
+    printf(" - CSR mepcc:         " BM_FMT_XLEN "\n", (xlen_t)csr_val_c);
+
+#else
     BM_CSR_READ(BM_CSR_MEPC, csr_val);
     printf(" - CSR mepc:          " BM_FMT_XLEN "\n", csr_val);
+#endif
 
     BM_CSR_READ(BM_CSR_MTVAL, csr_val);
     printf(" - CSR mtval:         " BM_FMT_XLEN "\n", csr_val);
@@ -146,7 +188,7 @@ void __attribute__((aligned(64))) trap_handler(void)
     #define MAX_BIN_FILES    (40)
     #define MAX_FILENAME_LEN (64)
     #define BIN_DIR          "/"
-    #define BIN_BOOT_ADDRESS (0x20000000)
+    #define BIN_BOOT_ADDRESS (ram_start)
 
 static char     bin_filenames[MAX_BIN_FILES][MAX_FILENAME_LEN];
 static uint32_t bin_filenames_num = 0;
@@ -177,25 +219,29 @@ static int get_bin_files(const char *directory_path)
             // Check if the file has a ".bin" extension
             const char *filename = entry.fname;
             size_t      len      = strlen(filename);
-            if (len > 4 && strcmp(filename + len - 4, ".bin") == 0)
+            // Check the filename is not flash.bin
+            if (strcmp(filename, "flash.bin") != 0)
             {
-                if (directory_path[strlen(directory_path) - 1] == '/')
+                if (len > 4 && strcmp(filename + len - 4, ".bin") == 0)
                 {
-                    snprintf(bin_filenames[bin_filenames_num],
-                             MAX_FILENAME_LEN,
-                             "%s%s",
-                             directory_path,
-                             filename);
+                    if (directory_path[strlen(directory_path) - 1] == '/')
+                    {
+                        snprintf(bin_filenames[bin_filenames_num],
+                                 MAX_FILENAME_LEN,
+                                 "%s%s",
+                                 directory_path,
+                                 filename);
+                    }
+                    else
+                    {
+                        snprintf(bin_filenames[bin_filenames_num],
+                                 MAX_FILENAME_LEN,
+                                 "%s/%s",
+                                 directory_path,
+                                 filename);
+                    }
+                    bin_filenames_num++;
                 }
-                else
-                {
-                    snprintf(bin_filenames[bin_filenames_num],
-                             MAX_FILENAME_LEN,
-                             "%s/%s",
-                             directory_path,
-                             filename);
-                }
-                bin_filenames_num++;
             }
         }
 
@@ -242,13 +288,23 @@ static int load_via_uart_menu(boot_config_t *config)
 
     } while (cli_ret == NULL || selection >= bin_filenames_num);
 
-    if (load_sdcard_payload(BIN_BOOT_ADDRESS, bin_filenames[selection]))
+    long payload_size = get_file_size(bin_filenames[selection]);
+    if (payload_size < 0)
+    {
+        printf("\nFailed to get payload size for '%s'.\n", bin_filenames[selection]);
+        return -1;
+    }
+
+    if (load_sdcard_payload((uint8_t *)addr_to_data_ptr(BIN_BOOT_ADDRESS, payload_size),
+                            bin_filenames[selection]))
     {
         printf("\nFailed to load payload '%s'.\n", bin_filenames[selection]);
         return -1;
     }
 
-    config->boot_addr = BIN_BOOT_ADDRESS;
+    printf("Loaded %s\n", bin_filenames[selection]);
+
+    config->boot_addr = (uint8_t *)addr_to_ptr(BIN_BOOT_ADDRESS);
     return 0;
 }
 
@@ -275,15 +331,18 @@ static int process_entry(entry_t *entry, boot_config_t *config)
         return -1;
     }
 
-    if ((entry->load_addr <= end_addr) &&
-        (((rom_end > ram_start) ? start_addr : ram_start) <= (entry->load_addr + payload_size)))
+    uintptr_t end_addr = (uintptr_t)entry->load_addr + payload_size;
+    if ((((uintptr_t)entry->load_addr >= boot_ram_start) &&
+         ((uintptr_t)entry->load_addr < boot_ram_end)) ||
+        ((end_addr >= boot_ram_start) && (end_addr < boot_ram_end)))
     {
         printf("\nFailed to load payload '%s' due to overlap with FSBL RAM address space.\n",
                entry->path);
         return -1;
     }
 
-    if (load_sdcard_payload(entry->load_addr, entry->path))
+    if (load_sdcard_payload((uint8_t *)addr_to_data_ptr((uintptr_t)entry->load_addr, payload_size),
+                            entry->path))
     {
         printf("\nFailed to load payload '%s'.\n", entry->path);
         return -1;
@@ -291,7 +350,7 @@ static int process_entry(entry_t *entry, boot_config_t *config)
 
     if (entry->flags & ENTRY_FLAG_BOOT)
     {
-        config->boot_addr = entry->load_addr;
+        config->boot_addr = addr_to_ptr(entry->load_addr);
     }
     else if (entry->flags & ENTRY_FLAG_FDT)
     {
@@ -382,6 +441,11 @@ int main(void)
     // setup trap handler
     bm_interrupt_tvec_setup(BM_PRIV_MODE_MACHINE, (xlen_t)trap_handler, BM_INTERRUPT_MODE_DIRECT);
 
+    /* Calculate the memory region end addresses */
+    boot_rom_end = boot_rom_start + (size_t)boot_rom_size;
+    boot_ram_end = boot_ram_start + (size_t)boot_ram_size;
+    ram_end      = ram_start + (size_t)ram_size;
+
     printf("\n\n----[ Welcome to the Codasip FSBL ]----\n\n");
     printf("Build version:        %s\n", BUILD_VERSION);
     printf("Build ID:             %s\n", BUILD_ID);
@@ -391,6 +455,11 @@ int main(void)
     printf(" - Platform:          %s\n", TARGET_PLATFORM_NAME);
     printf(" - Frequency:         %u MHz\n", (unsigned)TARGET_CLK_FREQ / 1000000);
     printf(" - Number of HARTs:   %u\n", TARGET_NUM_HARTS);
+#ifdef __CHERI_PURE_CAPABILITY__
+    printf(" - CHERI support:     enabled\n");
+#else
+    printf(" - CHERI support:     disabled\n");
+#endif
     printf("\n");
     printf("Machine information:\n");
 
@@ -460,17 +529,18 @@ int main(void)
 
     printf("Memory occupation:\n");
 
-    if (rom_end > ram_start)
+    if ((code_start >= boot_rom_start) && (code_start < boot_rom_end))
     {
-        // Only a single memory region is used
-        printf(" - RAM:               " BM_FMT_XLEN " - " BM_FMT_XLEN "\n", start_addr, end_addr);
+        printf(" - ROM:               " BM_FMT_XLEN " - " BM_FMT_XLEN "\n", boot_rom_start, boot_rom_end);
     }
-    else
-    {
-        printf(" - ROM:               " BM_FMT_XLEN " - " BM_FMT_XLEN "\n", start_addr, rom_end);
-        printf(" - RAM:               " BM_FMT_XLEN " - " BM_FMT_XLEN "\n", ram_start, end_addr);
-    }
+    printf(" - RAM:               " BM_FMT_XLEN " - " BM_FMT_XLEN "\n", ram_start, boot_ram_start);
     printf("\n");
+
+    /* Clear memory before loading because old data can cause MP app startup issues
+     * (BARRIER code race condition in CHERI SDK in crtmain.S, __boot_sync may not be zero) */
+    size_t zero_size = boot_ram_start - ram_start;
+
+    memset(addr_to_data_ptr(ram_start, zero_size), 0, zero_size);
 
     boot_config_t config = {0};
     int           ret    = load_payloads(&config);

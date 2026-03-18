@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/uart.h"
@@ -190,9 +190,10 @@ void bm_uart_init(bm_uart_t *uart, const bm_uart_config_t *config)
         // Clear interrupts. Reading the IIR clears the THRE and some other interrupts
         (void)uart->regs->IIR;
 
-        // Enable interrupts
+        // Enable interrupt generation in UART
         uart->regs->IER = IER_ELSI | IER_ETBEI | IER_ERBFI;
-        bm_ext_irq_init();
+
+        // Enable UART interrupt
         bm_ext_irq_enable(uart->ext_irq_id);
     }
     else

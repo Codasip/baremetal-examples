@@ -44,6 +44,7 @@
 /* See https://www.freertos.org/Using-FreeRTOS-on-RISC-V.html */
 #define configMTIME_BASE_ADDRESS    (CONF_CLINT_ADDR + CONF_CLINT_MTIME)
 #define configMTIMECMP_BASE_ADDRESS (CONF_CLINT_ADDR + CONF_CLINT_MTIMECMP)
+#define SystemCoreClock             (TARGET_PLATFORM_FREQ) /* CLINT Timer Frequency */
 
 #ifdef PICOLIBC_TLS
     #define configUSE_PICOLIBC_TLS 1
@@ -52,7 +53,7 @@
 #define configUSE_PREEMPTION                    1
 #define configUSE_IDLE_HOOK                     0
 #define configUSE_TICK_HOOK                     1
-#define configCPU_CLOCK_HZ                      (TARGET_PLATFORM_FREQ)
+#define configCPU_CLOCK_HZ                      (SystemCoreClock)
 #define configTICK_RATE_HZ                      ((TickType_t)1000)
 #define configMAX_PRIORITIES                    (7)
 #define configMINIMAL_STACK_SIZE                ((unsigned short)512)

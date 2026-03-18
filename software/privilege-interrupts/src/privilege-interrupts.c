@@ -1,4 +1,4 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/clint.h>
@@ -41,7 +41,7 @@ void mtip_handler(bm_register_file_t *stacked_regs)
 
     if (!pass)
     {
-        puts("MTIP handler enterred.");
+        puts("MTIP handler entered.");
     }
     else
     {
@@ -59,7 +59,7 @@ void ssip_handler(bm_register_file_t *stacked_regs)
 {
     (void)stacked_regs; // unused
 
-    puts("SSIP handler enterred.");
+    puts("SSIP handler entered.");
 
     // Clear the interrupt
     BM_CSR_CLEAR(BM_CSR_MIP, 1 << BM_INTERRUPT_SSIP);

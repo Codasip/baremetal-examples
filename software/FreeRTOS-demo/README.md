@@ -46,7 +46,7 @@ For example, to clone it with all submodules into a subdirectory:
 
 This demo has been tested with `FreeRTOS V11.2.0`.
 
-Set up the environment variables to to point to the repo:
+Set up the environment variables to point to the repo:
 
     export RTOS_DIR=$(realpath repos/FreeRTOS-Kernel)
 

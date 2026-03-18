@@ -51,7 +51,7 @@
 #define configMTIME_BASE_ADDRESS    (CONF_CLINT_ADDR + CONF_CLINT_MTIME)
 #define configMTIMECMP_BASE_ADDRESS (CONF_CLINT_ADDR + CONF_CLINT_MTIMECMP)
 #define configISR_STACK_SIZE_WORDS  (2048)
-#define SystemCoreClock             (TARGET_PLATFORM_FREQ)    /* To set configCPU_CLOCK_HZ below */
+#define SystemCoreClock             (TARGET_PLATFORM_FREQ) /* CLINT Timer Frequency */
 
 #if 0 // Moved in to Codasip's CMSIS_6 repo cmsis_gcc.h */
 /* RISC-V Specific functions required for cmsis_os2.c */
@@ -68,9 +68,9 @@ inline void __enable_irq(void)
 
 /* This is a RISC-V port of an ARM register read as follows: */
 /**************************************************************************************************/
-/** \brief  Read the PRIMASK register bit 
-    \details 
-    The function reads the Priority Mask register (PRIMASK) value using the instruction \b MRS. 
+/** \brief  Read the PRIMASK register bit
+    \details
+    The function reads the Priority Mask register (PRIMASK) value using the instruction \b MRS.
     \n\n
     PRIMASK is a 1-bit-wide interrupt mask register. When set,
     it blocks all interrupts apart from the non-maskable interrupt (NMI) and the hard fault exception.
@@ -79,8 +79,8 @@ inline void __enable_irq(void)
     \returns    PRIMASK register value
                 - =0 no effect
                 - =1 prevents the activation of all exceptions with configurable priority
-           
-    \sa 
+
+    \sa
         - \ref __set_PRIMASK; __get_BASEPRI; __get_FAULTMASK
         - \ref ref_man_sec "Cortex-M Generic User Guides"
 
@@ -101,12 +101,12 @@ static inline uint32_t __get_PRIMASK(void)
 
 
 
-/* PortISRNestingCounter is used to indicate to the CMSIS-RTOS2 wrapper that we are in an 
+/* PortISRNestingCounter is used to indicate to the CMSIS-RTOS2 wrapper that we are in an
  * ISR via __get_IPSR().
- * 
+ *
  * So if you create an ISR outside of freertos_risc_v_application_interrupt_handler()
  * then add PortNotifyISRBegin() and PortNotifyISREnd() function calls to the beginning and end of it.
- * 
+ *
  * NOTE: Currently FreeRTOS RISC-V Port does not support interrupt nesting via it's ISR handler */
 
 extern uint32_t PortISRNestingCounter;
@@ -127,12 +127,12 @@ static inline void PortNotifyISREnd(void)
 /* This is a RISC-V port of an ARM register read as follows: */
 /**************************************************************************************************/
 /** \brief  Read the IPSR register
-    \details 
-    The function reads the Interrupt Program Status Register (IPSR) using the instruction \b MRS. 
+    \details
+    The function reads the Interrupt Program Status Register (IPSR) using the instruction \b MRS.
     \n\n
-    The ISPR contains the exception type number of the current Interrupt Service Routine (ISR). 
+    The ISPR contains the exception type number of the current Interrupt Service Routine (ISR).
     Each exception has an associated unique IRQn number. The following bits are used:
-    
+
     - \b ISR_NUMBER (IPSR[8:0])
         - = 0 Thread mode
         - = 1 Reserved
@@ -154,10 +154,10 @@ static inline void PortNotifyISREnd(void)
 
     \returns    ISPR register value
 
-    \remarks    
+    \remarks
             - This register is read-only.
 
-    \sa     
+    \sa
             - \ref __get_xPSR; IPSR_Type
             - \ref NVIC_gr
             - \ref ref_man_sec "Cortex-M Generic User Guides"

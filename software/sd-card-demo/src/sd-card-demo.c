@@ -86,7 +86,7 @@ bool verify_pattern(const uint8_t *buf, size_t size, size_t *mismatch_offset)
     {
         if (buf[i] != (uint8_t)(i % 0xff))
         {
-            *mismatch_offset = i; // Update mismatch offset value when error occured
+            *mismatch_offset = i; // Update mismatch offset value when error occurred
             return false;
         }
     }

@@ -1,4 +1,4 @@
-/* Copyright 2024-2025 Codasip s.r.o.         */
+/* Copyright 2024-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/clic.h"
@@ -10,52 +10,67 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* CLINT Interrupts connected to the CLIC */
+/** \brief CLINT Interrupts */
+typedef enum {
+    // clang-format off
+    CLIC_MSIP_INPUT_ID       = 0,
+    CLIC_MTIP_INPUT_ID       = 1,
 #ifdef CLIC_TARGET_EXT_S
-    /* The Supervisor SSIP Interrupt is currently not connected in the FPGA Platforms */
-    #define CLIC_NUM_INTERNAL_INPUTS 3
-    #define CLIC_NUM_EXTERNAL_INPUTS (TARGET_CLIC_NUM_INPUTS - CLIC_NUM_INTERNAL_INPUTS)
-    #define CLIC_MSIP_INPUT_ID       0
-    #define CLIC_MTIP_INPUT_ID       1
-/*  #define CLIC_SSIP_INPUT_ID       ? Not defined yet */
-/*  #define CLIC_STIP_INPUT_ID       X - There is no ACLINT STIP Interrupt */
-#else
-    #define CLIC_NUM_INTERNAL_INPUTS 2
-    #define CLIC_NUM_EXTERNAL_INPUTS (TARGET_CLIC_NUM_INPUTS - CLIC_NUM_INTERNAL_INPUTS)
-    #define CLIC_MSIP_INPUT_ID       0
-    #define CLIC_MTIP_INPUT_ID       1
+    #error "CLIC_TARGET_EXT_S is currently unsupported"
+    // CLIC_SSIP_INPUT_ID    = ? Not implemented on L730 FPGA platform, as it's
+    //                           not routed from the ACLINT to CLIC. but it
+    //                           seems it's routed to the classic RISC-V core
+    //                           interrupt source BM_INTERRUPT_SSIP.
+    // CLIC_STIP_INPUT_ID    = X Not part of ACLINT design
 #endif
+    CLIC_NUM_INTERNAL_INPUTS
+    // clang-format on
+} bm_clic_intr_t;
 
-#define CLICINTATTR_MODE_OFFSET 6
-#define CLICINTATTR_MODE_MASK   0x3
-#define CLICINTATTR_TRIG_OFFSET 1
-#define CLICINTATTR_TRIG_MASK   0x3
-#define CLICINTATTR_SHV_OFFSET  0
-#define CLICINTATTR_SHV_MASK    0x1
+#define CLIC_NUM_EXTERNAL_INPUTS (TARGET_CLIC_NUM_INPUTS - CLIC_NUM_INTERNAL_INPUTS)
+
+#define CLICINTATTR_MODE_OFFSET  6
+#define CLICINTATTR_MODE_MASK    0x3
+#define CLICINTATTR_TRIG_OFFSET  1
+#define CLICINTATTR_TRIG_MASK    0x3
+#define CLICINTATTR_SHV_OFFSET   0
+#define CLICINTATTR_SHV_MASK     0x1
 
 unsigned bm_clic_get_ext_irq_id(unsigned ext_irq_id)
 {
+    if (ext_irq_id >= CLIC_NUM_EXTERNAL_INPUTS)
+    {
+        bm_fatal("unsupported external interrupt request %u", ext_irq_id);
+    }
     return ext_irq_id + CLIC_NUM_INTERNAL_INPUTS;
 }
 
-unsigned bm_clic_get_irq_id(bm_interrupt_source_t source)
+unsigned bm_clic_get_irq_id_for_source(bm_interrupt_source_t source)
 {
     switch (source)
     {
-#ifdef CLIC_TARGET_EXT_S
-    #if 0
-        case BM_INTERRUPT_SSIP:     /* Currently, not connected in FPGA Platforms */
-            return CLIC_SSIP_INPUT_ID;
-        case BM_INTERRUPT_STIP:     /* Not part of ACLINT design */
-            return CLIC_STIP_INPUT_ID;
-    #endif
-#endif
         case BM_INTERRUPT_MSIP:
             return CLIC_MSIP_INPUT_ID;
         case BM_INTERRUPT_MTIP:
             return CLIC_MTIP_INPUT_ID;
+#ifdef CLIC_TARGET_EXT_S
+    #error "CLIC_TARGET_EXT_S is currently unsupported"
+        case BM_INTERRUPT_SSIP:
+            return CLIC_SSIP_INPUT_ID;
+        case BM_INTERRUPT_STIP:
+            return CLIC_STIP_INPUT_ID;
+#endif
         default:
-            return bm_clic_get_ext_irq_id(source);
+            // The sole purpose of this function is the translation of RISC-V
+            // core interrupt sources (BM_INTERRUPT_xx) to the CLIC interrupt
+            // IDs. Usually, a system with a CLIC no longer has a designated
+            // external core interrupt (BM_INTERRUPT_xEIP), an external
+            // interrupt controller (e.g. a PLIC) would just be handled like
+            // any other external peripheral that generates interrupts. All
+            // these interrupts must be translated via bm_clic_get_ext_irq_id().
+            // We cannot do this translation here, because it would make this
+            // function return ambiguous IDs.
+            bm_fatal("unsupported interrupt source %u", source);
     }
 }
 
@@ -76,26 +91,31 @@ void bm_clic_init(bm_clic_t *clic)
 
 void bm_clic_set_enable(bm_clic_t *clic, unsigned clic_irq_id, bool en)
 {
+    bm_fatal_check_index(clic_irq_id, clic->regs->INPUTS);
     clic->regs->INPUTS[clic_irq_id].CLICINTIE = en;
 }
 
 bool bm_clic_get_enable(bm_clic_t *clic, unsigned clic_irq_id)
 {
+    bm_fatal_check_index(clic_irq_id, clic->regs->INPUTS);
     return clic->regs->INPUTS[clic_irq_id].CLICINTIE;
 }
 
 void bm_clic_set_level(bm_clic_t *clic, unsigned clic_irq_id, uint8_t level)
 {
+    bm_fatal_check_index(clic_irq_id, clic->regs->INPUTS);
     clic->regs->INPUTS[clic_irq_id].CLICINTCTL = level;
 }
 
 uint8_t bm_clic_get_level(bm_clic_t *clic, unsigned clic_irq_id)
 {
+    bm_fatal_check_index(clic_irq_id, clic->regs->INPUTS);
     return clic->regs->INPUTS[clic_irq_id].CLICINTCTL;
 }
 
 void bm_clic_set_vectored(bm_clic_t *clic, unsigned clic_irq_id, bool shv)
 {
+    bm_fatal_check_index(clic_irq_id, clic->regs->INPUTS);
     if (shv)
     {
         clic->regs->INPUTS[clic_irq_id].CLICINTATTR |= (CLICINTATTR_SHV_MASK << CLICINTATTR_SHV_OFFSET);
@@ -109,6 +129,7 @@ void bm_clic_set_vectored(bm_clic_t *clic, unsigned clic_irq_id, bool shv)
 
 bool bm_clic_get_pending(bm_clic_t *clic, unsigned clic_irq_id)
 {
+    bm_fatal_check_index(clic_irq_id, clic->regs->INPUTS);
     return clic->regs->INPUTS[clic_irq_id].CLICINTIP;
 }
 

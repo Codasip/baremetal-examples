@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2024 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/common.h>
@@ -42,7 +42,7 @@ void test_caches(unsigned (*generator)(unsigned offset))
         test_data[i] = generator(i);
     }
 
-    // Invalidate the caches so that previous instructions dont influence the results
+    // Invalidate the caches so that previous instructions don't influence the results
     bm_dcache_flush_all();
     bm_dcache_invalidate_all();
 
@@ -70,7 +70,7 @@ void test_caches(unsigned (*generator)(unsigned offset))
 
 int main(void)
 {
-    puts("Welcome to the cache counter demo!\n");
+    puts("Welcome to the cache-counter demo!\n");
 
     puts("Testing sequential access:");
     test_caches(sequential_access);

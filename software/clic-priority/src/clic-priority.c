@@ -1,4 +1,4 @@
-/* Copyright 2024-2025 Codasip s.r.o.         */
+/* Copyright 2024-2025 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/clic.h>
@@ -62,7 +62,7 @@ static inline void test_priority(unsigned prio0, unsigned prio1)
 
 int main(void)
 {
-    puts("Welcome to the CLIC priority demo!\n");
+    puts("Welcome to the CLIC-priority demo!\n");
 
     gpio0 = (bm_gpio_t *)target_peripheral_get(BM_PERIPHERAL_GPIO_LEDS_SWITCHES);
     gpio1 = (bm_gpio_t *)target_peripheral_get(BM_PERIPHERAL_GPIO_SD);

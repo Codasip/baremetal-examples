@@ -237,6 +237,8 @@ ifeq ($(XLEN),32)
 CC_ABI_ITEMS += l32pc64
 else ifeq ($(XLEN),64)
 CC_ABI_ITEMS += l64pc128
+else
+$(error "unsupported XLEN for CHERI: '$(XLEN)'")
 endif
 
 else
@@ -278,10 +280,11 @@ $(info - ABI             : $(if $(MABI),$(MABI),(toolchain default)))
 
 # ----[ LDSCRIPT ]----
 
+LDFLAGS += -Wl,-L$(PLATFORM_DIR)
+
 ifneq ($(USE_SDK_GLOSS),Y)
 LDSCRIPT ?= $(LD_TARGET)$(XLEN).ld
 LDFLAGS += -Wl,-L$(CORE_DIR)
-LDFLAGS += -Wl,-L$(PLATFORM_DIR)
 LDFLAGS += -Wl,-L$(LIB_DIR)/linker
 LDFLAGS += -Wl,--defsym=_STACK_SIZE=0x4000
 LDFLAGS += -Wl,--defsym=_HEAP_SIZE=0x4000

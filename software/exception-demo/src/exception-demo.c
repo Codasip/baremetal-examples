@@ -1,4 +1,4 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/common.h>
@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 /**
- * \brief A custom handler for Ilegal Instruction exception
+ * \brief A custom handler for Illegal Instruction exception
  */
 void ilegal_instruction_handler(bm_register_file_t *stacked_regs)
 {
@@ -17,7 +17,7 @@ void ilegal_instruction_handler(bm_register_file_t *stacked_regs)
 
     xlen_t csr_val = 0;
 
-    // Should be 0x2 - ilegal instruction
+    // Should be 0x2 - illegal instruction
     BM_CSR_READ(BM_CSR_MCAUSE, csr_val);
     printf("  - CSR mcause : " BM_FMT_XLEN "\n", csr_val);
 
@@ -71,12 +71,12 @@ int main(void)
 
     puts("Test custom managed exception handler:");
 
-    // Attempt to execute an ilegal instruction
+    // Attempt to execute an illegal instruction
     __asm__ volatile(".word 0x0");
 
     bm_exception_set_handler(BM_EXCEPTION_II, NULL);
     puts("Test default managed exception handler:");
 
-    // Attempt to execute an ilegal instruction
+    // Attempt to execute an illegal instruction
     __asm__ volatile(".word 0x0");
 }

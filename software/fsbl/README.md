@@ -22,8 +22,8 @@ The FSBL loads configuration and payloads from a FAT32 formatted microSD card:
    and clearing the BSS section.
 2. Configuration file `config.txt` is located in the root folder of the microSD
    card filesystem.
-   NOTE: If the `config.txt` file does bot exist, then the user is shown a list
-   of `*.bin` files on the SD-Card and asked to select one them to load
+   NOTE: If the `config.txt` file does not exist, then the user is shown a list
+   of `*.bin` files on the SD-Card and asked to select one of them to load
    at the fixed address of 0x20000000.
 3. Based on the configuration, payloads are loaded from the microSD card
    at specified addresses in the memory.
@@ -54,9 +54,9 @@ FSBL uses these configuration entries in the following manner:
 Optionally, for targets supporting Linux, configuration entries can also be
 denoted `FDT` or `NXT`. These payloads are then used during Linux boot:
 - The `address` of first entry denoted `FDT` is loaded to `a1` register,
-  to instruct OpenSBI to use this payload as a device tree,
+  to instruct OpenSBI to use this payload as a device tree.
 - The `address` of first entry denoted `NXT` is loaded to `a2` register,
-  to instruct OpenSBI to use this payload as a next stage bootloader,
+  to instruct OpenSBI to use this payload as a next stage bootloader.
 
 ## Example Configuration File
 

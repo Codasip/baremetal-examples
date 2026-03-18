@@ -62,3 +62,6 @@ IRQ_14:
         j freertos_risc_v_interrupt_handler
 IRQ_15:
         j freertos_risc_v_interrupt_handler
+
+.Lvector_table_end:
+	.size	freertos_vector_table, .Lvector_table_end-freertos_vector_table

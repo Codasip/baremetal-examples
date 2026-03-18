@@ -1,4 +1,4 @@
-/* Copyright 2025 Codasip s.r.o.         */
+/* Copyright 2025-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/common.h"
@@ -15,7 +15,7 @@ void USED WEAK NORETURN _exit(int exitcode)
         bm_info("Exited normally.");
     }
 
-    // Call environment spcific exit function, which shall not return.
+    // Call environment specfic exit function, which shall not return.
     if (env_do_exit)
     {
         env_do_exit(exitcode);

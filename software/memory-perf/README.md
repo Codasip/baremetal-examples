@@ -1,3 +1,3 @@
 # memory-perf
 
-Simple memory performance meassurement utility. Calculates memory throughput for different accesses.
+Simple memory performance measurement utility. Calculates memory throughput for different accesses.

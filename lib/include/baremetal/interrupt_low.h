@@ -1,4 +1,4 @@
-/* Copyright 2023-2026 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef BAREMETAL_INTERRUPT_LOW_H
@@ -17,19 +17,72 @@
 
 /** \brief Interrupt sources. */
 typedef enum {
+    // clang-format off
     BM_INTERRUPT_USIP = 0,  // User software interrupt
     BM_INTERRUPT_SSIP = 1,  // Supervisor software interrupt
+    // 2: reserved
     BM_INTERRUPT_MSIP = 3,  // Machine software interrupt
     BM_INTERRUPT_UTIP = 4,  // User timer interrupt
     BM_INTERRUPT_STIP = 5,  // Supervisor timer interrupt
+    // 6: reserved
     BM_INTERRUPT_MTIP = 7,  // Machine timer interrupt
     BM_INTERRUPT_UEIP = 8,  // User external interrupt
     BM_INTERRUPT_SEIP = 9,  // Supervisor external interrupt
+    // 10: reserved
     BM_INTERRUPT_MEIP = 11, // Machine external interrupt
+    // 12: reserved
+    // 13: counter overflow interrupt
+    // 14: reserved
+    // 15: reserved
+    // >= 16: platform specific reserved
+    // clang-format on
 } bm_interrupt_source_t;
+
+#ifdef TARGET_HAS_CLIC
+    // In systems with a CLIC, the core may no longer have the "classic" RISC-V
+    // interrupt sources (see bm_interrupt_source_t above), but everthing is
+    // mapped to CLIC interrupts. However, CLIC and classic sources may also
+    // exist in parallel - but the bare metal interrrupt system currently does
+    // not support this.
+    #define BM_CORE_INTERRUPT_NUMBER TARGET_CLIC_NUM_INPUTS
+
+#else
+    // See bm_interrupt_source_t above why 16 is a good choice.
+    #define BM_CORE_INTERRUPT_NUMBER 16
+
+#endif
+
+// Even when a CLIC is present there can also be additional external interrupt
+// controllers like PIC or PLIC. However, the bare metal interrupt system
+// currently do not support this configuration.
+
+#if defined(TARGET_HAS_PIC)
+    #define BM_EXT_INTERRUPT_NUMBER TARGET_PIC_NUM_INTERRUPTS
+
+    #ifdef TARGET_HAS_CLIC
+        #error "CLIC and PIC in the same system is currently unsupported"
+    #endif
+
+#elif defined(TARGET_HAS_PLIC)
+    // The platform configuration currently does not provide a parameter
+    // with the number of PLIC interrupts, so we use 32 for now.
+    #define BM_EXT_INTERRUPT_NUMBER 32
+
+    #ifdef TARGET_HAS_CLIC
+        #error "CLIC and PLIC in the same system is currently unsupported"
+    #endif
+
+#else
+    // Systems may not have a dedicated (external) interrupt controller at all.
+    // Another case where we arrive here is when targeting the core simulator
+    // without any peripherals.
+    #define BM_EXT_INTERRUPT_NUMBER 0
+
+#endif
 
 /** \brief Exception sources */
 typedef enum {
+    // clang-format off
     BM_EXCEPTION_IAM     = 0,  // Instruction address misaligned
     BM_EXCEPTION_IAF     = 1,  // Instruction access fault
     BM_EXCEPTION_II      = 2,  // Illegal instruction
@@ -44,12 +97,20 @@ typedef enum {
     BM_EXCEPTION_IPF     = 12, // Instruction page fault
     BM_EXCEPTION_LPF     = 13, // Load page fault
     BM_EXCEPTION_SPF     = 15, // Store/AMO page fault
-
+    // 16:      Double trap
+    // 17:      (reserved)
+    // 18:      Software check
+    // 19:      Hardware error
+    // 20 - 23: reserved
+    // 24 - 31: custom use
 #ifdef __CHERI_PURE_CAPABILITY__
-    BM_EXCEPTION_CHERI = 28, // Cheri exception
+    BM_EXCEPTION_CHERI   = 28, // CHERI exception
 #endif
-
+    // 32 - 47: reserved
+    // 48 - 63: custom use
+    // >= 64:   reserved
     BM_EXCEPTION_NUMBER // The Number of exceptions (used to size bm_exc_handler_table[]
+    // clang-format on
 } bm_exception_source_t;
 
 /** \brief Modes of trap handling. */

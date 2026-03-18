@@ -28,7 +28,7 @@ static bool test_aead_command(bm_aead_t *aead, bm_aead_command_t *command)
 
             if (block[j] != command->data_out[i * aead->block_size + j])
             {
-                printf("Data missmatch @%u Expected: 0x%x Got: 0x%x\n",
+                printf("Data mismatch @%u Expected: 0x%x Got: 0x%x\n",
                        i * aead->block_size + j,
                        block[j],
                        command->data_out[i * aead->block_size + j]);
@@ -49,7 +49,7 @@ static bool test_aead_command(bm_aead_t *aead, bm_aead_command_t *command)
 
         if (block[i] != command->tag[i])
         {
-            printf("Tag missmatch @%u Expected: 0x%x Got: 0x%x\n", i, block[i], command->tag[i]);
+            printf("Tag mismatch @%u Expected: 0x%x Got: 0x%x\n", i, block[i], command->tag[i]);
             ok = false;
         }
     }
@@ -109,7 +109,7 @@ int main(void)
         if (payload[i] != data_out_dec[i])
         {
             ok = false;
-            printf("Data missmatch @%u Expected: 0x%x Got: 0x%x\n", i, payload[i], data_out_dec[i]);
+            printf("Data mismatch @%u Expected: 0x%x Got: 0x%x\n", i, payload[i], data_out_dec[i]);
         }
     }
 

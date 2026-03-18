@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2024 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef CODASIP_FLASH_H
@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-/** \brief Structure holding data neccessary to service the SPI flash device. */
+/** \brief Structure holding data necessary to service the SPI flash device. */
 typedef struct {
     bm_spi_t *spi; ///< Pointer to structure describing the SPI peripheral used
 } spi_flash_t;
@@ -20,7 +20,7 @@ typedef struct {
  * \brief Initialize S25FL128S FLASH device
  *
  * \param flash Pointer to the flash structure to initialize
- * \param spi Spi controller device to use
+ * \param spi SPI controller device to use
  */
 void flash_init(spi_flash_t *flash, bm_spi_t *spi);
 
@@ -45,7 +45,7 @@ void flash_read(spi_flash_t *flash, uint32_t address, uint32_t length, uint8_t *
  * \param length Number of bytes to write
  * \param buffer Data to write
  *
- * \return Zero on success non-zero otherwise
+ * \return Zero on success, nonzero otherwise
  */
 int flash_write(spi_flash_t *flash, uint32_t address, uint32_t count, uint8_t *buffer);
 
@@ -60,7 +60,7 @@ int flash_write(spi_flash_t *flash, uint32_t address, uint32_t count, uint8_t *b
  * \param length Number of bytes to write
  * \param buffer Data to write
  *
- * \return Zero on success non-zero otherwise
+ * \return Zero on success, nonzero otherwise
  */
 int flash_page_program(spi_flash_t *flash, uint32_t address, uint32_t length, uint8_t *buffer);
 
@@ -70,7 +70,7 @@ int flash_page_program(spi_flash_t *flash, uint32_t address, uint32_t length, ui
  * \param flash FLASH device to work with
  * \param address Address in the erase sector to erase
  *
- * \return Zero on success non-zero otherwise
+ * \return Zero on success, nonzero otherwise
  */
 int flash_sector_erase(spi_flash_t *flash, uint32_t address);
 

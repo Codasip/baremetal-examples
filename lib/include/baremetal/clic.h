@@ -1,4 +1,4 @@
-/* Copyright 2024-2025 Codasip s.r.o.         */
+/* Copyright 2024-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef BAREMETAL_CLIC_H
@@ -36,13 +36,13 @@ typedef struct {
 } bm_clic_t;
 
 /**
- * \brief Convert interrupt source to CLIC interrupt ID
+ * \brief Convert RISC-V core interrupt source to CLIC interrupt ID
  *
  * \param irq Interrupt source
  *
  * \return CLIC interrupt ID for the given source
  */
-unsigned bm_clic_get_irq_id(bm_interrupt_source_t source);
+unsigned bm_clic_get_irq_id_for_source(bm_interrupt_source_t source);
 
 /**
  * \brief Convert external interrupt ID to CLIC interrupt ID

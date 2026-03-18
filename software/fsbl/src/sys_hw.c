@@ -1,4 +1,4 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "fatfs/ff.h"
@@ -254,7 +254,6 @@ char *cli_gets(char *s, uint32_t n)
         {
             c = bm_uart_receive_byte(sys_uart);
         } while (c == -1);
-
         /* Process user key */
         if (c == 0x7f)
         {
@@ -267,7 +266,7 @@ char *cli_gets(char *s, uint32_t n)
                 i--;
             }
         }
-        else if (c == '\r')
+        else if (c == '\r' || c == '\n')
         {
             /* Return pressed, so end of line */
             break;

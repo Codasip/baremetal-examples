@@ -1,4 +1,4 @@
-/* Copyright 2023-2026 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/atomic.h>
@@ -35,7 +35,7 @@ void msip_handler(bm_register_file_t *stacked_regs)
     // Clear pending interrupt
     bm_clint_clear_ipi(clint, hart_id);
 
-    // Output in a in a critical mutex section
+    // Output in a critical mutex section
     bm_mutex_lock(&mutex);
 
     printf("Hart%u: MSIP interrupt received!\n", hart_id);
@@ -56,7 +56,7 @@ void msip_handler(bm_register_file_t *stacked_regs)
 }
 
 /**
- * \brief Function to be caled from each hart
+ * \brief Function to be called from each hart
  */
 void hart_job(bm_hart_func_arg_t arg UNUSED)
 {
@@ -73,7 +73,7 @@ void hart_job(bm_hart_func_arg_t arg UNUSED)
     unsigned hart_id   = bm_get_hartid();
     unsigned next_hart = (hart_id + 1) % TARGET_NUM_HARTS;
 
-    // Output in a in a critical mutex section
+    // Output in a critical mutex section
     bm_mutex_lock(&mutex);
 
     printf("Hart%u: sending IPI to hart%u\n", hart_id, next_hart);
@@ -83,7 +83,7 @@ void hart_job(bm_hart_func_arg_t arg UNUSED)
     // Make sure all harts are ready before continuing
     bm_barrier_wait(&barrier);
 
-    // Enable the interrupt after the above berrier to prevent possible deadlock with the mutex in the msip_handler() ISR
+    // Enable the interrupt after the above barrier to prevent possible deadlock with the mutex in the msip_handler() ISR
     bm_interrupt_enable(BM_PRIV_MODE_MACHINE);
 
     // Send IPI to the next available hart
@@ -107,7 +107,7 @@ int main(void)
     while (done_ctr != TARGET_NUM_HARTS)
     {}
 
-    // Output in a in a critical section
+    // Output in a critical section
     puts("Bye.");
 
     return EXIT_SUCCESS;

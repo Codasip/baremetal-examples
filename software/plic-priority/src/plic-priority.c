@@ -1,8 +1,8 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/gpio.h>
-#include <baremetal/interrupt_low.h>
+#include <baremetal/interrupt.h>
 #include <baremetal/mp.h>
 #include <baremetal/platform.h>
 #include <baremetal/plic.h>
@@ -75,15 +75,17 @@ int main(void)
     gpio1 = (bm_gpio_t *)target_peripheral_get(BM_PERIPHERAL_GPIO_SD);
     plic  = (bm_plic_t *)target_peripheral_get(BM_PERIPHERAL_PLIC);
 
+    // Setup interrupts and enable M-Mode interrupts in general.
+    bm_interrupt_init(BM_PRIV_MODE_MACHINE);
+
+    // Don't use bare metal interrupt framework, install a custom handler.
+    bm_interrupt_tvec_setup(BM_PRIV_MODE_MACHINE, (xlen_t)&my_handler, BM_INTERRUPT_MODE_DIRECT);
+
+    // Initialize and enable GPIO interrupts.
     bm_gpio_init_irq(gpio0);
     bm_gpio_init_irq(gpio1);
 
-    // Setup interrupt handler
-    bm_interrupt_tvec_setup(BM_PRIV_MODE_MACHINE, (xlen_t)&my_handler, BM_INTERRUPT_MODE_DIRECT);
-
-    // Enable external interrupts
-    bm_plic_set_enable(plic, bm_get_hartid(), gpio0->ext_irq_id, 1);
-    bm_plic_set_enable(plic, bm_get_hartid(), gpio1->ext_irq_id, 1);
+    // Enable external interrupts in general.
     bm_interrupt_enable_source(BM_PRIV_MODE_MACHINE, BM_INTERRUPT_MEIP);
 
     puts("\nTesting with both priorities higher than the threshold.");

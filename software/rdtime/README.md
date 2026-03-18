@@ -18,7 +18,7 @@ Using rdtime   : Native
 Average rdtime : 2 cycles
 ```
 
-On a core (e.g. L31) that does not has the `rdtime` instruction and so it is trapped (as it's an
+On a core (e.g. L31) that does not have the `rdtime` instruction and so it is trapped (as it's an
 illegal instruction) and emulated in this example code:
 
 ```

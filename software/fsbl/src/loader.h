@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef FSBL_LOADER_H
@@ -14,6 +14,6 @@
  *
  * \return Zero on success, nonzero otherwise
  */
-int load_sdcard_payload(xlen_t load_address, const char *path);
+int load_sdcard_payload(uint8_t *load_address, const char *path);
 
 #endif // FSBL_LOADER_H

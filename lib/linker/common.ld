@@ -3,6 +3,19 @@
 
 /* Default linker script, for normal executables */
 
+/* Expose MEMORY region info to C */
+__boot_rom_start  = ORIGIN(boot_rom);
+__boot_rom_size   = LENGTH(boot_rom);
+
+__boot_ram_start  = ORIGIN(boot_ram);
+__boot_ram_size   = LENGTH(boot_ram);
+
+__ram_start       = ORIGIN(ram);
+__ram_size        = LENGTH(ram);
+
+__ddr_start       = ORIGIN(ddr);
+__ddr_size        = LENGTH(ddr);
+
 ENTRY (_start)
 
 __TEXT_START_ADDR = DEFINED(_TEXT_START_ADDR) ? _TEXT_START_ADDR : ORIGIN(ram);

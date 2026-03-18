@@ -28,6 +28,8 @@ THIS_DIR := $(subst config.mk,.,$(lastword $(MAKEFILE_LIST)))
 #include $(THIS_DIR)/lib/targets/configs/config-l730-topaz.mk
 #include $(THIS_DIR)/lib/targets/configs/config-l730-amethyst.mk
 
+#include $(THIS_DIR)/lib/targets/configs/config-v735-amber.mk
+#include $(THIS_DIR)/lib/targets/configs/config-v739-sphene.mk
 #include $(THIS_DIR)/lib/targets/configs/config-v739-spinel.mk
 
 #include $(THIS_DIR)/lib/targets/configs/config-a730-default.mk

@@ -97,8 +97,8 @@ extern void freertos_risc_v_mtimer_interrupt_handler(void);
  *
  * You can further bound all Interrupt Service Routine (ISR) entry points present in
  * the Trap Vector Table by writing a capability to CSR Xtvtentryic, e.g. mtvtentry0c for machine
- * mode. But you will need to write an infinate cap to Xtvtentryic if you want to
- * run your ISR in Cheri cap mode (as it defaults to the integer infinate cap).
+ * mode. But you will need to write an infinite cap to Xtvtentryic if you want to
+ * run your ISR in Cheri cap mode (as it defaults to the integer infinite cap).
  */
 static xlen_t mtvt_table[TARGET_CLIC_NUM_INPUTS] __attribute__((aligned(64))) = {0};
 
@@ -167,8 +167,16 @@ static void vUartInit(void)
     bm_uart_init(uart, &config);
 
     #if UART_LOCAL_IRQ_ENABLE
+
     bm_ext_irq_set_handler(uart->ext_irq_id, uart_interrupt_handler);
+
+        #ifndef TARGET_HAS_CLIC
+
+    // PIC/PLIC is connected to core's external interrupt, enable it.
     bm_interrupt_enable_source(BM_PRIV_MODE_MACHINE, BM_INTERRUPT_MEIP);
+
+        #endif // !TARGET_HAS_CLIC
+
     #endif
 }
 #endif
@@ -183,11 +191,11 @@ void vSendString(const char *s)
     xSemaphoreTake(xSemaphoreSendString, portMAX_DELAY);
 
 #if UART_LOCAL_USE
-    /* Use write_line() as baremetal-examples's printf(), which calls _write(), self initialises
+    /* Use write_line() as baremetal-examples's printf(), which calls _write(), self initializes
      * the UART (syscalls/sys_uart.c) */
     write_line(s);
 #else
-    /* BareMetal SYS UART _write() (used by printf()) self initialises, so you can just use printf
+    /* BareMetal SYS UART _write() (used by printf()) self initializes, so you can just use printf
      * after setting up bm_interrupt_tvec_setup() */
     printf("%s", s);
 #endif
@@ -202,7 +210,7 @@ void vSendString(const char *s)
     #define mainFLASH_LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
     /* The rate at which to flash the LEDs.  The 250ms value is converted
- * to ticks using the pdMS_TO_TICKS() macro. */
+     * to ticks using the pdMS_TO_TICKS() macro. */
     #define mainFLASH_LEDS_FREQUENCY_MS pdMS_TO_TICKS(250)
 
 static void prvFlashLEDsTask(void *pvParameters)
@@ -212,7 +220,7 @@ static void prvFlashLEDsTask(void *pvParameters)
 
     TickType_t xNextWakeTime;
     int        f = 1;
-    /* Initialise xNextWakeTime - this only needs to be done once. */
+    /* Initialize xNextWakeTime - this only needs to be done once. */
     xNextWakeTime = xTaskGetTickCount();
 
     vSendString("This (Fx) task is the BareMetal GPIO demo in a FreeRTOS task\n");

@@ -11,6 +11,12 @@ SOURCES = $(DEMO_DIR)/src/main.c \
           $(DEMO_DIR)/src/loader.c \
           $(DEMO_DIR)/src/parser.c
 
+ASM_SOURCES = $(DEMO_DIR)/src/embedded-sdk/jump.S
+
+ifeq ($(USE_SDK_GLOSS),Y)
+BM_CRT0 = $(DEMO_DIR)/src/embedded-sdk/crtstart.S
+endif
+
 CRT_SOURCES = $(DEMO_DIR)/src/init_ram.S
 
 ifeq ($(CONFIG_ENVIRONMENT),FPGA_UART)
@@ -24,26 +30,34 @@ endif
 
 CPPFLAGS += -I $(DEMO_DIR)/src
 
-APP_OBJS    = $(SOURCES:.c=.o)
+APP_OBJS    = $(SOURCES:.c=.o) $(ASM_SOURCES:.S=.o)
 LIB_OBJS    = $(BM_SOURCES:.c=.o)
 CRT_OBJ     = $(BM_CRT0:.S=.o)
 CRT_ROM_OBJ = $(CRT_SOURCES:.S=.o)
 
 APP_OBJS    := $(subst $(DEMO_DIR),.,$(APP_OBJS))
 LIB_OBJS    := $(subst $(TOP_DIR),.,$(LIB_OBJS))
-CRT_OBJ     := $(subst $(TOP_DIR),.,$(CRT_OBJ))
+CRT_OBJ     := $(subst $(DEMO_DIR),.,$(CRT_OBJ))
 CRT_ROM_OBJ := $(subst $(DEMO_DIR),.,$(CRT_ROM_OBJ))
 
 CFLAGS  += -std=gnu11 -pedantic -Wall -Wextra -Werror
 CFLAGS  += -g3 -Wno-unused-command-line-argument
-CFLAGS  += -Os -ffunction-sections -fdata-sections -flto
+CFLAGS  += -Os -ffunction-sections -fdata-sections
 ASFLAGS += -g3 -Wno-unused-command-line-argument
-LDFLAGS += -nostartfiles
-LDFLAGS += -flto -Os -Wl,--gc-sections
+LDFLAGS += -Os -Wl,--gc-sections
 LDFLAGS += -Wl,--defsym=_HEAP_SIZE=0x2000 -Wl,--defsym=_STACK_SIZE=0x1000
 
+ifeq ($(USE_SDK_GLOSS),Y)
+LDSCRIPT_PATH = -Wl,-L$(DEMO_DIR)/linker
+LDSCRIPT      = baremetal-sdk-sram.ld
+FSBL_LDSCRIPT = baremetal-sdk-fsbl.ld
+TSBL_LDSCRIPT = baremetal-sdk-tsbl.ld
+
+else
+LDFLAGS += -nostartfiles
 FSBL_LDSCRIPT ?= $(LD_TARGET)$(XLEN)_fsbl.ld
 TSBL_LDSCRIPT ?= $(LD_TARGET)$(XLEN)_tsbl.ld
+endif
 
 # ----[ REQUIREMENTS ]----
 
@@ -82,6 +96,10 @@ $(BUILD_DIR)%.o : $(DEMO_DIR)/%.S
 	@mkdir -p $(dir $@)
 	$(CC) $(ASFLAGS) $(CPPFLAGS) -c -o $@ $^
 
+#$(BUILD_DIR)%.o : $(DEMO_DIR)/sb-startfiles/%.S
+#	@mkdir -p $(dir $@)
+#	$(CC) $(ASFLAGS) $(CPPFLAGS) -c -o $@ $^
+
 $(BUILD_DIR)./lib%.o : $(LIB_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $^
@@ -94,7 +112,7 @@ $(BUILD_DIR)./lib%.o : $(LIB_DIR)/%.S
 all: $(BUILD_DIR)$(APP).xexe $(BUILD_DIR)$(APP)_rom.xexe $(TSBL_XEXE)
 
 $(BUILD_DIR)$(APP).xexe: $(addprefix $(BUILD_DIR), $(APP_OBJS) $(LIB_OBJS) $(CRT_OBJ))
-	$(LINK.c) -Wl,-T$(LDSCRIPT) -o $@ $^ $(LDLIBS)
+	$(LINK.c) $(LDSCRIPT_PATH) -Wl,-T$(LDSCRIPT) -o $@ $^ $(LDLIBS)
 
 $(BUILD_DIR)$(APP)_rom.xexe: $(addprefix $(BUILD_DIR), $(APP_OBJS) $(LIB_OBJS) $(CRT_OBJ) $(CRT_ROM_OBJ))
 	$(LINK.c) -Wl,-L$(DEMO_DIR)/linker -Wl,-T$(FSBL_LDSCRIPT) -o $@ $^ $(LDLIBS)

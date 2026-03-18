@@ -1,8 +1,9 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "parser.h"
 
+#include <baremetal/bm_cheri.h>
 #include <baremetal/common.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -114,7 +115,7 @@ int parse_entry(entry_t *entry)
                              (xlen_t)pos - (xlen_t)entry_buffer);
             continue;
         }
-        entry->load_addr = num;
+        entry->load_addr = (uint8_t *)addr_to_code_ptr(num);
         pos              = end;
 
         // Parse BOOT, FDT or NXT

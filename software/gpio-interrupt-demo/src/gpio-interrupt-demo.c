@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/gpio.h>
@@ -37,7 +37,11 @@ int main(void)
 
     bm_interrupt_init(BM_PRIV_MODE_MACHINE);
     bm_ext_irq_set_handler(gpio->ext_irq_id, interrupt_handler);
+
+#ifndef TARGET_HAS_CLIC
+    // PIC/PLIC is connected to core's external interrupt, enable it.
     bm_interrupt_enable_source(BM_PRIV_MODE_MACHINE, BM_INTERRUPT_MEIP);
+#endif
 
     bm_gpio_init_irq(gpio);
 

@@ -1,4 +1,4 @@
-/* Copyright 2024-2025 Codasip s.r.o.         */
+/* Copyright 2024-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/clint.h>
@@ -172,7 +172,7 @@ uint8_t u_stack[0x4000] __attribute__((aligned(16)));
 
 void __attribute__((noinline)) entry_user(void)
 {
-    puts("Using rdtime to meassure 100ms delay:");
+    puts("Using rdtime to measure 100ms delay:");
 
     xlen_t time_before = get_time();
 

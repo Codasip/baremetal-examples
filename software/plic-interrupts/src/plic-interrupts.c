@@ -1,9 +1,9 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/bm_cheri.h>
 #include <baremetal/gpio.h>
-#include <baremetal/interrupt_low.h>
+#include <baremetal/interrupt.h>
 #include <baremetal/mp.h>
 #include <baremetal/platform.h>
 #include <baremetal/plic.h>
@@ -59,14 +59,18 @@ int main(void)
 
     plic = (bm_plic_t *)target_peripheral_get(BM_PERIPHERAL_PLIC);
     gpio = (bm_gpio_t *)target_peripheral_get(BM_PERIPHERAL_GPIO_LEDS_SWITCHES);
+
+    // Setup interrupts and enable M-Mode interrupts in general.
+    bm_interrupt_init(BM_PRIV_MODE_MACHINE);
+
+    // Don't use bare metal interrupt framework, install a custom handler.
+    bm_interrupt_tvec_setup(BM_PRIV_MODE_MACHINE, (xlen_t)&my_handler, BM_INTERRUPT_MODE_DIRECT);
+
+    // Initilize GPIO interrupt.
     bm_gpio_init_irq(gpio);
 
-    // Setup interrupt handler
-    bm_interrupt_tvec_setup(BM_PRIV_MODE_MACHINE, (xlen_t)my_handler, BM_INTERRUPT_MODE_DIRECT);
-
-    // Enable external interrupts
+    // Enable external interrupts.
     bm_interrupt_enable_source(BM_PRIV_MODE_MACHINE, BM_INTERRUPT_MEIP);
-    bm_interrupt_enable(BM_PRIV_MODE_MACHINE);
 
     enable_interrupts();
 

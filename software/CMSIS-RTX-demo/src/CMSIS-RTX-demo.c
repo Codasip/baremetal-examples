@@ -159,13 +159,13 @@ void vSendString(const char *s)
     if (status == osOK)
     {
 #if UART_LOCAL_USE
-        /* Use write_line() as baremetal-examples's printf(), which calls _write(), self initialises
+        /* Use write_line() as baremetal-examples's printf(), which calls _write(), self initializes
          * the UART (syscalls/sys_uart.c) */
         write_line(s);
         write_line("\r\n");
 
 #else
-        /* BareMetal SYS UART _write() (used by printf()) self initialises, so you can just use printf
+        /* BareMetal SYS UART _write() (used by printf()) self initializes, so you can just use printf
          * after setting up bm_interrupt_tvec_setup() */
         printf("%s\r\n", s);
 #endif
@@ -199,7 +199,7 @@ static void prvFlashLEDsTask(void *argument)
     vSendString("with an additional counting number output.");
     vSendString("Feel free to flip switches 1-3, and observe blinking LEDs.\n");
 
-    vSendString("The other (Tx/Rx) tasks demostrate a message queue.\n");
+    vSendString("The other (Tx/Rx) tasks demonstrate a message queue.\n");
 
     bm_gpio_t *gpio = (bm_gpio_t *)target_peripheral_get(BM_PERIPHERAL_GPIO_LEDS_SWITCHES);
 
@@ -256,7 +256,7 @@ void system_init(void)
 
     extern void risc_v_trap_handler(void);
 
-    /* Initialise clock and system here */
+    /* Initialize clock and system here */
     /* init_system(); */
 
     /* CLIC trap (interrupt and exception) handler initialization.
@@ -294,7 +294,7 @@ void system_init(void)
 }
 
 /*---------------------------------------------------------------------------
- * Application thread initialisation
+ * Application thread initialization
  *---------------------------------------------------------------------------*/
 static void app_init(void)
 {
@@ -314,7 +314,7 @@ int main(void)
 {
     int ret = 0;
 
-    /* Initialise */
+    /* Initialize */
     system_init();
     osKernelInitialize(); // Initialize CMSIS-RTOS2
 

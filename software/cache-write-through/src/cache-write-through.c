@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2024 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/counter.h>
@@ -17,7 +17,7 @@ static volatile uint32_t test_data[TEST_DATA_LEN];
  */
 void test_caches()
 {
-    // Invalidate the caches so that previous instructions dont influence the results
+    // Invalidate the caches so that previous instructions don't influence the results
     bm_dcache_invalidate_all();
 
     // Clear the counter

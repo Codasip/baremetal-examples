@@ -46,7 +46,7 @@ For example, to clone them with all submodules into a subdirectory:
 
 This demo has been tested with `RTX V5.9.0`.
 
-Set up the environment variables to to point to the repos:
+Set up the environment variables to point to the repos:
 
     export CMSIS_6_DIR=$(realpath repos/CMSIS_6)
     export CMSIS_RTX_DIR=$(realpath repos/CMSIS-RTX)
@@ -74,7 +74,7 @@ This (Fx) task is the BareMetal GPIO demo in a RTX task
 with an additional counting number output.
 Feel free to flip switches 1-3, and observe blinking LEDs.
 
-The other (Tx/Rx) tasks demostrate a message queue.
+The other (Tx/Rx) tasks demonstrate a message queue.
 
 0: Fx: 1
 0: Fx: 2

@@ -1,4 +1,4 @@
-/* Copyright 2023-2026 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/interrupt.h"
@@ -102,15 +102,13 @@ static void bm_exception_print_details(xlen_t offset)
 /** \brief Table with handlers for individual exception sources */
 static bm_intr_handler_t bm_exc_handler_table[BM_EXCEPTION_NUMBER] = {0};
 
-#ifdef TARGET_HAS_CLIC
 /** \brief Table with handlers for individual interrupt sources */
-static bm_intr_handler_t bm_interrupt_handler_table[TARGET_CLIC_NUM_INPUTS] = {0};
-#else
-/** \brief Table with handlers for individual interrupt sources */
-static bm_intr_handler_t bm_interrupt_handler_table[16] = {0};
+static bm_intr_handler_t bm_interrupt_handler_table[BM_CORE_INTERRUPT_NUMBER] = {0};
+
+#if (BM_EXT_INTERRUPT_NUMBER > 0)
 
 /** \brief Table with handlers for individual external interrupt sources */
-static bm_intr_handler_t bm_ext_irq_handler_table[32] = {0};
+static bm_intr_handler_t bm_ext_irq_handler_table[BM_EXT_INTERRUPT_NUMBER] = {0};
 
 /** \brief Internal handler for external interrupts */
 void bm_ext_irq_handler(bm_register_file_t *stacked_regs)
@@ -128,22 +126,19 @@ void bm_ext_irq_handler(bm_register_file_t *stacked_regs)
     }
 
     unsigned int irq = (unsigned int)pending;
-    if (irq >= BM_ARRAY_ELEMENTS(bm_ext_irq_handler_table))
-    {
-        bm_fatal("Encountered external interrupt %u is out of handled range", irq);
-    }
-
+    bm_fatal_check_index(irq, bm_ext_irq_handler_table);
     bm_intr_handler_t handler = bm_ext_irq_handler_table[irq];
     if (!handler)
     {
-        bm_fatal("An external interrupt with unset handler was triggered.");
+        bm_fatal("External interrupt %u with unset handler was triggered.", irq);
     }
 
     handler(stacked_regs);
 
     bm_ext_irq_complete(pending);
 }
-#endif
+
+#endif // BM_EXT_INTERRUPT_NUMBER > 0
 
 // clang-format off
 #ifdef __CHERI_PURE_CAPABILITY__
@@ -331,11 +326,6 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode, bm_register_file_t *stack
 #endif
     xlen_t offset = cause & offset_mask;
 
-    if (offset >= BM_EXCEPTION_NUMBER)
-    {
-        bm_fatal("Encountered cause is out of handled range");
-    }
-
     if (cause >> (RISCV_XLEN - 1))
     {
         if (offset >= BM_ARRAY_ELEMENTS(bm_interrupt_handler_table))
@@ -373,13 +363,6 @@ void bm_managed_handler_inner(bm_priv_mode_t new_mode, bm_register_file_t *stack
     // Write original privilege mode value to the internal variable
     bm_current_mode = prev_mode;
 }
-
-#if defined(TARGET_HAS_CLIC) || defined(__CHERI_PURE_CAPABILITY__)
-    #define TRAP_HANDLER_ALIGNMENT 64
-
-#else
-    #define TRAP_HANDLER_ALIGNMENT 16
-#endif
 
 // clang-format off
 /**
@@ -471,23 +454,33 @@ CREATE_DEFAULT_HANDLER(bm_managed_handler_u, BM_PRIV_MODE_USER, uret)
 void bm_interrupt_set_handler(bm_interrupt_source_t source, bm_intr_handler_t func)
 {
 #ifdef TARGET_HAS_CLIC
-    bm_interrupt_handler_table[bm_clic_get_irq_id(source)] = func;
+    unsigned int idx = bm_clic_get_irq_id_for_source(source);
+    bm_fatal_check_index(idx, bm_interrupt_handler_table);
+    bm_interrupt_handler_table[idx] = func;
 #else
+    bm_fatal_check_index(source, bm_interrupt_handler_table);
     bm_interrupt_handler_table[source] = func;
 #endif
 }
 
 void bm_exception_set_handler(bm_exception_source_t source, bm_intr_handler_t func)
 {
+    bm_fatal_check_index(source, bm_exc_handler_table);
     bm_exc_handler_table[source] = func;
 }
 
 void bm_ext_irq_set_handler(unsigned ext_irq_id, bm_intr_handler_t func)
 {
 #ifdef TARGET_HAS_CLIC
-    bm_interrupt_handler_table[bm_clic_get_ext_irq_id(ext_irq_id)] = func;
-#else
+    unsigned int idx = bm_clic_get_ext_irq_id(ext_irq_id);
+    bm_fatal_check_index(idx, bm_interrupt_handler_table);
+    bm_interrupt_handler_table[idx] = func;
+#elif (BM_EXT_INTERRUPT_NUMBER > 0)
+    bm_fatal_check_index(ext_irq_id, bm_ext_irq_handler_table);
     bm_ext_irq_handler_table[ext_irq_id] = func;
+#else
+    (void)func; // unused
+    bm_fatal("External interrupts not supported, can't set handler for %u.", ext_irq_id);
 #endif
 }
 
@@ -514,7 +507,7 @@ void bm_interrupt_install_handlers(bm_priv_mode_t priv_mode)
     }
     bm_interrupt_tvec_setup(priv_mode, (xlen_t)handler, BM_INTERRUPT_MODE_DIRECT);
 
-#ifndef TARGET_HAS_CLIC
+#if (BM_EXT_INTERRUPT_NUMBER > 0)
     bm_interrupt_set_handler(BM_INTERRUPT_MEIP, bm_ext_irq_handler);
     #ifdef TARGET_EXT_S
     bm_interrupt_set_handler(BM_INTERRUPT_SEIP, bm_ext_irq_handler);
@@ -535,6 +528,9 @@ void bm_ext_irq_init(void)
 
 void bm_interrupt_init(bm_priv_mode_t priv_mode)
 {
+    // Setup interrupt controller
+    bm_ext_irq_init();
+
     // Install handlers for our interrupt framework
     bm_interrupt_install_handlers(priv_mode);
 

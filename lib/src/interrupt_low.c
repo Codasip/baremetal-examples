@@ -1,4 +1,4 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/interrupt_low.h"
@@ -30,8 +30,7 @@ void bm_interrupt_enable_source(bm_priv_mode_t priv_mode, bm_interrupt_source_t 
 #ifdef TARGET_HAS_CLIC
     (void)priv_mode;
     bm_clic_t *clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
-    bm_clic_init(clic);
-    bm_clic_set_enable(clic, bm_clic_get_irq_id(source), true);
+    bm_clic_set_enable(clic, bm_clic_get_irq_id_for_source(source), true);
 #else
     bm_priv_csr_set(priv_mode, BM_PRIV_CSR_XIE, 1 << source);
 #endif
@@ -42,8 +41,7 @@ void bm_interrupt_disable_source(bm_priv_mode_t priv_mode, bm_interrupt_source_t
 #ifdef TARGET_HAS_CLIC
     (void)priv_mode;
     bm_clic_t *clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
-    bm_clic_init(clic);
-    bm_clic_set_enable(clic, bm_clic_get_irq_id(source), false);
+    bm_clic_set_enable(clic, bm_clic_get_irq_id_for_source(source), false);
 #else
     bm_priv_csr_clear(priv_mode, BM_PRIV_CSR_XIE, 1 << source);
 #endif

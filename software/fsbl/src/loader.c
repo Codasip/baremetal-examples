@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "file.h"
@@ -24,7 +24,7 @@
  *
  * \return Zero on success, nonzero otherwise
  */
-static int do_load_file(FILE *fp, xlen_t load_address, size_t file_size)
+static int do_load_file(FILE *fp, uint8_t *load_address, size_t file_size)
 {
     size_t        bytes_read;
     unsigned long bytes_total = 0;
@@ -64,7 +64,7 @@ static int do_load_file(FILE *fp, xlen_t load_address, size_t file_size)
     return 0;
 }
 
-int load_sdcard_payload(xlen_t load_address, const char *path)
+int load_sdcard_payload(uint8_t *load_address, const char *path)
 {
     long file_size = get_file_size(path);
     if (file_size < 0)

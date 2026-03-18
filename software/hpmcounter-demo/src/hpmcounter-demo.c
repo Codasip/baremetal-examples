@@ -1,4 +1,4 @@
-/* Copyright 2023-2026 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/counter.h>
@@ -46,7 +46,7 @@ void independent_loads(void)
 /** \brief Function executing two load instructions, value obtained by the first one is used by the second */
 void dependant_loads(void)
 {
-    // Note, that variable b is unused, but still present, to instruct
+    // Note that variable b is unused, but still present, to instruct
     // the compiler to generate similar code as in independent loads function
 #ifdef __CHERI_PURE_CAPABILITY__
     __asm__ volatile("clc ct1, 0 (%0)\n"
@@ -62,7 +62,7 @@ void dependant_loads(void)
 #endif
 }
 
-/** \brief Function executing several dependant load instructions with nops inbetween */
+/** \brief Function executing several dependent load instructions with nops in between */
 void sparse_loads(void)
 {
 #ifdef __CHERI_PURE_CAPABILITY__
@@ -103,7 +103,7 @@ void sparse_loads(void)
 #endif
 }
 
-/** \brief Function executing several dependant load instructions and nops afterwards */
+/** \brief Function executing several dependent load instructions and nops afterwards */
 void grouped_loads(void)
 {
 #ifdef __CHERI_PURE_CAPABILITY__
@@ -182,11 +182,11 @@ int main(void)
 {
     puts("Welcome to the HPM counter demo!\n");
 
-    puts("Comparing independent and dependant loads\n");
+    puts("Comparing independent and dependent loads\n");
     puts("Running sequence with independent loads:");
     check_counters(independent_loads);
 
-    puts("Running sequence with dependant loads:");
+    puts("Running sequence with dependent loads:");
     check_counters(dependant_loads);
 
     puts("Comparing sparse and dense loads\n");

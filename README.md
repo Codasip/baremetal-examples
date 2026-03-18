@@ -59,11 +59,12 @@ baremetal-examples
 It must be possible to run one of the following (build system will try the other options unless `$CC_NAME` is defined, which should therefore be prefered to avoid warnings):
 
 ```sh
-${SDK_PREFIX}-clang --version
-${SDK_PREFIX}clang --version
-${SDK_PREFIX}-gcc --version
 ${SDK_PREFIX}gcc --version
+${SDK_PREFIX}-gcc --version
+${SDK_PREFIX}clang --version
+${SDK_PREFIX}-clang --version
 ${SDK_PREFIX}${CC_NAME} --version
+${SDK_PREFIX}-${CC_NAME} --version
 ```
 
 Additionally, for building the `bin` make target, it must be possible to run one of:

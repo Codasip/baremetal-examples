@@ -51,7 +51,7 @@ For example, to clone them with all submodules into a subdirectory:
 
 This demo has been tested with `FreeRTOS V11.2.0`.
 
-Set up the environment variables to to point to the repos:
+Set up the environment variables to point to the repos:
 
     export RTOS_DIR=$(realpath repos/FreeRTOS-Kernel)
     export CMSIS_6_DIR=$(realpath repos/CMSIS_6)
@@ -77,7 +77,7 @@ This (Fx) task is the BareMetal GPIO demo in a RTX/FreeRTOS task
 with an additional counting number output.
 Feel free to flip switches 1-3, and observe blinking LEDs.
 
-The other (Tx/Rx) tasks demostrate a message queue.
+The other (Tx/Rx) tasks demonstrate a message queue.
 
 0: Fx: 1
 Sending A

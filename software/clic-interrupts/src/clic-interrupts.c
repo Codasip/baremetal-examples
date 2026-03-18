@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2024 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/clic.h>
@@ -41,7 +41,7 @@ static inline void disable_interrupts(void)
 
 int main(void)
 {
-    puts("Welcome to the CLIC interrupts demo!\n");
+    puts("Welcome to the CLIC-interrupts demo!\n");
 
     clic = (bm_clic_t *)target_peripheral_get(BM_PERIPHERAL_CLIC);
     bm_clic_init(clic);

@@ -1,4 +1,4 @@
-/* Copyright 2023-2024 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "baremetal/gpio.h"
@@ -42,10 +42,13 @@ void bm_gpio_dir_set(bm_gpio_t *gpio, unsigned num, bm_gpio_dir_t dir)
 
 void bm_gpio_init_irq(bm_gpio_t *gpio)
 {
+    // Enable interrupt generation in GPIO
     gpio->regs->GIER  = 0x80000000;
     gpio->regs->IPIER = 0x1;
+
     bm_gpio_clear_irq(gpio);
-    bm_ext_irq_init();
+
+    // Enable GPIO interrupt
     bm_ext_irq_enable(gpio->ext_irq_id);
 }
 

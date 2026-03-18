@@ -1,4 +1,4 @@
-/* Copyright 2025 Codasip s.r.o.         */
+/* Copyright 2025-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef BM_CHERI_H

@@ -1,18 +1,20 @@
-/* Copyright 2023 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef FSBL_PARSER_H
 #define FSBL_PARSER_H
+
+#include <stdint.h>
 
 #define ENTRY_FLAG_BOOT 0x1
 #define ENTRY_FLAG_FDT  0x2
 #define ENTRY_FLAG_NXT  0x4
 
 typedef struct {
-    int           gpio;
-    char         *path;
-    unsigned long load_addr;
-    unsigned      flags;
+    int      gpio;
+    char    *path;
+    uint8_t *load_addr;
+    unsigned flags;
 } entry_t;
 
 /**

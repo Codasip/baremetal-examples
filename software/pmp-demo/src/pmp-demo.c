@@ -1,4 +1,4 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/interrupt.h>
@@ -73,13 +73,13 @@ static inline void test_read_write(xlen_t address)
  */
 static inline void test_memory_access(void)
 {
-    puts("Range with read and write access alowed globally:");
+    puts("Range with read and write access allowed globally:");
     test_read_write(program_data_end + 4);
     puts("Range with write access restricted globally:");
     test_read_write(program_data_end + 4 + 1 * TEST_RANGE);
     puts("Range with read and write access restricted globally:");
     test_read_write(program_data_end + 4 + 2 * TEST_RANGE);
-    puts("Range with read and write access alowed in user mode:");
+    puts("Range with read and write access allowed in user mode:");
     test_read_write(program_data_end + 4 + 3 * TEST_RANGE);
     puts("Range with write access restricted in user mode:");
     test_read_write(program_data_end + 4 + 4 * TEST_RANGE);
@@ -121,7 +121,7 @@ int main(void)
                BM_PMP_MODE_TOR,
                BM_PMP_CONFIG_READ | BM_PMP_MODE_WRITE | BM_PMP_MODE_EXECUTE);
 
-    // Create additional ranges with restricted access rights, to check the PMP functionality
+    // Create additional ranges with restricted access rights to check the PMP functionality
     bm_pmp_set(1,
                program_data_end + TEST_RANGE,
                BM_PMP_MODE_TOR,

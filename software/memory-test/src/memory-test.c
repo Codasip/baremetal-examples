@@ -1,4 +1,4 @@
-/* Copyright 2023-2025 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <baremetal/bm_cheri.h>
@@ -129,7 +129,7 @@ void mem_error_handler(bm_register_file_t *stacked_regs)
 
     log_error();
 
-    // Move past offending instrcution to continue
+    // Move past offending instruction to continue
 #ifdef __CHERI_PURE_CAPABILITY__
     const uint8_t *csr_val = 0;
 

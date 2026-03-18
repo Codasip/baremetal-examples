@@ -1,4 +1,4 @@
-/* Copyright 2023-2026 Codasip s.r.o.         */
+/* Copyright 2023-2026 Codasip s.r.o.    */
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #ifndef BAREMETAL_INTERRUPT_H
@@ -34,6 +34,7 @@
  * f28–31   ft8–11   FP temporaries                     Caller
  */
 
+/** \brief Register file */
 typedef struct {
     uintptr_t ra; // x1
     uintptr_t t0; // x5
@@ -55,26 +56,26 @@ typedef struct {
 #endif
 
 #if __riscv_flen
-    flen_t ft0;
-    flen_t ft1;
-    flen_t ft2;
-    flen_t ft3;
-    flen_t ft4;
-    flen_t ft5;
-    flen_t ft6;
-    flen_t ft7;
-    flen_t fa0;
-    flen_t fa1;
-    flen_t fa2;
-    flen_t fa3;
-    flen_t fa4;
-    flen_t fa5;
-    flen_t fa6;
-    flen_t fa7;
-    flen_t ft8;
-    flen_t ft9;
-    flen_t ft10;
-    flen_t ft11;
+    flen_t ft0;  // f0
+    flen_t ft1;  // f1
+    flen_t ft2;  // f2
+    flen_t ft3;  // f3
+    flen_t ft4;  // f4
+    flen_t ft5;  // f5
+    flen_t ft6;  // f6
+    flen_t ft7;  // f7
+    flen_t fa0;  // f10
+    flen_t fa1;  // f11
+    flen_t fa2;  // f12
+    flen_t fa3;  // f13
+    flen_t fa4;  // f14
+    flen_t fa5;  // f15
+    flen_t fa6;  // f16
+    flen_t fa7;  // f17
+    flen_t ft8;  // f28
+    flen_t ft9;  // f29
+    flen_t ft10; // f30
+    flen_t ft11; // f31
 #endif
 } bm_register_file_t;
 

@@ -2,12 +2,12 @@
 
 Demonstrates use of CLINT API to issue IPIs.
 
-The demo issues a IPI from each hart to the next available hart,
+The demo issues an IPI from each hart to the next available hart,
 and prints out once the interrupt is triggered.
 
 ## Example Output
-On a MP4 system you can expect a correctly synchronised output in terms of the stings,
-but the order of the harts output can be different on each run.
+On a MP4 system you can expect a correctly synchronised output in terms of the strings,
+but the order of the harts' output can be different on each run.
 
 ```
 Welcome to the CLINT-IPI demo!
